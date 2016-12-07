@@ -1,0 +1,373 @@
+# Catmandu Fix
+#
+# Institution: Museum of Fine Arts Ghent
+# Description: Converts Adlib Structured XML to LIDO 1.0
+# Created: 1/12/2016
+#
+
+## Prepare an intermediate structure:
+##   Copy relevant Adlib fields to a dedicated lido structure.
+##   Remove all Adlib fields afterwards, retaining only the lido structure.
+
+copy_field(object_number, lido.object_number)
+copy_field(lido.object_number, lido.identificator)
+lookup_in_store(lido.identificator, DBI, data_source: "dbi:SQLite:PIDS_MSK.sqlite")
+
+copy_field(object_category, lido.object_category)
+copy_field(Object_name, lido.object_name)
+copy_field(Title, lido.title)
+copy_field(Title_translation, lido.title_translation)
+copy_field(Description, lido.description)
+copy_field(Dimension, lido.dimensions)
+copy_field(Production, lido.production)
+copy_field(Production_date, lido.production_date)
+copy_field('production\.period', lido.production_period)
+copy_field(physical_description, lido.physical_description)
+copy_field(Material, lido.materials)
+copy_field("institution\.name", lido.institution)
+copy_field('content\.motif\.general', 'lido.subject')
+
+## Set default values for required fields if value is missing
+
+unless exists(lido.production.creator.name)
+  add_field(lido.production.creator.name, 'n/a')
+end
+
+retain(lido)
+
+#### Mapping starts here
+
+## LIDO RecID
+
+lido_baseid(
+		lidoRecID,
+		lido.identificator.dataPid,
+		-source: 'Museum voor Schone Kunsten Gent',
+		-type: 'global',
+		-label: 'dataPID'
+)
+
+## LIDO ObjectPublishedID
+
+lido_baseid(
+		objectPublishedID,
+		lido.identificator.workPid,
+		-source: 'Museum voor Schone Kunsten Gent',
+		-type: 'global',
+		-label: 'workPID'
+)
+
+## LIDO Category
+
+add_field("lido.CIDOCCategoryTerm", "Man-Made Object")
+add_field("lido.CIDOCCategoryURI", "http://www.cidoc-crm.org/crm-concepts/E22")
+
+lido_term(
+		lido.category,
+		'lido.CIDOCCategoryTerm',
+		-conceptid: 'lido.CIDOCCategoryURI',
+		-type: 'URI',
+		-source: 'cidoc-crm',
+)
+
+## LIDO Classification
+
+# Mapping
+# -----------------------------------------------------------------------------
+# Adlib                         LIDO                       VKC
+#   object_category                lido:objectWorkType       Type kunstwerk
+#                                  lido:classification
+#   object_name (AAT)                 alternate
+#   object_name (Adlib)               preferred
+#   content.motif.general (Adlib)  lido:subjectWrap          Voorstelling
+#   physical_description           lido:materialsTech        Materiaal
+
+## LIDO classification & ObjectWorkType
+
+copy_field(lido.object_name.object_name.term, lido.object_name.aat)
+lookup_in_store(lido.object_name.aat, DBI, data_source: "dbi:SQLite:AAT.sqlite")
+
+lido_classification (
+		lido.object_category.term,
+		lido.object_name.aat.aatterm,
+		-classification_id: lido.object_name.aat.aaturi,
+		-classification_type: global,
+		-classification_source: AAT,
+		-classification_type_lang: nl,
+		-classification_pref: 'alternate',
+		-object_work_type_lang: nl,
+		-object_work_type_pref: 'preferred',
+)
+
+## Adlib Object Name classification
+
+lido_term(
+	'descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last',
+	'lido.object_name.object_name.term',
+	-pref: 'preferred',
+)
+
+## LIDO Subject wrap
+
+lido_term(
+   'descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept',
+   'lido.subject.term',
+   -lang: 'nl'
+)
+
+### LIDO ObjectIdentification
+
+## Title
+
+lido_basenameset(
+		descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+		lido.title.title,
+		-value_lang: nl
+)
+
+if all_match('lido.title_translation.1.title\.translation', '.*\S.*')
+  lido_basenameset(
+      descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+      'lido.title_translation.1.title\.translation',
+      -value_lang: en,
+      -value_pref: preferred
+  )
+end
+
+## Description
+
+lido_descriptivenote(
+    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+    lido.description.0.description,
+    -lang: 'nl'
+)
+
+lido_descriptivenote(
+    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+    lido.description.2.description,
+    -lang: 'en'
+)
+
+## LIDO ObjectMeasurements
+
+do list(path:lido.dimensions, var:c)
+  if all_equal('c.dimension\.part', 'geheel')
+
+     copy_field('c.dimension\.type.term', c.dimension_type)
+     copy_field('c.dimension\.unit.term', c.dimension_unit)
+     copy_field('c.dimension\.value', c.dimension_value)
+
+    unless exists('c.dimension_unit')
+       add_field('c.dimension_unit', 'n/a')
+    end
+
+    unless exists('c.dimension_value')
+       # add_field('c.dimension_value', 'n/a')
+    end
+
+    unless all_match('c.dimension_value', '.*\S.*')
+       add_field('c.dimension_value', 'n/a')
+    end
+
+    lido_objectmeasurements(
+        '',
+        'c.dimension_type',
+        'c.dimension_unit',
+        'c.dimension_value'
+    )
+  end
+end
+
+##
+# Event: production
+##
+
+## LIDO Event Type: Production
+
+add_field(lido.event_type, 'Production')
+lido_term(
+		descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+		lido.event_type
+)
+
+## TODO: SQL lite support voor PID's integratie
+
+## LIDO Event type: Actor (creator)
+
+copy_field(lido.production.creator.name, lido.production.creator.pid)
+lookup_in_store(lido.production.creator.pid, DBI, data_source: "dbi:SQLite:creators.sqlite")
+
+lido_actor(
+		descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+    'lido.production.creator\.lref',
+		lido.production.creator.name,
+		-id_source: "Adlib",
+		-birthdate: 'lido.production.creator.birth\.date\.start',
+		-deathdate: 'lido.production.creator.death\.date\.start',
+		-role: 'lido.production.creator\.role.term',
+		-qualifier: 'lido.production.creator\.qualifier',
+		-name_pref: 'alternate'
+)
+
+## Add Persistent URI data to actor
+
+if exists(lido.production.creator.pid.display_name)
+  ## Preferred label from Flemish Art Collection concordance database
+  lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.appellationValue,
+    lido.production.creator.pid.display_name,
+    -pref: 'preferred'
+	)
+
+	## Creator Persistent URI's
+
+	lido_baseid(
+	  descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+	  lido.production.creator.pid.viaf_uri,
+	  -source: 'VIAF'
+	)
+
+	lido_baseid(
+	  descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+	  lido.production.creator.pid.rkd_uri,
+	  -source: 'RKD'
+	)
+
+	lido_baseid(
+	  descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+	  lido.production.creator.pid.wikidata_uri,
+	  -source: 'Wikidata'
+	)
+end
+
+
+## LIDO Event date: creation date
+
+lido_date(
+		descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+		-earliest_date: 'lido.production_date.production\.date\.start',
+		-earliest_date_type: 'lido.production_date.production\.date\.start\.prec',
+		-latest_date: 'lido.production_date.production\.date\.end',
+		-latest_date_type: 'lido.production_date.production\.date\.end\.prec'
+)
+
+## TODO: displayDate
+
+paste(lido.displayDate, "lido.production_date.production\.date\.start", "lido.production_date.production\.date\.end", join_char:" - ")
+
+if all_match('lido.production_date.production\.date\.start\.prec', '.*\S.*')
+  add_field('lido.production_date.precision', 'circa')
+end
+
+if all_match('lido.production_date.production\.date\.start\.prec', '.*\S.*'
+)
+  add_field('lido.production_date.precision', 'circa')
+end
+
+if exists('lido.production_date.precision')
+  paste(lido.displayDate, lido.production_date.precision, lido.displayDate)
+end
+
+lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+    lido.displayDate
+)
+
+## LIDO Period name
+
+## TODO: add local conceptID from Adlib
+
+lido_term(
+		descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+		'lido.production_period.term',
+		-lang: 'nl'
+)
+
+## LIDO Event place: creation place
+
+lido_basenameset (
+		descriptiveMetadata.eventWrap.eventSet.$last.event.eventPlace.place.namePlaceSet,
+		'lido.production.production\.place.term',
+		-value_pref: 'preferred',
+		-value_lang: 'nl'
+)
+
+## LIDO eventMaterialsTech (Materiaal)
+
+if exists(physical_description)
+  lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
+    'lido.physical_description',
+  )
+end
+
+# TODO: -conceptID does not work here
+if exists(lido.materials.material.term)
+  lido_term(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech,
+    'lido.materials.material.term',
+    -conceptid: 'lido.materials.material.material\.lref',  # Does not work
+    -source: 'Adlib'
+  )
+
+  add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.type, 'material')
+end
+
+## LIDO eventMaterialsTech (Techniek)
+
+# TODO: -conceptID does not work here
+if exists(lido.physical_description)
+  lido_term(
+    descriptiveMetadata.eventWrap.eventSet.event.eventMaterialsTech.materialsTech.$append.termMaterialsTech,
+    'lido.physical_description',
+    -conceptid: 'lido.materials.material.material\.lref',
+    -source: 'Adlib'
+  )
+
+  # Debatable
+  add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.type, 'physicalDescription')
+end
+
+##
+# recordWrap
+##
+
+## LIDO RecordID
+
+lido_baseid(
+		administrativeMetadata.recordWrap.recordID,
+		lido.object_number
+)
+
+## LIDO recordType
+
+add_field('lido.AATRecordTypeTerm', 'Item')
+add_field('lido.AATRecordTypeID', 'http://vocab.getty.edu/aat/300133025')
+
+lido_term(
+		administrativeMetadata.recordWrap.recordType,
+		lido.AATRecordTypeTerm,
+		-conceptid: 'lido.AATRecordTypeID',
+		-type: 'local',
+		-source: 'AAT',
+)
+
+## LIDO recordSource
+
+lido_basenameset(
+		administrativeMetadata.recordWrap.recordSource.legalBodyName,
+		lido.institution.name
+)
+
+add_field('lido.LegalBodyWebLink', 'http://mskgent.be')
+
+lido_basevalue(
+		administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
+		lido.LegalBodyWebLink
+)
+
+## Remove the 'lido' structure
+
+remove_field(lido)
+
+vacuum()
