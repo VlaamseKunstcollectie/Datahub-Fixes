@@ -1,8 +1,8 @@
 # Catmandu Fix
 #
-# Institution: Museum of Fine Arts Ghent
+# Institution: Groeninge Museum Bruges
 # Description: Converts Adlib Structured XML to LIDO 1.0
-# Created: 1/12/2016
+# Created: 7/12/2016
 #
 
 ## Prepare an intermediate structure:
@@ -42,7 +42,7 @@ retain(lido)
 lido_baseid(
 		lidoRecID,
 		lido.identificator.dataPid,
-		-source: 'Museum voor Schone Kunsten Gent',
+		-source: 'Groeninge Museum Bruges',
 		-type: 'global',
 		-label: 'dataPID'
 )
@@ -52,7 +52,7 @@ lido_baseid(
 lido_baseid(
 		objectPublishedID,
 		lido.identificator.workPid,
-		-source: 'Museum voor Schone Kunsten Gent',
+		-source: 'Groeninge Museum Bruges',
 		-type: 'global',
 		-label: 'workPID'
 )
@@ -359,7 +359,7 @@ lido_basenameset(
 		lido.institution.name
 )
 
-add_field('lido.LegalBodyWebLink', 'http://mskgent.be')
+add_field('lido.LegalBodyWebLink', 'http://www.museabrugge.be')
 
 lido_basevalue(
 		administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
