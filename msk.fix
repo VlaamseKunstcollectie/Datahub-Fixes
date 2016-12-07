@@ -152,11 +152,28 @@ lido_descriptivenote(
 
 do list(path:lido.dimensions, var:c)
   if all_equal('c.dimension\.part', 'geheel')
+
+     copy_field('c.dimension\.type.term', c.dimension_type)
+     copy_field('c.dimension\.unit.term', c.dimension_unit)
+     copy_field('c.dimension\.value', c.dimension_value)
+
+    unless exists('c.dimension_unit')
+       add_field('c.dimension_unit', 'n/a')
+    end
+
+    unless exists('c.dimension_value')
+       # add_field('c.dimension_value', 'n/a')
+    end
+
+    unless all_match('c.dimension_value', '.*\S.*')
+       add_field('c.dimension_value', 'n/a')
+    end
+
     lido_objectmeasurements(
         '',
-        'c.dimension\.type.term',
-        'c.dimension\.unit.term',
-        'c.dimension\.value'
+        'c.dimension_type',
+        'c.dimension_unit',
+        'c.dimension_value'
     )
   end
 end
@@ -284,7 +301,6 @@ if exists(physical_description)
   )
 end
 
-# TODO: Not possible to add a 'type' attribute to 'termMaterialsTech'
 # TODO: -conceptID does not work here
 if exists(lido.materials.material.term)
   lido_term(
@@ -299,7 +315,6 @@ end
 
 ## LIDO eventMaterialsTech (Techniek)
 
-# TODO: Not possible to add a 'type' attribute to 'termMaterialsTech'
 # TODO: -conceptID does not work here
 if exists(lido.physical_description)
   lido_term(
