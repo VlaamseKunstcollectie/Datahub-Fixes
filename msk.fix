@@ -345,7 +345,8 @@ end
 
 lido_baseid(
     administrativeMetadata.recordWrap.recordID,
-    lido.object_number
+    lido.object_number,
+	-type: 'local'
 )
 
 ## LIDO recordType
@@ -374,6 +375,10 @@ lido_basevalue(
     administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
     lido.LegalBodyWebLink
 )
+
+## Add lang attributes to descriptiveMetadata and administrativeMetadata
+add_field(descriptiveMetadata.lang, 'nl')
+add_field(administrativeMetadata.lang, 'nl')
 
 ## Remove the 'lido' structure
 
