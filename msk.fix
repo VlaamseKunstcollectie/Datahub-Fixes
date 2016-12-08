@@ -316,7 +316,8 @@ if exists(lido.materials.material.term)
     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech,
     'lido.materials.material.term',
     -conceptid: 'lido.materials.material.material\.lref',  # Does not work
-    -source: 'Adlib'
+    -source: 'Adlib',
+	-type: 'local'
   )
 
   add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.type, 'material')
