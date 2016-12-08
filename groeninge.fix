@@ -9,9 +9,10 @@
 ##   Copy relevant Adlib fields to a dedicated lido structure.
 ##   Remove all Adlib fields afterwards, retaining only the lido structure.
 
+copy_field(priref, lido.priref)
 copy_field(object_number, lido.object_number)
 copy_field(lido.object_number, lido.identificator)
-lookup_in_store(lido.identificator, DBI, data_source: "dbi:SQLite:PIDS_MSK.sqlite")
+lookup_in_store(lido.identificator, DBI, data_source: "dbi:SQLite:PIDS_GRO.sqlite")
 
 copy_field(object_category, lido.object_category)
 copy_field(Object_name, lido.object_name)
@@ -39,23 +40,27 @@ retain(lido)
 
 ## LIDO RecID
 
-lido_baseid(
-		lidoRecID,
-		lido.identificator.dataPid,
-		-source: 'Groeninge Museum Bruges',
-		-type: 'global',
-		-label: 'dataPID'
-)
+if exists(lido.identificator.dataPid)
+	lido_baseid(
+			lidoRecID,
+			lido.identificator.dataPid,
+			-source: 'Groeninge Museum Bruges',
+			-type: 'global',
+			-label: 'dataPID'
+	)
+end
 
 ## LIDO ObjectPublishedID
 
-lido_baseid(
-		objectPublishedID,
-		lido.identificator.workPid,
-		-source: 'Groeninge Museum Bruges',
-		-type: 'global',
-		-label: 'workPID'
-)
+if exists(lido.identificator.workPid)
+	lido_baseid(
+			objectPublishedID,
+			lido.identificator.workPid,
+			-source: 'Groeninge Museum Bruges',
+			-type: 'global',
+			-label: 'workPID'
+	)
+end
 
 ## LIDO Category
 
@@ -72,15 +77,21 @@ lido_term(
 
 ## LIDO Classification
 
-# Mapping
+# Mapping Facets
 # -----------------------------------------------------------------------------
 # Adlib                         LIDO                       VKC
-#   object_category                lido:objectWorkType       Type kunstwerk
+#   object_category                lido:objectWorkType          Type kunstwerk
 #                                  lido:classification
-#   object_name (AAT)                 alternate
-#   object_name (Adlib)               preferred
-#   content.motif.general (Adlib)  lido:subjectWrap          Voorstelling
-#   physical_description           lido:materialsTech        Materiaal
+#   object_name (AAT)                 type:alternate
+#   object_name (Adlib)               type:preferred
+#   content.motif.general (Adlib)  lido:subjectWrap             Voorstelling
+#                                  lido:materialsTech
+#   physical_description              type:physicalDescription  Materiaal
+#   institution.name               lido:legalBodyName           Museum
+#   creator.name                   lido:nameActorSet
+#                                     type:alternate
+#                                     type:preferred            Kunstenaar
+#   production.period              lido:periodName              Periode
 
 ## LIDO classification & ObjectWorkType
 
@@ -135,6 +146,18 @@ if all_match('lido.title_translation.1.title\.translation', '.*\S.*')
 end
 
 ## Description
+
+# TODO: implement this as a to_array fix. Convert a single value to an array.
+#   Rationale: if a complexType with repeatable subnodes contains only one
+#   instance, it is converted to a string. Otherwise an array. Should always be
+#   an array so the paths don't turn variable & fixes shouldn't be repeated.
+
+unless is_array(lido.description)
+  copy_field(lido.description.description, lido.temp)
+  remove_field(lido.description)
+  copy_field(lido.temp, lido.description.0.description)
+  remove_field(lido.temp)
+end
 
 lido_descriptivenote(
     descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
@@ -336,7 +359,14 @@ end
 
 lido_baseid(
 		administrativeMetadata.recordWrap.recordID,
-		lido.object_number
+		lido.object_number,
+		-type: 'local'
+)
+
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    lido.priref,
+    -type: 'Adlib'
 )
 
 ## LIDO recordType
@@ -368,6 +398,6 @@ lido_basevalue(
 
 ## Remove the 'lido' structure
 
-remove_field(lido)
+# remove_field(lido)
 
 vacuum()
