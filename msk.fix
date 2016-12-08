@@ -316,7 +316,8 @@ if exists(lido.materials.material.term)
     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech,
     'lido.materials.material.term',
     -conceptid: 'lido.materials.material.material\.lref',  # Does not work
-    -source: 'Adlib'
+    -source: 'Adlib',
+	-type: 'local'
   )
 
   add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.type, 'material')
@@ -345,7 +346,8 @@ end
 
 lido_baseid(
     administrativeMetadata.recordWrap.recordID,
-    lido.object_number
+    lido.object_number,
+	-type: 'local'
 )
 
 ## LIDO recordType
@@ -374,6 +376,10 @@ lido_basevalue(
     administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
     lido.LegalBodyWebLink
 )
+
+## Add lang attributes to descriptiveMetadata and administrativeMetadata
+add_field(descriptiveMetadata.lang, 'nl')
+add_field(administrativeMetadata.lang, 'nl')
 
 ## Remove the 'lido' structure
 
