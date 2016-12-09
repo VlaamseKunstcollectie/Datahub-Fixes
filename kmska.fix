@@ -1,0 +1,232 @@
+
+
+##
+# Prepare
+
+# lidoRecID
+#ObjectNumber
+#ObjectID => is de key
+copy_field(ObjectNumber, or_record.object_number.local)
+copy_field(ObjectID, or_record.object_number.tms)
+copy_field(ObjectID, or_record.object_number.pid)
+lookup_in_store(or_record.object_number.pid, DBI, data_source: 'dbi:SQLite:/vagrant/Datahub-Fixes/PIDS_KMSKA.sqlite')
+
+# objectPublishedID
+
+# category
+add_field("or_record.category.term", "Man-Made Object")
+add_field("or_record.category.concept_id", "http://www.cidoc-crm.org/crm-concepts/E22")
+
+# objectWorkType
+add_field(or_record.objectWorkType, 'NOT AVAILABLE')
+
+#   object_category                lido:objectWorkType          Type kunstwerk
+#                                  lido:classification
+#   object_name (AAT)                 type:alternate
+# object_name (Adlib) type:preferred
+
+# classification
+copy_field(ObjectName, or_record.ObjectName)
+
+unless all_match(ObjectName, '.*\S.*')
+    add_field(or_record.ObjectName, 'n/a')
+end
+
+if is_null(ObjectName)
+   add_field(or_record.ObjectName, 'n/a')
+end
+
+split_field(or_record.ObjectName, ';')
+do list(path:or_record.ObjectName, var:n)
+    trim(n)
+    copy_field(n, or_record.classification.$append.preferred)
+
+    unless all_match(or_record.classification.$last.preferred, 'n/a')
+        copy_field(or_record.classification.$last.preferred, or_record.classification.$last.aat)
+    end
+end
+
+# ObjectName: pendanten; linkerluik
+# ObjectName => lido:classification type=preferred
+
+# subjectWrap
+# title
+copy_field(Title, or_record.titleSet.appellationValue)
+trim(or_record.titleSet.appellationValue)
+copy_field(TitleID, or_record.titleSet.sourceAppellation)
+trim(or_record.titleSet.sourceAppellation)
+
+# description
+copy_field(Description, or_record.descriptiveNote.$append)
+trim(or_record.descriptiveNote.$last)
+
+# objectMeasurements
+
+# type, unit, value
+
+
+# event (production)
+# actor
+#AlphaSort: Berchem, Nicolaes
+# creation date
+# period
+# place
+# eventMaterialsTech
+#Medium
+# recordID (see lidoRecID)
+# recordType
+add_field('or_record.recordType.term', 'Item')
+add_field('or_record.recordType.conceptID', 'http://vocab.getty.edu/aat/300133025')
+
+# recordSource
+add_field(or_record.legalBodyWeblink, 'http://kmska.be')
+
+if exists(Institution)
+    copy_field(Institution, or_record.legalBodyName)
+
+    # Check for null or only spaces
+    if is_null(Institution)
+        add_field(or_record.legalBodyName, 'KMSKA')
+    end
+    unless all_match(Institution, '.*\S.*')
+        add_field(or_record.legalBodyName, 'KMSKA')
+    end
+else
+    add_field(or_record.legalBodyName, 'KMSKA')
+end
+trim(or_record.legalBodyName)
+
+#
+##
+retain(or_record)
+
+##
+# Convert to LIDO
+##
+
+# lidoRecID
+lido_baseid(
+    lidoRecID,
+    or_record.object_number.pid.dataPid,
+    -source: KMSKA,
+    -type: global,
+    -label: dataPID
+)
+
+# objectPublishedID
+lido_baseid(
+    objectPublishedID,
+    or_record.object_number.pid.workPid,
+    -source: KMSKA,
+    -type: global,
+    -label: workPID
+)
+
+
+# category
+lido_term(
+    category,
+    or_record.category.term,
+    -conceptid: or_record.category.concept_id,
+    -type: 'URI',
+    -source: 'cidoc-crm'
+)
+
+
+# classification
+lido_classification (
+    or_record.objectWorkType,
+    or_record.classification.$first.preferred,
+    -classification_pref: preferred,
+    -object_work_type_lang: nl,
+    -object_work_type_pref: preferred
+)
+
+lido_term(
+        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+        or_record.classification.$first.aatterm,
+        -conceptid: or_record.classification.$first.aaturi,
+        -lang: nl,
+        -source: AAT,
+        -type: global,
+        -pref: alternate
+    )
+
+# a hack so we can loop over the rest of or_record
+remove_field(or_record.classification.$first)
+
+do list(path:or_record.classification, var:c)
+    lido_term(
+        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+        c.preferred,
+        -pref: preferred
+    )
+    lido_term(
+        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+        c.aat.aatterm,
+        -conceptid: c.aat.aaturi,
+        -lang: nl,
+        -source: AAT,
+        -type: global,
+        -pref: alternate
+    )
+end
+
+# title
+lido_basenameset(
+    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+    or_record.titleSet.appellationValue,
+    -value_pref: preferred,
+    -value_lang: nl,
+    -source: or_record.titleSet.sourceAppellation,
+    -source_lang: nl
+)
+
+# Description
+lido_descriptivenote(
+    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+    or_record.descriptiveNote.$first,
+    -lang: 'nl'
+)
+
+# recordSource
+lido_basenameset(
+    administrativeMetadata.recordWrap.recordSource.legalBodyName,
+    or_record.legalBodyName
+)
+
+lido_basevalue(
+    administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
+    or_record.legalBodyWeblink
+)
+
+# recordID
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    or_record.object_number.local,
+    -type: local
+)
+
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    or_record.object_number.tms,
+    -type: TMS
+)
+
+# recordType
+lido_term(
+    administrativeMetadata.recordWrap.recordType,
+    or_record.recordType.term,
+    -conceptid: or_record.recordType.conceptID,
+    -type: local,
+    -source: AAT
+)
+
+# Add lang attributes to descriptiveMetadata and administrativeMetadata
+add_field(descriptiveMetadata.lang, 'nl')
+add_field(administrativeMetadata.lang, 'nl')
+
+#
+##
+remove_field(or_record)
+#vacuum()
