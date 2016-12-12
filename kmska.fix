@@ -66,13 +66,42 @@ trim(or_record.descriptiveNote.$last)
 
 
 # event (production)
+add_field(or_record.production_type, 'Production')
 # actor
 #AlphaSort: Berchem, Nicolaes
+copy_field(AlphaSort, or_record.creator.pid)
+copy_field(DisplayName, or_record.creator.display)
+copy_field(NameID, or_record.creator.id)
+copy_field(Role, or_record.creator.role)
+trim(or_record.creator.display)
+trim(or_record.creator.pid)
+trim(or_record.creator.role)
+lookup_in_store(or_record.creator.pid, DBI, data_source: "dbi:SQLite:/vagrant/Datahub-Fixes/creators_kmska.sqlite")
+
 # creation date
+copy_field(DateBegin, or_record.date.begin)
+copy_field(DateEnd, or_record.date.end)
+copy_field(Dated, or_record.date.display)
+trim(or_record.date.begin)
+trim(or_record.date.end)
+trim(or_record.date.display)
+
 # period
+
+
 # place
+
+
 # eventMaterialsTech
-#Medium
+copy_field(Medium, or_record.eventMaterialsTech.display)
+unless all_match(Medium, '.*\S.*')
+    add_field(or_record.eventMaterialsTech.display, 'n/a')
+end
+
+if is_null(Medium)
+   add_field(or_record.eventMaterialsTech.display, 'n/a')
+end
+
 # recordID (see lidoRecID)
 # recordType
 add_field('or_record.recordType.term', 'Item')
@@ -220,6 +249,74 @@ lido_term(
     -conceptid: or_record.recordType.conceptID,
     -type: local,
     -source: AAT
+)
+
+# Production
+lido_term(
+    descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+    or_record.production_type
+)
+
+# Production: Actor
+lido_actor(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+    or_record.creator.id,
+    or_record.creator.display,
+    -id_source: TMS,
+    -id_type: local,
+    -role: or_record.creator.role,
+    -name_pref: alternate
+)
+if exists(or_record.creator.pid.VIAFname)
+lido_basenameset(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$append,
+    or_record.creator.pid.VIAFname,
+    -value_pref: preferred,
+    -value_lang: nl,
+    -value_type: VIAF,
+    -source: 'or_record.creator.pid.VIAF URI',
+    -source_lang: nl
+)
+lido_baseid(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+    'or_record.creator.pid.VIAF URI',
+    -source: VIAF,
+    -type: url
+)
+end
+if exists(or_record.creator.pid.rkd-name)
+lido_basenameset(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$append,
+    or_record.creator.pid.rkd-name,
+    -value_pref: preferred,
+    -value_lang: nl,
+    -value_type: RKD,
+    -source: 'or_record.creator.pid.rkd-uri',
+    -source_lang: nl
+)
+lido_baseid(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+    'or_record.creator.pid.rkd-uri',
+    -source: RKD,
+    -type: url
+)
+end
+
+# Production: Date
+lido_date(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+    -earliest_date: or_record.date.begin,
+    -latest_date: or_record.date.end
+)
+lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+    or_record.date.display
+)
+
+# Production: displayMaterialsTech
+lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
+    or_record.eventMaterialsTech.display
 )
 
 # Add lang attributes to descriptiveMetadata and administrativeMetadata
