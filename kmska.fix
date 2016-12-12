@@ -18,33 +18,19 @@ add_field("or_record.category.term", "Man-Made Object")
 add_field("or_record.category.concept_id", "http://www.cidoc-crm.org/crm-concepts/E22")
 
 # objectWorkType
-add_field(or_record.objectWorkType, 'NOT AVAILABLE')
+copy_field(ClassificationID, or_record.objectWorkType.db)
+if all_equal(or_record.objectWorkType.db, '0')
+    move_field(or_record.objectWorkType.db, or_record.objectWorkType.db._id)
+    add_field(or_record.objectWorkType.db.term, 'n/a')
+else
+    lookup_in_store(or_record.objectWorkType.db, DBI, data_source: 'dbi:SQLite:/vagrant/Datahub-Fixes/kmska_classifications.sqlite')
+end
+
 
 #   object_category                lido:objectWorkType          Type kunstwerk
 #                                  lido:classification
 #   object_name (AAT)                 type:alternate
 # object_name (Adlib) type:preferred
-
-# classification
-copy_field(ObjectName, or_record.ObjectName)
-
-unless all_match(ObjectName, '.*\S.*')
-    add_field(or_record.ObjectName, 'n/a')
-end
-
-if is_null(ObjectName)
-   add_field(or_record.ObjectName, 'n/a')
-end
-
-split_field(or_record.ObjectName, ';')
-do list(path:or_record.ObjectName, var:n)
-    trim(n)
-    copy_field(n, or_record.classification.$append.preferred)
-
-    unless all_match(or_record.classification.$last.preferred, 'n/a')
-        copy_field(or_record.classification.$last.preferred, or_record.classification.$last.aat)
-    end
-end
 
 # ObjectName: pendanten; linkerluik
 # ObjectName => lido:classification type=preferred
@@ -164,7 +150,7 @@ lido_term(
 
 # classification
 lido_classification (
-    or_record.objectWorkType,
+    or_record.objectWorkType.db.term,
     or_record.classification.$first.preferred,
     -classification_pref: preferred,
     -object_work_type_lang: nl,
