@@ -23,7 +23,7 @@ if all_equal(or_record.objectWorkType.db, '0')
     move_field(or_record.objectWorkType.db, or_record.objectWorkType.db._id)
     add_field(or_record.objectWorkType.db.term, 'n/a')
 else
-    lookup_in_store(or_record.objectWorkType.db, DBI, data_source: 'dbi:SQLite:/vagrant/Datahub-Fixes/kmska_classifications.sqlite')
+    lookup_in_store(or_record.objectWorkType.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.classifications.sqlite')
 end
 
 
@@ -73,7 +73,8 @@ trim(or_record.date.end)
 trim(or_record.date.display)
 
 # period
-
+copy_field(ObjectID, or_record.periodName)
+lookup_in_store(or_record.periodName, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.periods.sqlite')
 
 # place
 
@@ -297,6 +298,13 @@ lido_date(
 lido_basevalue(
     descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
     or_record.date.display
+)
+
+# Production: Period
+lido_term(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+    or_record.periodName.term,
+    -lang: nl
 )
 
 # Production: displayMaterialsTech
