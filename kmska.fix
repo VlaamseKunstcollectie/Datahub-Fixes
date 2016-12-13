@@ -36,6 +36,10 @@ end
 # ObjectName => lido:classification type=preferred
 
 # subjectWrap
+copy_field(ObjectID, or_record.subjectWrap.db)
+lookup_in_store(or_record.subjectWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.subjects.sqlite')
+
+
 # title
 copy_field(Title, or_record.titleSet.appellationValue)
 trim(or_record.titleSet.appellationValue)
@@ -54,8 +58,6 @@ do list(path:or_record.objectMeasurements.db.dimensions, var:d)
         copy_field(d, or_record.objectMeasurements.volledig.$append)
     end
 end
-
-# type, unit, value
 
 
 # event (production)
@@ -165,6 +167,14 @@ lido_classification (
     -object_work_type_pref: preferred
 )
 
+# subjectWrap
+do list(path:or_record.subjectWrap.db.subjects, var:s)
+    lido_term(
+        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept,
+        s.subject,
+        -lang: nl
+    )
+end
 
 # title
 lido_basenameset(
