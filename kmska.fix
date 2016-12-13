@@ -27,14 +27,6 @@ else
 end
 
 
-#   object_category                lido:objectWorkType          Type kunstwerk
-#                                  lido:classification
-#   object_name (AAT)                 type:alternate
-# object_name (Adlib) type:preferred
-
-# ObjectName: pendanten; linkerluik
-# ObjectName => lido:classification type=preferred
-
 # subjectWrap
 copy_field(ObjectID, or_record.subjectWrap.db)
 lookup_in_store(or_record.subjectWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.subjects.sqlite')
@@ -158,13 +150,12 @@ lido_term(
 )
 
 
-# classification
-lido_classification (
+# objectWorkType
+lido_term(
+    descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
     or_record.objectWorkType.db.term,
-    or_record.classification.$first.preferred,
-    -classification_pref: preferred,
-    -object_work_type_lang: nl,
-    -object_work_type_pref: preferred
+    -lang: nl,
+    -pref: preferred
 )
 
 # subjectWrap
