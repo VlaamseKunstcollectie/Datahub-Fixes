@@ -47,6 +47,13 @@ copy_field(Description, or_record.descriptiveNote.$append)
 trim(or_record.descriptiveNote.$last)
 
 # objectMeasurements
+copy_field(ObjectID, or_record.objectMeasurements.db)
+lookup_in_store(or_record.objectMeasurements.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.dimensions.sqlite')
+do list(path:or_record.objectMeasurements.db.dimensions, var:d)
+    if all_match(d.element, 'Volledig')
+        copy_field(d, or_record.objectMeasurements.volledig.$append)
+    end
+end
 
 # type, unit, value
 
@@ -158,35 +165,6 @@ lido_classification (
     -object_work_type_pref: preferred
 )
 
-lido_term(
-        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-        or_record.classification.$first.aatterm,
-        -conceptid: or_record.classification.$first.aaturi,
-        -lang: nl,
-        -source: AAT,
-        -type: global,
-        -pref: alternate
-    )
-
-# a hack so we can loop over the rest of or_record
-remove_field(or_record.classification.$first)
-
-do list(path:or_record.classification, var:c)
-    lido_term(
-        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-        c.preferred,
-        -pref: preferred
-    )
-    lido_term(
-        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-        c.aat.aatterm,
-        -conceptid: c.aat.aaturi,
-        -lang: nl,
-        -source: AAT,
-        -type: global,
-        -pref: alternate
-    )
-end
 
 # title
 lido_basenameset(
@@ -199,11 +177,22 @@ lido_basenameset(
 )
 
 # Description
+#Chat
 lido_descriptivenote(
     descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
     or_record.descriptiveNote.$first,
     -lang: 'nl'
 )
+
+# objectMeasurements
+do list(path:or_record.objectMeasurements.volledig, var: m)
+    lido_objectmeasurements(
+        'Volledig',
+        m.type,
+        m.unit,
+        m.dimension
+    )
+end
 
 # recordSource
 lido_basenameset(
