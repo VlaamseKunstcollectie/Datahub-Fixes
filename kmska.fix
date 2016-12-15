@@ -9,7 +9,7 @@
 copy_field(ObjectNumber, or_record.object_number.local)
 copy_field(ObjectID, or_record.object_number.tms)
 copy_field(ObjectID, or_record.object_number.pid)
-lookup_in_store(or_record.object_number.pid, DBI, data_source: 'dbi:SQLite:/vagrant/Datahub-Fixes/PIDS_KMSKA.sqlite')
+lookup_in_store(or_record.object_number.pid, DBI, data_source: 'dbi:SQLite:/tmp/import.PIDS.KMSKA.UTF8.sqlite')
 
 # objectPublishedID
 
@@ -63,7 +63,7 @@ copy_field(Role, or_record.creator.role)
 trim(or_record.creator.display)
 trim(or_record.creator.pid)
 trim(or_record.creator.role)
-lookup_in_store(or_record.creator.pid, DBI, data_source: "dbi:SQLite:/vagrant/Datahub-Fixes/creators_kmska.sqlite")
+lookup_in_store(or_record.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS.KMSKA.UTF8.sqlite")
 
 # creation date
 copy_field(DateBegin, or_record.date.begin)
