@@ -9,7 +9,7 @@
 copy_field(ObjectNumber, or_record.object_number.local)
 copy_field(ObjectID, or_record.object_number.tms)
 copy_field(ObjectNumber, or_record.object_number.pid)
-lookup_in_store(or_record.object_number.pid, Resolver, url: 'http://resolver.kmska.be', username: catmandu, password: catmandu)
+lookup_in_store(or_record.object_number.pid, Resolver, url: 'http://resolver.kmska.be')
 
 # objectPublishedID
 
