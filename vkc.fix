@@ -1,0 +1,426 @@
+lookup_in_store(record, VKC, username: username, password: password, lang: nl_NL)
+##
+# Data preparation
+##
+
+add_field(or_record.legalBodyName, 'VKC')
+add_field(or_record.legalBodyWeblink, 'http://www.vlaamsekunstcollectie.be')
+
+##
+# WorkPID
+copy_field('record.ca_objects\.objectWorkPid', or_record.objectWorkPid.source)
+
+do each(path: or_record.objectWorkPid.source, var: o)
+
+    do each(path: o.value, var: p)
+        # Doing a paste from inside a bind doesn't seem to work
+        copy_field(p.value, t)
+    end
+
+end
+
+paste(or_record.objectWorkPid.workPid,
+    t.objectWorkPidDomain,
+    t.objectWorkPidID,
+    join_char: ''
+)
+
+##
+# DataPID
+copy_field('record.ca_objects\.objectRecordPid', or_record.objectDataPid.source)
+
+do each(path: or_record.objectDataPid.source, var: o)
+
+    do each(path: o.value, var: p)
+        # Doing a paste from inside a bind doesn't seem to work
+        copy_field(p.value, t)
+    end
+
+end
+
+paste(or_record.objectDataPid.dataPid,
+    t.objectRecordPidDomain,
+    t.objectRecordPidID,
+    join_char: ''
+)
+
+##
+# category
+add_field(or_record.category.term, 'Man-Made Object')
+add_field(or_record.category.concept_id, 'http://www.cidoc-crm.org/crm-concepts/E22')
+
+##
+# objectWorkType
+copy_field('record.ca_objects\.objectObjectCategory', or_record.objectWorkType.source)
+
+do each(path: or_record.objectWorkType.source, var: o)
+
+    do each(path: o.value, var: t)
+        copy_field(t.value.objectObjectCategory, or_record.objectWorkType.term.$append.value)
+        copy_field(t.key, or_record.objectWorkType.term.$last.lang)
+        copy_field(t.value.objectObjectCategory, or_record.objectWorkType.term.$last.aat)
+ #       aat_match(or_record.objectWorkType.term.$last.aat)
+    end
+
+end
+
+# classification
+copy_field('record.ca_objects\.objectName', or_record.classification.source)
+
+do each(path: or_record.classification.source, var: o)
+
+    do each(path: o.value, var: t)
+        copy_field(t.value.objectObjectName, or_record.classification.term.$append.value)
+        copy_field(t.key, or_record.classification.term.$last.lang)
+    end
+
+end
+
+copy_field('record.ca_objects\.objectnamePid', or_record.classification_id.source)
+do each(path: or_record.classification_id.source, var: t)
+
+    do each(path: t.value, var: i)
+        copy_field(i.value.objectnamePidDomain, or_record.classification_id.pid.$append)
+        copy_field(i.value.objectnamePidID, or_record.classification_id.pid.$append)
+    end
+
+end
+
+paste(or_record.classification.pid, or_record.classification_id.pid.0, or_record.classification_id.pid.1, join_char: '')
+
+do list(path: or_record.classification.term, var: t)
+    copy_field(or_record.classification.pid, t.pid)
+end
+
+##
+# titleSet
+copy_field('record.preferred_labels', or_record.titleSet.source)
+do each(path: or_record.titleSet.source, var: k)
+
+    set_hash(or_record.titleSet.title.$append)
+    copy_field(k.key, or_record.titleSet.title.$last.lang)
+    copy_field(k.value.$first.name, or_record.titleSet.title.$last.value)
+
+end
+
+##
+# descriptiveNoteValue
+copy_field('record.ca_objects\.contentDescription', or_record.descriptiveNoteValue.source)
+
+do each(path: or_record.descriptiveNoteValue.source, var: s)
+    do each(path: s.value, var: d)
+        set_hash(or_record.descriptiveNoteValue.descriptions.$append)
+        copy_field(d.key, or_record.descriptiveNoteValue.descriptions.$last.lang)
+        copy_field(d.value.contentDescription, or_record.descriptiveNoteValue.descriptions.$last.value)
+    end
+end
+
+##
+# objectMeasurements
+copy_field('record.ca_objects\.dimensions', or_record.objectMeasurements.source)
+set_array(or_record.objectMeasurements.measurements)
+
+do each(path: or_record.objectMeasurements.source, var: s)
+
+do each(path: s.value, var: m)
+    if exists(m.value.dimensions_width)
+        split_field(m.value.dimensions_width)
+        add_field(or_record.objectMeasurements.measurements.$append.type, 'breedte')
+        copy_field(m.value.dimensions_width.1, or_record.objectMeasurements.measurements.$last.unit)
+        copy_field(m.value.dimensions_width.0, or_record.objectMeasurements.measurements.$last.value)
+    end
+    if exists(m.value.dimensions_height)
+        split_field(m.value.dimensions_height)
+        add_field(or_record.objectMeasurements.measurements.$append.type, 'hoogte')
+        copy_field(m.value.dimensions_height.1, or_record.objectMeasurements.measurements.$last.unit)
+        copy_field(m.value.dimensions_height.0, or_record.objectMeasurements.measurements.$last.value)
+    end
+    if exists(m.value.dimensions_depth)
+        split_field(m.value.dimensions_depth)
+        add_field(or_record.objectMeasurements.measurements.$append.type, 'diepte')
+        copy_field(m.value.dimensions_depth.1, or_record.objectMeasurements.measurements.$last.unit)
+        copy_field(m.value.dimensions_depth.0, or_record.objectMeasurements.measurements.$last.value)
+    end
+    if exists(m.value.dimensions_type)
+       copy_field(m.value.dimensions_type, or_record.objectMeasurements.extent_measurements)
+    end
+end
+
+end
+
+##
+# Production event
+add_field(or_record.production.type, 'Production')
+
+# actor
+# Get the production actor. This ain't easy
+set_array(or_record.production.actors)
+do list(path: record.related.ca_entities, var: e)
+    if all_equal(e.relationship_type_code, 'creator')
+        copy_field(e.displayname, or_record.production.actors.$append.nameActorSet)
+        copy_field(e.entity_id, or_record.production.actors.$last.actorID)
+        copy_field(e.relationship_type_code, or_record.production.actors.$last.attributionQualifierActor)
+        copy_field(e.displayname, or_record.production.actors.$last.viaf)
+        viaf_match(or_record.production.actors.$last.viaf)
+        copy_field(e.displayname, or_record.production.actors.$last.rkd)
+        rkd_name(or_record.production.actors.$last.rkd)
+    end
+end
+
+# eventDate
+set_array(or_record.production.eventDate.dates)
+copy_field('record.ca_objects\.objectProductionDate', or_record.production.date.source)
+do each(path: or_record.production.date.source, var: t)
+
+    do each(path: t.value, var: d)
+        copy_field(d.key, or_record.production.eventDate.dates.$append.lang)
+        copy_field(d.value.objectProductionDate, or_record.production.eventDate.dates.$last.value)
+    end
+
+end
+
+# namePlaceSet
+
+# eventMaterialsTech
+set_array(or_record.production.eventMaterialsTech.materials)
+copy_field('record.ca_objects\.materialInfo', or_record.production.material.source)
+do each(path: or_record.production.material.source, var: t)
+
+    do each(path: t.value, var: m)
+        copy_field(m.key, or_record.production.eventMaterialsTech.materials.$append.lang)
+        copy_field(m.value.material, or_record.production.eventMaterialsTech.materials.$last.value)
+        copy_field(m.value.material, or_record.production.eventMaterialsTech.materials.$last.aat)
+ #       aat_match(or_record.production.eventMaterialsTech.materials.$last.aat)
+    end
+
+end
+
+##
+# subjectConcept
+copy_field('record.ca_objects\.assocConcept', or_record.subjectConcept.source)
+
+do each(path: or_record.subjectConcept.source, var: o)
+
+    do each(path: o.value, var: t)
+        copy_field(t.value.assocConcept, or_record.subjectConcept.term.$append.value)
+        copy_field(t.key, or_record.subjectConcept.term.$last.lang)
+        copy_field(t.value.assocConcept, or_record.subjectConcept.term.$last.aat)
+#        aat_match(or_record.subjectConcept.term.$last.aat)
+    end
+
+end
+
+##
+# recordID
+copy_field(record.object_id, or_record.recordID.vkc)
+copy_field(record.idno, or_record.recordID.source)
+
+##
+# recordSource
+
+
+retain(or_record)
+
+##
+# LIDO record creation
+##
+
+lido_baseid(
+    lidoRecID,
+    or_record.objectDataPid.dataPid,
+    -type: global,
+    -label: dataPID
+)
+
+lido_baseid(
+    objectPublishedID,
+    or_record.objectWorkPid.workPid,
+    -type: global,
+    -label: workPID
+)
+
+lido_term(
+    category,
+    or_record.category.term,
+    -conceptid: or_record.category.concept_id,
+    -type: URI,
+    -source: CIDOC-CRM
+)
+
+do list(path: or_record.objectWorkType.term, var: t)
+
+    lido_term(
+        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+        t.value,
+        -lang: t.lang,
+        -pref: preferred
+    )
+
+    if exists(t.aat.id)
+        lido_term(
+            descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+            t.value,
+            -conceptid: t.aat.uri,
+            -source: AAT,
+            -type: URI,
+            -lang: t.lang,
+            -pref: preferred
+        )
+    end
+
+end
+
+do list(path: or_record.classification.term, var: t)
+
+    lido_term(
+        descriptiveMetadata.objectClassificationWrap.classification.$append,
+        t.value,
+        -conceptid: or_record.classification.pid,
+        -lang: t.lang,
+        -pref: preferred,
+        -source: AAT,
+        -type: URI
+    )
+
+end
+
+do list(path: or_record.titleSet.title, var: t)
+
+    lido_basenameset(
+        descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+        t.value,
+        -value_lang: t.lang
+    )
+
+end
+
+do list(path: or_record.descriptiveNoteValue.descriptions, var: t)
+
+    lido_descriptivenote(
+        descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+        t.value,
+        -lang: t.lang
+    )
+
+end
+
+do list(path: or_record.objectMeasurements.measurements, var: t)
+
+    lido_objectmeasurements(
+        or_record.objectMeasurements.extent_measurements,
+        t.type,
+        t.unit,
+        t.value
+    )
+
+end
+
+lido_term(
+    descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+    or_record.production.type
+)
+
+do list(path: or_record.production.actors, var: t)
+
+    lido_actor(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+        t.actorID,
+        t.nameActorSet,
+        -id_source: CollectiveAccess,
+        -id_type: local,
+        -role: t.attributionQualifierActor,
+        -name_pref: alternate
+    )
+
+    if exists(t.viaf.guid)
+
+        lido_basenameset(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$append,
+            't.viaf.skos:prefLabel',
+            -value_pref: preferred,
+            -value_lang: nl_NL,
+            -value_type: VIAF,
+            -source: t.viaf.guid,
+            -source_lang: nl_NL
+        )
+
+        lido_baseid(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+            t.viaf.guid,
+            -source: VIAF,
+            -type: URI
+        )
+
+    end
+
+end
+
+do list(path: or_record.production.eventDate.dates, var: t)
+
+    lido_date(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+        -earliest_date: t.value
+    )
+
+end
+
+do list(path: or_record.production.eventMaterialsTech.materials)
+
+    lido_term(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.$append,
+        t.value
+    )
+
+    if exists(t.aat.id)
+        lido_term(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.$append,
+            t.value,
+            -conceptid: t.aat.uri,
+            -source: AAT,
+            -type: URI,
+            -lang: t.lang,
+            -pref: preferred
+        )
+    end
+
+    add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.*.type, 'material')
+
+end
+
+
+do list(path: or_record.subjectConcept.term, var: t)
+
+    lido_term(
+            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept,
+            t.value
+    )
+
+    if exists(t.aat.id)
+        lido_term(
+            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept,
+            t.value,
+            -conceptid: t.aat.uri,
+            -source: AAT,
+            -type: URI,
+            -lang: t.lang,
+            -pref: preferred
+        )
+    end
+
+end
+
+lido_basenameset(
+    administrativeMetadata.recordWrap.recordSource.legalBodyName,
+    or_record.legalBodyName
+)
+
+lido_basevalue(
+    administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
+    or_record.legalBodyWeblink
+)
+
+
+add_field(descriptiveMetadata.lang, 'nl')
+add_field(administrativeMetadata.lang, 'nl')
+
+remove_field(or_record)
