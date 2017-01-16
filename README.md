@@ -15,8 +15,8 @@ Command line client `catmandu`:
 
 ## AVAILABLE FIXES
 
-- Groeninge Museum Bruges: Adlib XML to LIDO XML
-- Museum of Fine Arts Ghent: Adlib XML to LIDO XML
+- Groeninge Museum Bruges: Adlib XML to LIDO XML. See [msk_lido.xml](https://github.com/VlaamseKunstcollectie/Datahub-Fixes/blob/master/msk_lido.xml) for an example record.
+- Museum of Fine Arts Ghent: Adlib XML to LIDO XML. See [kmska_lido.xml](https://github.com/VlaamseKunstcollectie/Datahub-Fixes/blob/master/kmska_lido.xml) for an example record.
 
 # SEE ALSO
 
