@@ -1,4 +1,3 @@
-lookup_in_store(record, VKC, username: username, password: password, lang: nl_NL)
 ##
 # Data preparation
 ##
@@ -218,6 +217,10 @@ copy_field(record.idno, or_record.recordID.source)
 ##
 # recordSource
 
+##
+# recordType
+add_field('or_record.recordType.term', 'Item')
+add_field('or_record.recordType.id', 'http://vocab.getty.edu/aat/300133025')
 
 retain(or_record)
 
@@ -252,7 +255,7 @@ do list(path: or_record.objectWorkType.term, var: t)
     lido_term(
         descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
         t.value,
-        -lang: t.lang,
+        #-lang: t.lang,
         -pref: preferred
     )
 
@@ -263,7 +266,7 @@ do list(path: or_record.objectWorkType.term, var: t)
             -conceptid: t.aat.uri,
             -source: AAT,
             -type: URI,
-            -lang: t.lang,
+            #-lang: t.lang,
             -pref: preferred
         )
     end
@@ -273,10 +276,10 @@ end
 do list(path: or_record.classification.term, var: t)
 
     lido_term(
-        descriptiveMetadata.objectClassificationWrap.classification.$append,
+        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
         t.value,
         -conceptid: or_record.classification.pid,
-        -lang: t.lang,
+        #-lang: t.lang,
         -pref: preferred,
         -source: AAT,
         -type: URI
@@ -289,7 +292,7 @@ do list(path: or_record.titleSet.title, var: t)
     lido_basenameset(
         descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
         t.value,
-        -value_lang: t.lang
+        #-value_lang: t.lang
     )
 
 end
@@ -299,7 +302,7 @@ do list(path: or_record.descriptiveNoteValue.descriptions, var: t)
     lido_descriptivenote(
         descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
         t.value,
-        -lang: t.lang
+        #-lang: t.lang
     )
 
 end
@@ -338,10 +341,10 @@ do list(path: or_record.production.actors, var: t)
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$append,
             't.viaf.skos:prefLabel',
             -value_pref: preferred,
-            -value_lang: nl_NL,
+            -value_lang: nl,
             -value_type: VIAF,
             -source: t.viaf.guid,
-            -source_lang: nl_NL
+            -source_lang: nl
         )
 
         lido_baseid(
@@ -378,7 +381,7 @@ do list(path: or_record.production.eventMaterialsTech.materials)
             -conceptid: t.aat.uri,
             -source: AAT,
             -type: URI,
-            -lang: t.lang,
+            #-lang: t.lang,
             -pref: preferred
         )
     end
@@ -402,7 +405,7 @@ do list(path: or_record.subjectConcept.term, var: t)
             -conceptid: t.aat.uri,
             -source: AAT,
             -type: URI,
-            -lang: t.lang,
+            #-lang: t.lang,
             -pref: preferred
         )
     end
@@ -419,6 +422,25 @@ lido_basevalue(
     or_record.legalBodyWeblink
 )
 
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    or_record.recordID.source.value,
+    -type: local
+)
+
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    or_record.recordID.vkc.value,
+    -type: VKC
+)
+
+lido_term(
+    administrativeMetadata.recordWrap.recordType,
+    or_record.recordType.term,
+    -conceptid: or_record.recordType.id,
+    -type: local,
+    -source: AAT,
+)
 
 add_field(descriptiveMetadata.lang, 'nl')
 add_field(administrativeMetadata.lang, 'nl')
