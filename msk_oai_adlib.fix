@@ -1,3 +1,4 @@
+
 # Catmandu Fix
 #
 # Institution: Museum of Fine Arts Ghent
@@ -511,6 +512,6 @@ add_field(administrativeMetadata.lang, 'nl')
 
 ## Remove the 'or_record' structure
 
-#remove_field(or_record)
+remove_field(or_record)
 
 #vacuum()

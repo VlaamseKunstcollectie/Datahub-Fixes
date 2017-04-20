@@ -7,7 +7,7 @@ add_field(or_record.legalBodyWeblink, 'http://www.vlaamsekunstcollectie.be')
 
 ##
 # WorkPID
-copy_field('record.ca_objects\.objectWorkPid', or_record.objectWorkPid.source)
+copy_field('ca_objects\.objectWorkPid', or_record.objectWorkPid.source)
 
 do each(path: or_record.objectWorkPid.source, var: o)
 
@@ -25,8 +25,15 @@ paste(or_record.objectWorkPid.workPid,
 )
 
 ##
+# Here be dark magic
+if any_match(or_record.objectWorkPid, '^(http://)')
+end
+#
+##
+
+##
 # DataPID
-copy_field('record.ca_objects\.objectRecordPid', or_record.objectDataPid.source)
+copy_field('ca_objects\.objectRecordPid', or_record.objectDataPid.source)
 
 do each(path: or_record.objectDataPid.source, var: o)
 
@@ -50,7 +57,7 @@ add_field(or_record.category.concept_id, 'http://www.cidoc-crm.org/crm-concepts/
 
 ##
 # objectWorkType
-copy_field('record.ca_objects\.objectObjectCategory', or_record.objectWorkType.source)
+copy_field('ca_objects\.objectObjectCategory', or_record.objectWorkType.source)
 
 do each(path: or_record.objectWorkType.source, var: o)
 
@@ -64,7 +71,7 @@ do each(path: or_record.objectWorkType.source, var: o)
 end
 
 # classification
-copy_field('record.ca_objects\.objectName', or_record.classification.source)
+copy_field('ca_objects\.objectName', or_record.classification.source)
 
 do each(path: or_record.classification.source, var: o)
 
@@ -75,7 +82,7 @@ do each(path: or_record.classification.source, var: o)
 
 end
 
-copy_field('record.ca_objects\.objectnamePid', or_record.classification_id.source)
+copy_field('ca_objects\.objectnamePid', or_record.classification_id.source)
 do each(path: or_record.classification_id.source, var: t)
 
     do each(path: t.value, var: i)
@@ -93,7 +100,7 @@ end
 
 ##
 # titleSet
-copy_field('record.preferred_labels', or_record.titleSet.source)
+copy_field('preferred_labels', or_record.titleSet.source)
 do each(path: or_record.titleSet.source, var: k)
 
     set_hash(or_record.titleSet.title.$append)
@@ -104,7 +111,7 @@ end
 
 ##
 # descriptiveNoteValue
-copy_field('record.ca_objects\.contentDescription', or_record.descriptiveNoteValue.source)
+copy_field('ca_objects\.contentDescription', or_record.descriptiveNoteValue.source)
 
 do each(path: or_record.descriptiveNoteValue.source, var: s)
     do each(path: s.value, var: d)
@@ -116,7 +123,7 @@ end
 
 ##
 # objectMeasurements
-copy_field('record.ca_objects\.dimensions', or_record.objectMeasurements.source)
+copy_field('ca_objects\.dimensions', or_record.objectMeasurements.source)
 set_array(or_record.objectMeasurements.measurements)
 
 do each(path: or_record.objectMeasurements.source, var: s)
@@ -154,7 +161,7 @@ add_field(or_record.production.type, 'Production')
 # actor
 # Get the production actor. This ain't easy
 set_array(or_record.production.actors)
-do list(path: record.related.ca_entities, var: e)
+do list(path: related.ca_entities, var: e)
     if all_equal(e.relationship_type_code, 'creator')
         copy_field(e.displayname, or_record.production.actors.$append.nameActorSet)
         copy_field(e.entity_id, or_record.production.actors.$last.actorID)
@@ -168,7 +175,7 @@ end
 
 # eventDate
 set_array(or_record.production.eventDate.dates)
-copy_field('record.ca_objects\.objectProductionDate', or_record.production.date.source)
+copy_field('ca_objects\.objectProductionDate', or_record.production.date.source)
 do each(path: or_record.production.date.source, var: t)
 
     do each(path: t.value, var: d)
@@ -182,7 +189,7 @@ end
 
 # eventMaterialsTech
 set_array(or_record.production.eventMaterialsTech.materials)
-copy_field('record.ca_objects\.materialInfo', or_record.production.material.source)
+copy_field('ca_objects\.materialInfo', or_record.production.material.source)
 do each(path: or_record.production.material.source, var: t)
 
     do each(path: t.value, var: m)
@@ -196,7 +203,7 @@ end
 
 ##
 # subjectConcept
-copy_field('record.ca_objects\.assocConcept', or_record.subjectConcept.source)
+copy_field('ca_objects\.assocConcept', or_record.subjectConcept.source)
 
 do each(path: or_record.subjectConcept.source, var: o)
 
@@ -211,8 +218,8 @@ end
 
 ##
 # recordID
-copy_field(record.object_id, or_record.recordID.vkc)
-copy_field(record.idno, or_record.recordID.source)
+copy_field(object_id, or_record.recordID.vkc)
+copy_field(idno, or_record.recordID.source)
 
 ##
 # recordSource

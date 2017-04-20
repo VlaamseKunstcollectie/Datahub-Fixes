@@ -9,7 +9,7 @@
 copy_field(ObjectNumber, or_record.object_number.local)
 copy_field(ObjectID, or_record.object_number.tms)
 copy_field(ObjectNumber, or_record.object_number.pid)
-lookup_in_store(or_record.object_number.pid, Resolver, url: 'http://resolver.kmska.be', username: username, password: password)
+lookup_in_store(or_record.object_number.pid, Resolver, url: 'http://resolver.kmska.be', username: admin, password: default)
 
 # objectPublishedID
 
@@ -63,7 +63,6 @@ copy_field(Role, or_record.creator.role)
 trim(or_record.creator.display)
 trim(or_record.creator.pid)
 trim(or_record.creator.role)
-lookup_in_store(or_record.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS.KMSKA.UTF8.sqlite")
 copy_field(AlphaSort, or_record.creator.viaf)
 viaf_match(or_record.creator.viaf)
 
