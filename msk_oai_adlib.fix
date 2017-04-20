@@ -1,0 +1,516 @@
+# Catmandu Fix
+#
+# Institution: Museum of Fine Arts Ghent
+# Description: Converts Adlib Structured XML exposed via ErfgoedInzicht OAI to LIDO 1.0
+# Created: 5/4/2017
+#
+
+## Prepare an intermediate structure:
+##   Copy relevant Adlib fields to a dedicated lido structure.
+##   Remove all Adlib fields afterwards, retaining only the lido structure.
+
+retain(_metadata)
+
+copy_field(_metadata.priref, or_record.priref)
+copy_field(_metadata.object_number, or_record.object_number)
+copy_field(or_record.object_number, or_record.identificator)
+#lookup_in_store(or_record.identificator, DBI, data_source: "dbi:SQLite:/tmp/import.PIDS.MSK.UTF8.sqlite")
+lookup_in_store(or_record.identificator, Resolver, username: none, password: none, url: 'http://resolver.mskgent.be')
+
+copy_field(_metadata.object_category, or_record.object_category)
+copy_field(_metadata.Object_name, or_record.object_name)
+copy_field(_metadata.Title, or_record.title)
+copy_field(_metadata.Titel_translation, or_record.title_translation)
+copy_field(_metadata.Description, or_record.description)
+copy_field(_metadata.Dimension, or_record.dimensions)
+copy_field(_metadata.Production, or_record.production)
+copy_field(_metadata.Production_date, or_record.production_date)
+copy_field('_metadata.production\.period', or_record.production_period)
+copy_field(_metadata.physical_description, or_record.physical_description)
+copy_field(_metadata.Material, or_record.materials)
+copy_field("_metadata.institution\.name", or_record.institution)
+copy_field('_metadata.content\.motif\.general', 'or_record.subject')
+
+## Set default values for required fields if value is missing
+
+unless exists(or_record.production.creator.name)
+  add_field(or_record.production.creator.name, 'n/a')
+end
+
+retain(or_record)
+
+#### Mapping starts here
+
+## LIDO RecID
+
+#if exists(or_record.identificator.dataPid)
+if exists(or_record.identificator.data.persistentURIs)
+	lido_baseid(
+	    lidoRecID,
+#	    or_record.identificator.dataPid,
+        or_record.identificator.data.persistentURIs.0,
+	    -source: 'Museum voor Schone Kunsten Gent',
+	    -type: 'global',
+	    -label: 'dataPID'
+	)
+end
+
+## LIDO ObjectPublishedID
+
+#if exists(or_record.identificator.workPid)
+if exists(or_record.identificator.data.persistentURIs)
+	lido_baseid(
+	    objectPublishedID,
+        or_record.identificator.data.persistentURIs.4,
+#	    or_record.identificator.workPid,
+	    -source: 'Museum voor Schone Kunsten Gent',
+	    -type: 'global',
+	    -label: 'workPID'
+	)
+#end
+end
+
+## LIDO Category
+
+add_field("or_record.CIDOCCategoryTerm", "Man-Made Object")
+add_field("or_record.CIDOCCategoryURI", "http://www.cidoc-crm.org/crm-concepts/E22")
+
+lido_term(
+    or_record.category,
+    'or_record.CIDOCCategoryTerm',
+    -conceptid: 'or_record.CIDOCCategoryURI',
+    -type: 'URI',
+    -source: 'cidoc-crm',
+)
+
+## LIDO Classification
+
+# Mapping Facets
+# -----------------------------------------------------------------------------
+# Adlib                         LIDO                       VKC
+#   object_category                lido:objectWorkType          Type kunstwerk
+#                                  lido:classification
+#   object_name (AAT)                 type:alternate
+#   object_name (Adlib)               type:preferred
+#   content.motif.general (Adlib)  lido:subjectWrap             Voorstelling
+#                                  lido:materialsTech
+#   physical_description              type:physicalDescription  Materiaal
+#   institution.name               lido:legalBodyName           Museum
+#   creator.name                   lido:nameActorSet
+#                                     type:alternate
+#                                     type:preferred            Kunstenaar
+#   production.period              lido:periodName              Periode
+
+## LIDO classification & ObjectWorkType
+
+if is_array(or_record.object_name)
+
+    # objectWorkType (we'll have multiple classifications)
+    lido_term(
+        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+        or_record.object_category.value,
+        -lang: nl,
+        -pref: preferred
+    )
+
+    do list(path: or_record.object_name, var: o)
+
+        copy_field(o.value, o.aat)
+        aat_match(o.aat)
+
+        if exists(o.aat.uri)
+
+            lido_term(
+                descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+                o.aat.prefLabel,
+                -conceptid: o.aat.uri,
+                -type: global,
+                -source: AAT,
+                -lang: nl,
+                -pref: alternate
+            )
+
+        else
+            copy_field(o.value, o.aat)
+            lookup_in_store(o.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT.UTF8.sqlite")
+            lido_term(
+                descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+                o.aat.aatterm,
+                -conceptid: o.aat.aaturi,
+                -type: global,
+                -source: AAT,
+                -lang: nl,
+                -pref: alternate
+            )
+        end
+
+        lido_term(
+            descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
+            o.value,
+            -pref: preferred,
+        )
+
+    end
+
+else
+
+    copy_field(or_record.object_name.object_name.value, or_record.object_name.aat)
+
+    #lookup_in_store(or_record.object_name.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT.UTF8.sqlite")
+    aat_match(or_record.object_name.aat)
+
+    if exists(or_record.object_name.aat.uri)
+        lido_classification (
+            or_record.object_category.value,
+            or_record.object_name.aat.prefLabel,
+            -classification_id: or_record.object_name.aat.uri,
+            -classification_type: global,
+            -classification_source: AAT,
+            -classification_type_lang: nl,
+            -classification_pref: 'alternate',
+            -object_work_type_lang: nl,
+            -object_work_type_pref: 'preferred',
+        )
+    else
+        copy_field(or_record.object_name.object_name.value, or_record.object_name.aat)
+        lookup_in_store(or_record.object_name.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT.UTF8.sqlite")
+
+        lido_classification (
+            or_record.object_category.value,
+            or_record.object_name.aat.aatterm,
+            -classification_id: or_record.object_name.aat.aaturi,
+            -classification_type: global,
+            -classification_source: AAT,
+            -classification_type_lang: nl,
+            -classification_pref: 'alternate',
+            -object_work_type_lang: nl,
+            -object_work_type_pref: 'preferred',
+        )
+    end
+
+    lido_term(
+        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
+        or_record.object_name.object_name.value,
+        -pref: preferred,
+    )
+
+end
+
+## Adlib Object Name classification
+
+# TODO: implement this as a to_array fix. Convert a single value to an array.
+#   Rationale: if a complexType with repeatable subnodes contains only one
+#   instance, it is converted to a string. Otherwise an array. Should always be
+#   an array so the paths don't turn variable & fixes shouldn't be repeated.
+
+unless is_array(or_record.description)
+  copy_field(or_record.description.description, or_record.temp)
+  remove_field(or_record.description)
+  copy_field(or_record.temp, or_record.description.0.description)
+  remove_field(or_record.temp)
+end
+
+## LIDO Subject wrap
+
+lido_term(
+   'descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept',
+   'or_record.subject.value',
+   -lang: 'nl'
+)
+
+### LIDO ObjectIdentification
+
+## Title
+
+if is_array(or_record.title)
+    lido_basenameset(
+        descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+        or_record.title.0.title.value,
+        -value_lang: nl
+    )
+else
+    lido_basenameset(
+        descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+        or_record.title.title.value,
+        -value_lang: nl
+    )
+end
+
+if all_match('or_record.title_translation.1.title\.translation', '.*\S.*')
+  lido_basenameset(
+      descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+      'or_record.title_translation.1.title\.translation',
+      -value_lang: en,
+      -value_pref: preferred
+  )
+end
+
+## Description
+
+lido_descriptivenote(
+    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+    or_record.description.0.description,
+    -lang: 'nl'
+)
+
+lido_descriptivenote(
+    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+    or_record.description.2.description,
+    -lang: 'en'
+)
+
+## LIDO ObjectMeasurements
+
+do list(path:or_record.dimensions, var:c)
+  if all_equal('c.dimension\.part', 'geheel')
+
+     copy_field('c.dimension\.type.value', c.dimension_type)
+     copy_field('c.dimension\.unit.value', c.dimension_unit)
+     copy_field('c.dimension\.value', c.dimension_value)
+
+    unless exists('c.dimension_unit')
+       add_field('c.dimension_unit', 'n/a')
+    end
+
+    unless exists('c.dimension_value')
+       # add_field('c.dimension_value', 'n/a')
+    end
+
+    #unless all_match('c.dimension_value', '.*\S.*')
+    #   add_field('c.dimension_value', 'n/a')
+    #end
+
+    lido_objectmeasurements(
+        '',
+        'c.dimension_type',
+        'c.dimension_unit',
+        'c.dimension_value'
+    )
+  end
+end
+
+##
+# Event: production
+##
+
+## LIDO Event Type: Production
+
+add_field(or_record.event_type, 'Production')
+lido_term(
+    descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+    or_record.event_type
+)
+
+## TODO: SQL lite support voor PID's integratie
+
+## LIDO Event type: Actor (creator)
+
+copy_field(or_record.production.creator.name, or_record.production.creator.pid)
+lookup_in_store(or_record.production.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS.MSK.UTF8.sqlite")
+
+copy_field('or_record.production.creator\.qualifier', or_record.production.creator_qualifier)
+unless exists(or_record.production.creator_qualifier)
+    add_field(or_record.production.creator_qualifier, 'n/a')
+end
+unless all_match(or_record.production.creator_qualifier, '.*\S.*')
+    add_field(or_record.production.creator_qualifier, 'n/a')
+end
+
+lido_actor(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+    'or_record.production.creator\.lref',
+    or_record.production.creator.value,
+    -id_source: "Adlib",
+    -id_type: "local",
+    -birthdate: 'or_record.production.creator\.date_of_birth',
+    -deathdate: 'or_record.production.creator\.date_of_death',
+    -role: 'or_record.production.creator\.role.value',
+    -qualifier: or_record.production.creator_qualifier,
+    -name_pref: 'alternate'
+)
+
+## Add Persistent URI data to actor
+
+if exists(or_record.production.creator.pid.display_name)
+  ## Preferred label from Flemish Art Collection concordance database
+  lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.appellationValue,
+    or_record.production.creator.pid.display_name,
+    -pref: 'preferred'
+  )
+
+  ## Creator Persistent URI's
+
+  lido_baseid(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+    or_record.production.creator.pid.viaf_uri,
+    -source: 'VIAF',
+    -type: 'url'
+  )
+
+  lido_baseid(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+    or_record.production.creator.pid.rkd_uri,
+    -source: 'RKD',
+    -type: 'url'
+  )
+
+  lido_baseid(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+    or_record.production.creator.pid.wikidata_uri,
+    -source: 'Wikidata',
+    -type: 'url'
+  )
+end
+
+
+## LIDO Event date: creation date
+
+lido_date(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+    -earliest_date: 'or_record.production_date.production\.date\.start',
+    -earliest_date_type: 'or_record.production_date.production\.date\.start\.prec',
+    -latest_date: 'or_record.production_date.production\.date\.end',
+    -latest_date_type: 'or_record.production_date.production\.date\.end\.prec'
+)
+
+## TODO: displayDate
+
+paste(or_record.displayDate, "or_record.production_date.production\.date\.start", "or_record.production_date.production\.date\.end", join_char:" - ")
+
+if all_match('or_record.production_date.production\.date\.start\.prec', '.*\S.*')
+  add_field('or_record.production_date.precision', 'circa')
+end
+
+if all_match('or_record.production_date.production\.date\.start\.prec', '.*\S.*'
+)
+  add_field('or_record.production_date.precision', 'circa')
+end
+
+if exists('or_record.production_date.precision')
+  paste(or_record.displayDate, or_record.production_date.precision, or_record.displayDate)
+end
+
+lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+    or_record.displayDate
+)
+
+## LIDO Period name
+
+## TODO: add local conceptID from Adlib
+
+lido_term(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+    'or_record.production_period.value',
+    -lang: 'nl'
+)
+
+## LIDO Event place: creation place
+
+lido_basenameset (
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventPlace.place.namePlaceSet,
+    'or_record.production.production\.place.value',
+    -value_pref: 'preferred',
+    -value_lang: 'nl'
+)
+
+## LIDO eventMaterialsTech (Materiaal)
+
+if exists(physical_description)
+  lido_basevalue(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
+    'or_record.physical_description',
+  )
+end
+
+# TODO: -conceptID does not work here
+if exists(or_record.materials.material.value)
+  lido_term(
+    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech,
+    'or_record.materials.material.value',
+    -conceptid: 'or_record.materials.material.material\.lref',  # Does not work
+    -source: 'Adlib',
+	-type: 'local'
+  )
+
+  add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.type, 'material')
+end
+
+## LIDO eventMaterialsTech (Techniek)
+
+# TODO: -conceptID does not work here
+if exists(or_record.physical_description)
+  lido_term(
+    descriptiveMetadata.eventWrap.eventSet.event.eventMaterialsTech.materialsTech.$append.termMaterialsTech,
+    'or_record.physical_description',
+    -conceptid: 'or_record.materials.material.material\.lref',
+    -source: 'Adlib'
+  )
+
+  # Debatable
+  add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.type, 'physicalDescription')
+end
+
+##
+# recordWrap
+##
+
+## LIDO RecordID
+
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    or_record.object_number,
+    -type: 'local'
+)
+
+if is_array(or_record.priref)
+    lido_baseid(
+        administrativeMetadata.recordWrap.recordID,
+        or_record.priref.0,
+        -type: 'Adlib'
+    )
+else
+    lido_baseid(
+        administrativeMetadata.recordWrap.recordID,
+        or_record.priref,
+        -type: 'Adlib'
+    )
+end
+
+## LIDO recordType
+
+add_field('or_record.AATRecordTypeTerm', 'Item')
+add_field('or_record.AATRecordTypeID', 'http://vocab.getty.edu/aat/300133025')
+
+lido_term(
+    administrativeMetadata.recordWrap.recordType,
+    or_record.AATRecordTypeTerm,
+    -conceptid: 'or_record.AATRecordTypeID',
+    -type: 'local',
+    -source: 'AAT',
+)
+
+## LIDO recordSource
+
+lido_basenameset(
+    administrativeMetadata.recordWrap.recordSource.legalBodyName,
+    'or_record.institution.value'
+)
+
+add_field('or_record.LegalBodyWebLink', 'http://mskgent.be')
+
+lido_basevalue(
+    administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
+    or_record.LegalBodyWebLink
+)
+
+## Add lang attributes to descriptiveMetadata and administrativeMetadata
+add_field(descriptiveMetadata.lang, 'nl')
+add_field(administrativeMetadata.lang, 'nl')
+
+## Remove the 'or_record' structure
+
+#remove_field(or_record)
+
+#vacuum()
