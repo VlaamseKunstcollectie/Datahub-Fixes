@@ -14,9 +14,11 @@ retain(_metadata)
 
 copy_field(_metadata.priref, or_record.priref)
 copy_field(_metadata.object_number, or_record.object_number)
-copy_field(or_record.object_number, or_record.identificator)
-#lookup_in_store(or_record.identificator, DBI, data_source: "dbi:SQLite:/tmp/import.PIDS.MSK.UTF8.sqlite")
-lookup_in_store(or_record.identificator, Resolver, username: none, password: none, url: 'http://resolver.mskgent.be')
+copy_field(or_record.object_number, or_record.identificator.cms)
+copy_field(or_record.object_number, or_record.identificator.resolver)
+copy_field(or_record.object_number, or_record.identificator.csv)
+lookup_in_store(or_record.identificator.csv, DBI, data_source: "dbi:SQLite:/tmp/import.PIDS.MSK.UTF8.sqlite")
+lookup_in_store(or_record.identificator.resolver, Resolver, username: none, password: none, url: 'http://resolver.mskgent.be')
 
 copy_field(_metadata.object_category, or_record.object_category)
 copy_field(_metadata.Object_name, or_record.object_name)
@@ -43,13 +45,20 @@ retain(or_record)
 #### Mapping starts here
 
 ## LIDO RecID
-
-#if exists(or_record.identificator.dataPid)
-if exists(or_record.identificator.data.persistentURIs)
+if exists(or_record.identificator.resolver.data.persistentURIs)
+    # Resolver
 	lido_baseid(
 	    lidoRecID,
-#	    or_record.identificator.dataPid,
-        or_record.identificator.data.persistentURIs.0,
+        or_record.identificator.resolver.data.persistentURIs.0,
+	    -source: 'Museum voor Schone Kunsten Gent',
+	    -type: 'global',
+	    -label: 'dataPID'
+	)
+else
+    # CSV
+	lido_baseid(
+	    lidoRecID,
+ 	    or_record.identificator.csv.dataPid,
 	    -source: 'Museum voor Schone Kunsten Gent',
 	    -type: 'global',
 	    -label: 'dataPID'
@@ -58,17 +67,24 @@ end
 
 ## LIDO ObjectPublishedID
 
-#if exists(or_record.identificator.workPid)
-if exists(or_record.identificator.data.persistentURIs)
+if exists(or_record.identificator.resolver.data.persistentURIs)
+    # Resolver
 	lido_baseid(
-	    objectPublishedID,
-        or_record.identificator.data.persistentURIs.4,
-#	    or_record.identificator.workPid,
+	    lidoRecID,
+        or_record.identificator.resolver.data.persistentURIs.4,
 	    -source: 'Museum voor Schone Kunsten Gent',
 	    -type: 'global',
-	    -label: 'workPID'
+	    -label: 'dataPID'
 	)
-#end
+else
+    # CSV
+	lido_baseid(
+	    lidoRecID,
+ 	    or_record.identificator.csv.workPid,
+	    -source: 'Museum voor Schone Kunsten Gent',
+	    -type: 'global',
+	    -label: 'dataPID'
+	)
 end
 
 ## LIDO Category
