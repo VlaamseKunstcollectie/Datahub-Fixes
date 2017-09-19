@@ -425,6 +425,8 @@
 
     end
 
+##### TO DO: DOESN'T WORK
+
     # Add Persistent URI data to actor
 
     copy_field(or_record.production.creator.value, or_record.production.creator.pid)
@@ -461,7 +463,8 @@
             -source: Wikidata,
             -type: purl
         )
-    
+
+#####    
 
 # LIDO displayDate
 
@@ -612,21 +615,29 @@
 
         do list(path: or_record.subject, var: c)
 
-            lido_term(
-                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
-                c.value,
-                -lang: nl
-            )
+            if all_match(c.value, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
+                    c.value,
+                    -lang: nl
+                )
+
+            end
 
         end
 
     else
 
-        lido_term(
-            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
-            or_record.subject.value,
-            -lang: nl
-        )
+        if all_match(or_record.subject.value, '.*\S.*')
+
+            lido_term(
+                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
+                or_record.subject.value,
+                -lang: nl
+            )
+
+        end
 
     end
 
@@ -636,29 +647,41 @@
 
 # LIDO recordID
 
-    lido_baseid(
-        administrativeMetadata.recordWrap.recordID,
-        or_record.object_number,
-        -type: local
-    )
+    if all_match(or_record.object_number, '.*\S.*')
+
+        lido_baseid(
+            administrativeMetadata.recordWrap.recordID,
+            or_record.object_number,
+            -type: local
+        )
+
+    end
 
     if is_array(or_record.priref)
 
-        lido_baseid(
-            administrativeMetadata.recordWrap.recordID,
-            or_record.priref.0,
-            -type: local,
-            -source: Adlib
-        )
+        if all_match(or_record.priref.0,'.*\S.*')
+
+            lido_baseid(
+                administrativeMetadata.recordWrap.recordID,
+                or_record.priref.0,
+                -type: local,
+                -source: Adlib
+            )
+
+        end
 
     else
+
+        if all_match(or_record.priref,'.*\S.*')
     
-        lido_baseid(
-            administrativeMetadata.recordWrap.recordID,
-            or_record.priref,
-            -type: local,
-            -source: Adlib
-        )
+            lido_baseid(
+                administrativeMetadata.recordWrap.recordID,
+                or_record.priref,
+                -type: local,
+                -source: Adlib
+            )
+
+        end
 
     end
 
@@ -677,10 +700,14 @@
 
 # LIDO recordSource
 
-    lido_basenameset(
-        administrativeMetadata.recordWrap.recordSource.legalBodyName,
-        'or_record.institution.value'
-    )
+    if all_match(or_record.institution.value, '.*\S.*')
+
+        lido_basenameset(
+            administrativeMetadata.recordWrap.recordSource.legalBodyName,
+            or_record.institution.value
+        )
+
+    end
 
     add_field('or_record.LegalBodyWebLink', 'http://groeningemuseum.be')
 
