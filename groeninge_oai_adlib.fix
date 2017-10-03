@@ -584,11 +584,9 @@
     
     if all_match(or_record.physical_description, '.*\S.*')
 
-        lido_term(
+        lido_basevalue(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
-            or_record.physical_description,
-            -source: Adlib,
-            -type: local
+            or_record.physical_description
         )
 
     end
