@@ -431,7 +431,7 @@
 
     copy_field(or_record.production.creator.value, or_record.production.creator.pid)
 
-    lookup_in_store(or_record.production.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS.UTF8.sqlite")
+    lookup_in_store(or_record.production.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
         # Preferred label from Flemish Art Collection concordance database
   
