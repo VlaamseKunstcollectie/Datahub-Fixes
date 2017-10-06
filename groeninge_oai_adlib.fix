@@ -1,6 +1,6 @@
 # Catmandu Fix
 #
-# Institution: Museum voor Schone Kunsten Gent
+# Institution: Museums Bruges - Groeninge Museum
 # Description: Converts Adlib Structured XML exposed via ErfgoedInzicht OAI to LIDO 1.0
 # Created: 15/9/2017
 
@@ -84,7 +84,7 @@
             lidoRecID,
             or_record.identificator.dataPid,
             -type: purl,
-            -source: 'Museum voor Schone Kunsten Gent',
+            -source: 'Musea Brugge - Groeningemuseum',
             -label: dataPID
         )
     
@@ -99,7 +99,7 @@
             objectPublishedID,
             or_record.identificator.workPid,
             -type: purl,
-            -source: 'Museum voor Schone Kunsten Gent',
+            -source: 'Musea Brugge - Groeningemuseum',
             -label: workPID
         )
 
@@ -707,7 +707,7 @@
 
     end
 
-    add_field('or_record.LegalBodyWebLink', 'http://mskgent.be')
+    add_field('or_record.LegalBodyWebLink', 'http://groeningemuseum.be')
 
     lido_basevalue(
         administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
