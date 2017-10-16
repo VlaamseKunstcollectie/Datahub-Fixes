@@ -462,8 +462,6 @@
             -type: purl
         )
 
-#####    
-
 # LIDO displayDate
 
     if all_match('or_record.production_date.production\.date\.start', '.*\S.*')
