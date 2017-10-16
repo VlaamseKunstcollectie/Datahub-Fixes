@@ -425,8 +425,6 @@
 
     end
 
-##### TO DO: DOESN'T WORK
-
     # Add Persistent URI data to actor
 
     copy_field(or_record.production.creator.value, or_record.production.creator.pid)
