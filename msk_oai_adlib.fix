@@ -425,23 +425,27 @@
 
     end
 
-##### TO DO: DOESN'T WORK
-
-    # Add Persistent URI data to actor
+# Add Persistent URI data to actor
 
     copy_field(or_record.production.creator.value, or_record.production.creator.pid)
 
     lookup_in_store(or_record.production.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
-        # Preferred label from Flemish Art Collection concordance database
-  
+    # Preferred label from Flemish Art Collection concordance database
+
+    if all_match(or_record.production.creator.pid._id, '.*\S.*')
+
         lido_basenameset(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$last,
-            or_record.production.creator.pid.display_name,
-            -value_pref: preferred
+            or_record.production.creator.pid._id,
+            -value_pref: alternate
         )
 
-        # Creator Persistent URI's
+    end
+
+    # Creator Persistent URI's
+
+    if all_match(or_record.production.creator.pid.viaf_uri, '.*\S.*')
 
         lido_baseid(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
@@ -450,12 +454,20 @@
             -type: purl
         )
 
+    end
+
+    if all_match(or_record.production.creator.pid.rkd_uri, '.*\S.*')
+
         lido_baseid(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
             or_record.production.creator.pid.rkd_uri,
             -source: RKD,
             -type: purl
         )
+
+    end
+
+    if all_match(or_record.production.creator.pid.wikidata_uri, '.*\S.*')
 
         lido_baseid(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
@@ -464,7 +476,7 @@
             -type: purl
         )
 
-#####    
+    end
 
 # LIDO displayDate
 
