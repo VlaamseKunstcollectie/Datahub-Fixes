@@ -416,85 +416,177 @@
 
 # Lido eventActor
 
-    unless all_match('or_record.production.creator\.qualifier', '.*\S.*')
-        set_field('or_record.production.creator\.qualifier', 'n/a')
-    end
+    if is_array(or_record.production)
 
-    unless all_match('or_record.production.creator.date_of_birth', '.*\S.*')
-        set_field('or_record.production.creator.date_of_birth', 'n/a')
-    end
+        do list (path: or_record.production, var: c)
 
-    unless all_match('or_record.production.creator.date_of_death', '.*\S.*')
-        set_field('or_record.production.creator.date_of_death', 'n/a')
-    end
+            unless all_match('c.creator\.qualifier', '.*\S.*')
+                set_field('c.creator\.qualifier', 'n/a')
+            end
 
-    if all_match(or_record.production.creator.name, '.*\S.*')
+            unless all_match('c.creator.date_of_birth', '.*\S.*')
+                set_field('c.creator.date_of_birth', 'n/a')
+            end
 
-        lido_actor(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
-            'or_record.production.creator\.lref',
-            or_record.production.creator.name,
-            -id_source: Adlib,
-            -id_type: local,
-            -birthdate: 'or_record.production.creator.date_of_birth',
-            -deathdate: 'or_record.production.creator.date_of_death',
-            -role: 'or_record.production.creator\.role.value',
-            -qualifier: 'or_record.production.creator\.qualifier',
-            -name_pref: alternate
-        )
+            unless all_match('c.creator.date_of_death', '.*\S.*')
+                set_field('c.creator.date_of_death', 'n/a')
+            end
 
-    end
+            if all_match(c.creator.name, '.*\S.*')
 
-    # Add Persistent URI data to actor
+                lido_actor(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
+                    'c.creator\.lref',
+                    c.creator.name,
+                    -id_source: Adlib,
+                    -id_type: local,
+                    -birthdate: 'c.creator.date_of_birth',
+                    -deathdate: 'c.creator.date_of_death',
+                    -role: 'c.creator\.role.value',
+                    -qualifier: 'c.creator\.qualifier',
+                    -name_pref: preferred
+                )
 
-    copy_field(or_record.production.creator.value, or_record.production.creator.pid)
+            end
 
-    lookup_in_store(or_record.production.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+            # Add Persistent URI data to actor
 
-    # Preferred label from Flemish Art Collection concordance database
+            copy_field(c.creator.name, c.creator.pid)
 
-    if all_match(or_record.production.creator.pid._id, '.*\S.*')
+            lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
-        lido_basenameset(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$last,
-            or_record.production.creator.pid._id,
-            -value_pref: alternate
-        )
+            # Preferred label from Flemish Art Collection concordance database
 
-    end
+            if all_match(c.creator.pid._id, '.*\S.*')
 
-    # Creator Persistent URI's
+                lido_basenameset(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
+                    c.creator.pid._id,
+                    -value_pref: alternate
+                )
 
-    if all_match(or_record.production.creator.pid.viaf_uri, '.*\S.*')
+            end
 
-        lido_baseid(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
-            or_record.production.creator.pid.viaf_uri,
-            -source: VIAF,
-            -type: purl
-        )
+            # Creator Persistent URI's
 
-    end
+            if all_match(c.creator.pid.viaf_uri, '.*\S.*')
 
-    if all_match(or_record.production.creator.pid.rkd_uri, '.*\S.*')
+                lido_baseid(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                    c.creator.pid.viaf_uri,
+                    -source: VIAF,
+                    -type: purl
+                )
 
-        lido_baseid(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
-            or_record.production.creator.pid.rkd_uri,
-            -source: RKD,
-            -type: purl
-        )
+            end
 
-    end
+            if all_match(c.creator.pid.rkd_uri, '.*\S.*')
 
-    if all_match(or_record.production.creator.pid.wikidata_uri, '.*\S.*')
+                lido_baseid(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.$last.eventActor.$last.actorInRole.actor.actorID,
+                    c.creator.pid.rkd_uri,
+                    -source: RKD,
+                    -type: purl
+                )
 
-        lido_baseid(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
-            or_record.production.creator.pid.wikidata_uri,
-            -source: Wikidata,
-            -type: purl
-        ) 
+            end
+
+            if all_match(c.creator.pid.wikidata_uri, '.*\S.*')
+
+                lido_baseid(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.$last.eventActor.$last.actorInRole.actor.actorID,
+                    c.creator.pid.wikidata_uri,
+                    -source: Wikidata,
+                    -type: purl
+                )
+
+            end
+
+        end
+
+    else
+
+        unless all_match('or_record.production.creator\.qualifier', '.*\S.*')
+            set_field('or_record.production.creator\.qualifier', 'n/a')
+        end
+
+        unless all_match('or_record.production.creator.date_of_birth', '.*\S.*')
+            set_field('or_record.production.creator.date_of_birth', 'n/a')
+        end
+
+        unless all_match('or_record.production.creator.date_of_death', '.*\S.*')
+            set_field('or_record.production.creator.date_of_death', 'n/a')
+        end
+
+        if all_match(or_record.production.creator.name, '.*\S.*')
+
+            lido_actor(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+                'or_record.production.creator\.lref',
+                or_record.production.creator.name,
+                -id_source: Adlib,
+                -id_type: local,
+                -birthdate: 'or_record.production.creator.date_of_birth',
+                -deathdate: 'or_record.production.creator.date_of_death',
+                -role: 'or_record.production.creator\.role.value',
+                -qualifier: 'or_record.production.creator\.qualifier',
+                -name_pref: preferred
+            )
+
+        end
+
+        # Add Persistent URI data to actor
+
+        copy_field(or_record.production.creator.name, or_record.production.creator.pid)
+
+        lookup_in_store(or_record.production.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+
+        # Preferred label from Flemish Art Collection concordance database
+
+        if all_match(or_record.production.creator.pid._id, '.*\S.*')
+
+            lido_basenameset(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$last,
+                or_record.production.creator.pid._id,
+                -value_pref: alternate
+            )
+
+        end
+
+        # Creator Persistent URI's
+
+        if all_match(or_record.production.creator.pid.viaf_uri, '.*\S.*')
+
+            lido_baseid(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+                or_record.production.creator.pid.viaf_uri,
+                -source: VIAF,
+                -type: purl
+            )
+
+        end
+
+        if all_match(or_record.production.creator.pid.rkd_uri, '.*\S.*')
+
+            lido_baseid(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+                or_record.production.creator.pid.rkd_uri,
+                -source: RKD,
+                -type: purl
+            )
+
+        end
+
+        if all_match(or_record.production.creator.pid.wikidata_uri, '.*\S.*')
+
+            lido_baseid(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+                or_record.production.creator.pid.wikidata_uri,
+                -source: Wikidata,
+                -type: purl
+            )
+
+        end
 
     end
 
