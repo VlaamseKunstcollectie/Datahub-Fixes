@@ -127,15 +127,35 @@
 
 # LIDO objectWorkType
 
-    if all_match(or_record.object_category.value, '.*\S.*')
-    
-        lido_term(
-            descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType,
-            or_record.object_category.value,
-            -lang: nl
-        )
+    if is_array(or_record.object_category)
 
-    end   
+        do list(path: or_record.object_category, var: c)
+
+            if all_match(c.value, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType,
+                    c.value,
+                    -lang: nl
+                )
+
+            end
+
+        end
+
+    else
+
+        if all_match(or_record.object_category.value, '.*\S.*')
+        
+            lido_term(
+                descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType,
+                or_record.object_category.value,
+                -lang: nl
+            )
+
+        end 
+
+    end
 
 # LIDO classification
 
@@ -425,11 +445,7 @@
 
     end
 
-<<<<<<< HEAD
     # Add Persistent URI data to actor
-=======
-# Add Persistent URI data to actor
->>>>>>> bc533cd86c437e5d10225015d37fd8e9e43372f5
 
     copy_field(or_record.production.creator.value, or_record.production.creator.pid)
 
@@ -478,13 +494,9 @@
             or_record.production.creator.pid.wikidata_uri,
             -source: Wikidata,
             -type: purl
-<<<<<<< HEAD
         ) 
-=======
-        )
 
     end
->>>>>>> bc533cd86c437e5d10225015d37fd8e9e43372f5
 
 # LIDO displayDate
 
