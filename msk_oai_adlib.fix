@@ -400,24 +400,24 @@
         set_field('or_record.production.creator\.qualifier', 'n/a')
     end
 
-    unless all_match('or_record.production.creator\.date_of_birth', '.*\S.*')
-        set_field('or_record.production.creator\.date_of_birth', 'n/a')
+    unless all_match('or_record.production.creator.date_of_birth', '.*\S.*')
+        set_field('or_record.production.creator.date_of_birth', 'n/a')
     end
 
-    unless all_match('or_record.production.creator\.date_of_death', '.*\S.*')
-        set_field('or_record.production.creator\.date_of_death', 'n/a')
+    unless all_match('or_record.production.creator.date_of_death', '.*\S.*')
+        set_field('or_record.production.creator.date_of_death', 'n/a')
     end
 
-    if all_match(or_record.production.creator.value, '.*\S.*')
+    if all_match(or_record.production.creator.name, '.*\S.*')
 
         lido_actor(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
             'or_record.production.creator\.lref',
-            or_record.production.creator.value,
+            or_record.production.creator.name,
             -id_source: Adlib,
             -id_type: local,
-            -birthdate: 'or_record.production.creator\.date_of_birth',
-            -deathdate: 'or_record.production.creator\.date_of_death',
+            -birthdate: 'or_record.production.creator.date_of_birth',
+            -deathdate: 'or_record.production.creator.date_of_death',
             -role: 'or_record.production.creator\.role.value',
             -qualifier: 'or_record.production.creator\.qualifier',
             -name_pref: alternate
