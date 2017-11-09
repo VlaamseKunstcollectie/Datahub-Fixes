@@ -18,11 +18,6 @@
     copy_field(ObjectNumber, or_record.object_number.pid)
     lookup_in_store(or_record.object_number.pid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.Cit_KMSKApids_conversie_gecorrigeerd.sqlite')
 
-    # category
-
-    add_field("or_record.category.term", "Man-Made Object")
-    add_field("or_record.category.concept_id", "http://www.cidoc-crm.org/crm-concepts/E22")
-
     # objectWorkType
 
     copy_field(ClassificationID, or_record.objectWorkType.db)
@@ -60,10 +55,6 @@
         end
     end
 
-    # event (production)
-
-    add_field(or_record.production_type, 'Production')
-
     # production actor (production)
 
     copy_field(DisplayName, or_record.creator.display)
@@ -100,15 +91,6 @@
     if is_null(Medium)
        add_field(or_record.eventMaterialsTech.display, 'n/a')
     end
-
-    # recordType
-
-    add_field('or_record.recordType.term', 'Item')
-    add_field('or_record.recordType.conceptID', 'http://vocab.getty.edu/aat/300133025')
-
-    # recordSource
-
-    add_field(or_record.legalBodyWeblink, 'http://kmska.be')
 
     if exists(Institution)
         copy_field(Institution, or_record.legalBodyName)
@@ -168,142 +150,115 @@
 #   institution.name                 lido:recordSource                   Museum
 
 
+### LIDO lidoRecID
 
-#
-##
-retain(or_record)
+    lido_baseid(
+        lidoRecID,
+        or_record.object_number.pid.dataPid,
+        -source: KMSKA,
+        -type: global,
+        -label: dataPID
+    )
 
-##
-# Convert to LIDO
-##
+### LIDO objectPublishedID
 
-# lidoRecID
-lido_baseid(
-    lidoRecID,
-# Resolver
-#    or_record.object_number.pid.data.persistentURIs.0,
-    or_record.object_number.pid.dataPid,
-    -source: KMSKA,
-    -type: global,
-    -label: dataPID
-)
-
-# objectPublishedID
-lido_baseid(
-    objectPublishedID,
-# Resolver
-#    or_record.object_number.pid.data.persistentURIs.4,
-    or_record.object_number.pid.workPid,
-    -source: KMSKA,
-    -type: global,
-    -label: workPID
-)
+    lido_baseid(
+        objectPublishedID,
+        or_record.object_number.pid.workPid,
+        -source: KMSKA,
+        -type: global,
+        -label: workPID
+    )
 
 
-# category
-lido_term(
-    category,
-    or_record.category.term,
-    -conceptid: or_record.category.concept_id,
-    -type: 'URI',
-    -source: 'cidoc-crm'
-)
+### LIDO category
 
+    add_field(or_record.CIDOCCategoryTerm, 'Man-Made Object')
+    add_field(or_record.CIDOCCategoryURI, 'http://www.cidoc-crm.org/crm-concepts/E22')
 
-# objectWorkType
-lido_term(
-    descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
-    or_record.objectWorkType.db.term,
-    -lang: nl,
-    -pref: preferred
-)
-
-# subjectWrap
-do list(path:or_record.subjectWrap.db.subjects, var:s)
     lido_term(
-        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept,
-        s.subject,
-        -lang: nl
+        category,
+        or_record.CIDOCCategoryTerm,
+        -conceptid: or_record.CIDOCCategoryURI,
+        -type: purl,
+        -source: cidoc-crm
     )
-end
 
-# title
-lido_basenameset(
-    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
-    or_record.titleSet.appellationValue,
-    -value_pref: preferred,
-    -value_lang: nl,
-    -source: or_record.titleSet.sourceAppellation,
-    -source_lang: nl
-)
+### LIDO descriptiveMetadata
 
-# Description
-#Chat
-lido_descriptivenote(
-    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
-    or_record.descriptiveNote.$first,
-    -lang: 'nl'
-)
+## LIDO objectClassificationWrap
 
-# objectMeasurements
-do list(path:or_record.objectMeasurements.volledig, var: m)
-    lido_objectmeasurements(
-        'Volledig',
-        m.type,
-        m.unit,
-        m.dimension
+# LIDO objectWorkType
+
+    lido_term(
+        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+        or_record.objectWorkType.db.term,
+        -lang: nl,
+        -pref: preferred
     )
-end
 
-# recordSource
-lido_basenameset(
-    administrativeMetadata.recordWrap.recordSource.legalBodyName,
-    or_record.legalBodyName
-)
+# LIDO classification
 
-lido_basevalue(
-    administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
-    or_record.legalBodyWeblink
-)
+## LIDO objectIdentificationWrap
 
-# recordID
-lido_baseid(
-    administrativeMetadata.recordWrap.recordID,
-    or_record.object_number.local,
-    -type: local
-)
+# LIDO titleSet
 
-lido_baseid(
-    administrativeMetadata.recordWrap.recordID,
-    or_record.object_number.tms,
-    -type: TMS
-)
+    lido_basenameset(
+        descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
+        or_record.titleSet.appellationValue,
+        -value_pref: preferred,
+        -value_lang: nl,
+        -source: or_record.titleSet.sourceAppellation,
+        -source_lang: nl
+    )
 
-# recordType
-lido_term(
-    administrativeMetadata.recordWrap.recordType,
-    or_record.recordType.term,
-    -conceptid: or_record.recordType.conceptID,
-    -type: local,
-    -source: AAT
-)
+# LIDO repositoryName
 
-# Production
-lido_term(
-    descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
-    or_record.production_type
-)
+# LIDO objectDescriptionSet
 
-# Production: Actor
-lido_actor(
-    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
-    or_record.creator.id,
-    or_record.creator.display,
-    -id_source: TMS,
-    -id_type: local,
-    -role: or_record.creator.role,
-    -name_pref: preferred
-)
+    if all_match(or_record.descriptiveNote.$first, '.*\S.*')
+
+        lido_descriptivenote(
+            descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+            or_record.descriptiveNote.$first,
+            -lang: 'nl'
+        )
+
+    end
+
+# LIDO displayObjectMeasurements
+
+    do list(path:or_record.objectMeasurements.volledig, var: m)
+        lido_objectmeasurements(
+            'Volledig',
+            m.type,
+            m.unit,
+            m.dimension
+        )
+    end
+
+## LIDO eventWrap
+
+# LIDO eventType
+
+    add_field(or_record.event_type, production)
+    
+    lido_term(
+        descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+        or_record.event_type
+    )
+
+# LIDO eventActor
+
+    lido_actor(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+        or_record.creator.id,
+        or_record.creator.display,
+        -id_source: TMS,
+        -id_type: local,
+        -role: or_record.creator.role,
+        -name_pref: preferred
+    )
 
 # Add Persistent URI data to actor
 
@@ -358,36 +313,102 @@ lido_actor(
 
     end
 
+# LIDO displayDate
 
-# Production: Date
-lido_date(
-    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-    -earliest_date: or_record.date.begin,
-    -latest_date: or_record.date.end
+    lido_basevalue(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+        or_record.date.display
+    )
+
+# LIDO date
+
+    lido_date(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+        -earliest_date: or_record.date.begin,
+        -latest_date: or_record.date.end
+    )
+
+# LIDO periodName    
+
+    lido_term(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+        or_record.periodName.term,
+        -lang: nl
+    )
+
+# LIDO termMaterialsTech
+
+# LIDO displayMaterialsTech
+
+    lido_basevalue(
+        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
+        or_record.eventMaterialsTech.display
+    )
+
+# LIDO namePlaceSet
+
+## LIDO objectRelationWrap
+
+# LIDO subjectConcept
+
+    do list(path:or_record.subjectWrap.db.subjects, var:s)
+        lido_term(
+            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept,
+            s.subject,
+            -lang: nl
+        )
+    end
+
+### LIDO administrativeMetadata
+
+# LIDO recordID
+
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    or_record.object_number.local,
+    -type: local
 )
-lido_basevalue(
-    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
-    or_record.date.display
+
+lido_baseid(
+    administrativeMetadata.recordWrap.recordID,
+    or_record.object_number.tms,
+    -type: TMS
 )
 
-# Production: Period
-lido_term(
-    descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
-    or_record.periodName.term,
-    -lang: nl
-)
+# LIDO recordType
 
-# Production: displayMaterialsTech
-lido_basevalue(
-    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
-    or_record.eventMaterialsTech.display
-)
+    add_field('or_record.AATRecordTypeTerm', 'Item')
+    add_field('or_record.AATRecordTypeID', 'http://vocab.getty.edu/aat/300133025')
 
-# Add lang attributes to descriptiveMetadata and administrativeMetadata
-add_field(descriptiveMetadata.lang, 'nl')
-add_field(administrativeMetadata.lang, 'nl')
+    lido_term(
+        administrativeMetadata.recordWrap.recordType,
+        or_record.AATRecordTypeTerm,
+        -conceptid: or_record.AATRecordTypeID,
+        -type: local,
+        -source: AAT
+    )
 
-#
-##
-remove_field(or_record)
-#vacuum()
+# LIDO recordSource
+
+
+    lido_basenameset(
+        administrativeMetadata.recordWrap.recordSource.legalBodyName,
+        or_record.legalBodyName
+    )
+
+    add_field(or_record.legalBodyWeblink, 'http://kmska.be')
+
+    lido_basevalue(
+        administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
+        or_record.legalBodyWeblink
+    )
+
+### Add lang attributes to descriptiveMetadata and administrativeMetadata
+
+    add_field(descriptiveMetadata.lang, 'nl')
+    add_field(administrativeMetadata.lang, 'nl')
+
+### Remove the 'or_record' structure
+
+    remove_field(or_record)
+
