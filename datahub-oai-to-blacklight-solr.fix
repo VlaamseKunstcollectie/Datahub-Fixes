@@ -106,6 +106,9 @@ copy_field('_metadata.administrativeMetadata.0.recordWrap.recordInfoSet.0.record
 copy_field('_metadata.administrativeMetadata.0.recordWrap.recordID.0._', 'object_number')
 # copy_field('_metadata.administrativeMetadata.0.recordWrap.recordID.0._', 'id')
 
+# Description
+copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
+
 # Work_pid
 copy_field('_metadata.objectPublishedID.0._', 'work_pid')
 
