@@ -361,24 +361,24 @@
             set_field('c.creator\.qualifier', 'n/a')
         end
 
-        unless all_match('c.creator.date_of_birth', '.*\S.*')
-            set_field('c.creator.date_of_birth', 'n/a')
+        unless all_match('c.creator\.date_of_birth', '.*\S.*')
+            set_field('c.creator\.date_of_birth', 'n/a')
         end
 
-        unless all_match('c.creator.date_of_death', '.*\S.*')
-            set_field('c.creator.date_of_death', 'n/a')
+        unless all_match('c.creator\.date_of_death', '.*\S.*')
+            set_field('c.creator\.date_of_death', 'n/a')
         end
 
-        if all_match(c.creator.name, '.*\S.*')
+        if all_match(c.creator.value, '.*\S.*')
 
             lido_actor(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
                 'c.creator\.lref',
-                c.creator.name,
+                c.creator.value,
                 -id_source: Adlib,
                 -id_type: local,
-                -birthdate: 'c.creator.date_of_birth',
-                -deathdate: 'c.creator.date_of_death',
+                -birthdate: 'c.creator\.date_of_birth',
+                -deathdate: 'c.creator\.date_of_death',
                 -role: 'c.creator\.role.value',
                 -qualifier: 'c.creator\.qualifier',
                 -name_pref: preferred
@@ -388,7 +388,7 @@
 
         # Add Persistent URI data to actor
 
-        copy_field(c.creator.name, c.creator.pid)
+        copy_field(c.creator.value, c.creator.pid)
 
         lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
@@ -579,7 +579,7 @@
         if all_match(c.value, '.*\S.*')
 
             lido_term(
-                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.$last.subjectConcept,
+                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
                 c.value,
                 -lang: nl
             )
