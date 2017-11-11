@@ -32,6 +32,12 @@ else
     end
 end
 
+set_array(creator)
+do list(path: 'creator_display', var: c)
+    lookup_in_store(c, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+    copy_field(c.viaf_alternate, creator.$append)
+end
+
 # ? Production date
 copy_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.date.earliestDate._', 'production_date')
 
