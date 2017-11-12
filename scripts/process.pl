@@ -7,6 +7,10 @@ use Data::Dumper;
 
 
 sub prepare {
+	if (-e "/tmp/index.oai_raw.sqlite") {
+		unlink "/tmp/index.oai_raw.sqlite";
+	}
+
 	my $store = Catmandu->store(
 		'DBI',
 		data_source => 'dbi:SQLite:/tmp/index.oai_raw.sqlite',
@@ -27,9 +31,7 @@ sub prepare {
 }
 
 sub process {
-	if (! -e "/tmp/index.oai_raw.sqlite") {
-		prepare();
-	}
+	prepare();
 
 	my $importer = Catmandu->importer('JSON', file => '/tmp/bulk.json');
 	my $fixer = Catmandu->fixer(
