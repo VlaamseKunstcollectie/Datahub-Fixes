@@ -75,19 +75,32 @@ do list(path: '_metadata.descriptiveMetadata.0.objectRelationWrap.subjectWrap.su
 end
 
 # Artwork_type
+# Facet
 do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.0.term', var:type)
     if all_match('type.pref', 'alternate')
         copy_field(type._, artwork_type.$append)
     end
 end
+# Display
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.0.term', var:type)
+    if all_match('type.pref', 'preferred')
+        copy_field(type._, artwork_type_display.$append)
+    end
+end
 
 # Artwork_subtype
+# Facet
 do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification.0.term', var:classification) 
     if all_match('classification.pref', 'alternate')
         copy_field(classification._, artwork_subtype.$append)
     end
 end
-
+# Display
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification.0.term', var:classification) 
+    if all_match('classification.pref', 'preferred')
+        copy_field(classification._, artwork_subtype_display.$append)
+    end
+end
 
 # References
 copy_field('_metadata.administrativeMetadata.0.recordWrap.recordInfoSet.0.recordInfoLink.0._', 'references')
