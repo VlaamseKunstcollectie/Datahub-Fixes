@@ -66,7 +66,9 @@
 #                                    lido:periodName              
 #   production.period.lref              lido:conceptID
 #   production.period                   lido:term                        Periode
-#   Material                         lido:termMaterialsTech
+#                                    lido:termMaterialsTech
+#                                       pref: alternate
+#   Material                            pref: preferred
 #   physical_description             lido:displayMaterialsTech           Materiaal
 #   Production.production.place      lido:namePlaceSet
 #   content.motif.general            lido:subjectConcept                 Voorstelling
@@ -561,16 +563,42 @@
         move_field(or_record.tmp, or_record.materials.$last)
     end
 
+    # We'll have multiple classifications: the corresponding value in AAT (type:alternate) and the value from the Adlib field object_name itself (type:preferred)
+
     do list(path: or_record.materials, var: c)
 
         if all_match(c.material.value, '.*\S.*')
 
+        # Value in Adlib
+
             lido_term(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech,
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append,
                 c.material.value,
                 -conceptid: 'c.material\.lref',
+                -type: local,
                 -source: Adlib,
-                -type: local
+                -pref: preferred,
+                -lang: nl
+            )
+
+        end
+
+        # Corresponding value in AAT
+
+        copy_field(c.material.value, c.aat)
+
+        lookup_in_store(c.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+        if all_match(c.aat._id, '.*\S.*')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$last,
+                c.aat.aatterm,
+                -conceptid: c.aat.aaturi,
+                -type: purl,
+                -source: AAT,
+                -pref: alternate,
+                -lang: nl
             )
 
         end
