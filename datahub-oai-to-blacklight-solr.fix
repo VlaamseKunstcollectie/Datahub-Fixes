@@ -16,12 +16,41 @@ do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.titleWrap.
 end
 
 # Artist - use preferred
+
+# Set the creator_role array
+
+set_array(creator_role)
+
 do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventActor', var: c)
+    set_array(tmp_creator)
+
+    # The name of the creator
+
     do list(path:c.actorInRole.actor.nameActorSet.0.appellationValue, var:creator)
         if all_match('creator.pref', 'alternate')
-            copy_field(creator._, "creator_display.$append")
+            copy_field(creator._, tmp_creator.$append)
         end
     end
+
+    # The qualifier of the creator (Attributed to, Workshop of,...)
+
+    unless all_match('c.actorInRole.attributionQualifierActor.$last._', 'n/a')
+        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator.$prepend)
+    end
+
+    copy_field(c.actorInRole.roleActor, tmp_creator.$append)
+
+    join_field(tmp_creator, " ")
+    move_field(tmp_creator, creator_display.$append)
+
+
+    # The role of the creator (if any, if roleActor is an empty node, add 'n/a' as default)
+
+    unless all_match('c.actorInRole.roleActor.$last.term.$last._', '.*\S.*')
+        add_field(creator_role.$append, 'n/a')
+    end
+
+    copy_field(c.actorInRole.roleActor.$last.term.$last._, creator_role.$append)
 end
 
 set_array(creator)
