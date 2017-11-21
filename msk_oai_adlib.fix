@@ -86,12 +86,40 @@
 
     if all_match(or_record.identificator.dataPid, '.*\S.*')
     
+        # ID
+        #
+        # The ID in Solr is based on the data_pid. The data_pid is converted to a string
+        # which can be safely used as an identifier in Project Blacklight. The format of
+        # the ID field looks like this:
+        #
+        #   oai:datahub.vlaamsekunstcollectie.be:<domain>:<identifier>
+        #   ex. oai:datahub.vlaamsekunstcollectie.be:kmksa:254
+        #   ex. oai:datahub.vlaamsekunstcollectie.be:collectievlaamsegemeenschap:837
+        #
+        # Note: the .tld is stripped from the domainname because the . (dot) breaks the
+        # route matching algoritm.
+
+        copy_field('or_record.identificator.dataPid', 'or_record.identificator.oaiPid')
+        parse_text('or_record.identificator.oaiPid', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
+        join_field('or_record.identificator.oaiPid', ':')
+        prepend('or_record.identificator.oaiPid', 'oai:datahub.vlaamsekunstcollectie.be:')
+
+        lido_baseid(
+            lidoRecID,
+            or_record.identificator.oaiPid,
+            -type: urn,
+            -source: 'Vlaamse Kunstcollectie - Arthub Flanders',
+            -label: dataPID,
+            -pref: preferred
+        )
+
         lido_baseid(
             lidoRecID,
             or_record.identificator.dataPid,
             -type: purl,
-            -source: 'Museum voor Schone Kunsten Gent',
-            -label: dataPID
+            -source: 'Musea Brugge - Groeningemuseum',
+            -label: dataPID,
+            -pref: alternate
         )
     
     end
