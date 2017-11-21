@@ -395,8 +395,14 @@
 
     do list (path: or_record.production, var: c)
 
+        trim('c.creator\.qualifier')
         unless all_match('c.creator\.qualifier', '.*\S.*')
             set_field('c.creator\.qualifier', 'n/a')
+        end
+
+        trim('c.creator\.role.value')
+        unless all_match('c.creator\.role.value', '.*\S.*')
+            set_field('c.creator\.role.value', 'n/a')
         end
 
         unless all_match('c.creator\.date_of_birth', '.*\S.*')
@@ -417,12 +423,18 @@
                 -id_type: local,
                 -birthdate: 'c.creator\.date_of_birth',
                 -deathdate: 'c.creator\.date_of_death',
-                -role: 'c.creator\.role.value',
                 -qualifier: 'c.creator\.qualifier',
                 -name_pref: preferred
             )
 
         end
+
+        # Role. Work around. -role switch in lido_actor does not work correctly.
+
+        lido_term(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor,
+            'c.creator\.role.value',
+        )
 
         # Add Persistent URI data to actor
 
