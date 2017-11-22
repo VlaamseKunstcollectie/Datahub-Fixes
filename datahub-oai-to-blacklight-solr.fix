@@ -73,8 +73,8 @@ end
 copy_field('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', 'repository')
 
 # Material
-do list(path: '_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventMaterialsTech', var: material)
-    do list(path: 'material.materialsTech.termMaterialsTech.0.term', var: prefMaterial)
+do list(path: '_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventMaterialsTech', var: mat)
+    do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var: prefMaterial)
         if all_match('prefMaterial.pref', 'preferred')
             copy_field(prefMaterial._, material.$append)
         end
