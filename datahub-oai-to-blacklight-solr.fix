@@ -20,28 +20,30 @@ end
 # Set the creator_role array
 
 set_array(creator_role)
+set_array(tmp_creators)
 
 do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventActor', var: c)
-    set_array(tmp_creator)
+    set_array(tmp_creator_display)
 
     # The name of the creator
 
     do list(path:c.actorInRole.actor.nameActorSet.0.appellationValue, var:creator)
         if all_match('creator.pref', 'alternate')
-            copy_field(creator._, tmp_creator.$append)
+            copy_field(creator._, tmp_creator_display.$append)
+            copy_field(creator._, tmp_creators.$append)
         end
     end
 
     # The qualifier of the creator (Attributed to, Workshop of,...)
 
     unless all_match('c.actorInRole.attributionQualifierActor.$last._', 'n/a')
-        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator.$prepend)
+        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_display.$prepend)
     end
 
-    copy_field(c.actorInRole.roleActor, tmp_creator.$append)
+    copy_field(c.actorInRole.roleActor, tmp_creator_display.$append)
 
-    join_field(tmp_creator, " ")
-    move_field(tmp_creator, creator_display.$append)
+    join_field(tmp_creator_display, " ")
+    move_field(tmp_creator_display, creator_display.$append)
 
 
     # The role of the creator (if any, if roleActor is an empty node, add 'n/a' as default)
@@ -54,10 +56,12 @@ do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventAc
 end
 
 set_array(creator)
-do list(path: 'creator_display', var: c)
+do list(path: 'tmp_creators', var: c)
     lookup_in_store(c, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
     copy_field(c.viaf_alternate, creator.$append)
 end
+
+remove_field(tmp_creators)
 
 # ? Production date
 copy_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.date.earliestDate._', 'production_date')
@@ -150,7 +154,11 @@ copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescr
 copy_field('_metadata.objectPublishedID.0._', 'work_pid')
 
 # Data_pid
-copy_field('_metadata.lidoRecID.0._', 'data_pid')
+do list(path: '_metadata.lidoRecID', var:lidoRecID)
+    if all_match('lidoRecID.type', 'purl')
+        copy_field(lidoRecID._, data_pid)
+    end
+end
 
 # ID
 #
