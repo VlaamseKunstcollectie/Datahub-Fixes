@@ -35,7 +35,6 @@ sub process {
 
 	my $importer = Catmandu->importer('JSON', file => '/tmp/bulk.json');
 	my $fixer = Catmandu->fixer(
-		'copy_field(data_pid, raw)',
 		'lookup_in_store(raw, DBI, data_source: "dbi:SQLite:/tmp/index.oai_raw.sqlite")',
 		'copy_field(raw._metadata, xml)',
 		'remove_field(raw)'

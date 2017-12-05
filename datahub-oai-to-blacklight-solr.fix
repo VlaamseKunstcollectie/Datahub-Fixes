@@ -158,6 +158,10 @@ do list(path: '_metadata.lidoRecID', var:lidoRecID)
     if all_match('lidoRecID.type', 'purl')
         copy_field(lidoRecID._, data_pid)
     end
+
+    if all_match('lidoRecID.type', 'urn')
+        copy_field(lidoRecID._, raw)
+    end
 end
 
 # ID
@@ -186,3 +190,5 @@ remove_field('_setSpec')
 remove_field('_about')
 remove_field('_datestamp')
 remove_field('_metadata')
+remove_field('_resumption')
+remove_field('_resumptionToken')
