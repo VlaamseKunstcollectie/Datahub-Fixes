@@ -1,455 +1,677 @@
-##
-# Data preparation
-##
-
-add_field(or_record.legalBodyName, 'VKC')
-add_field(or_record.legalBodyWeblink, 'http://www.vlaamsekunstcollectie.be')
-
-##
-# WorkPID
-copy_field('ca_objects\.objectWorkPid', or_record.objectWorkPid.source)
-
-do each(path: or_record.objectWorkPid.source, var: o)
-
-    do each(path: o.value, var: p)
-        # Doing a paste from inside a bind doesn't seem to work
-        copy_field(p.value, t)
-    end
-
-end
-
-paste(or_record.objectWorkPid.workPid,
-    t.objectWorkPidDomain,
-    t.objectWorkPidID,
-    join_char: ''
-)
-
-##
-# Here be dark magic
-if any_match(or_record.objectWorkPid, '^(http://)')
-end
+# Catmandu Fix
 #
-##
+# Institution: Vlaamse Kunstcollectie
+# Description: Converts XML to LIDO 1.0
+# Created: 22/11/2017
 
-##
-# DataPID
-copy_field('ca_objects\.objectRecordPid', or_record.objectDataPid.source)
 
-do each(path: or_record.objectDataPid.source, var: o)
 
-    do each(path: o.value, var: p)
-        # Doing a paste from inside a bind doesn't seem to work
-        copy_field(p.value, t)
-    end
+### Prepare an intermediate structure
+
+# Copy relevant Collactive Access fields in order to create a dedicated lido structure
+
+    copy_field(access.value, or_record.access)
+    copy_field('ca_objects\.objectRecordPid', or_record.dataPid_tmp)
+    copy_field('ca_objects\.objectWorkPid', or_record.workPid_tmp)
+    copy_field('ca_objects\.objectnamePid', or_record.category_aat_tmp)
+    copy_field('ca_objects\.objectName', or_record.category_tmp)
+    copy_field(preferred_labels, or_record.title_tmp)
+    copy_field('ca_objects\.contentDescription', or_record.description_tmp)
+    copy_field('ca_objects\.dimensions', or_record.dimensions_tmp)
+    copy_field(related.ca_entities, or_record.actor_tmp)
+    copy_field('ca_objects\.objectProductionDate', or_record.date_tmp)
+    copy_field('ca_objects\.materialInfo', or_record.physical_description_tmp)
+    copy_field('ca_objects\.assocConcept', or_record.subject_tmp)
+    copy_field(intrinsic.idno, or_record.object_number)
+
+# Remove all Collective Access fields, retaining only the fields to create the lido structure
+
+    retain(or_record)
+
+# Transform only those objects that are accessible to public
+
+    if all_match(or_record.access, '1')
+
+
+
+        ### Mapping to lido structure
+
+        # Mapping Facets
+        # -----------------------------------------------------------------------------------------------
+        # Collective Access               LIDO                              VKC
+        #   ca_objects.objectRecordPid       lido:lidoRecID               
+        #   ca_objects.objectWorkPid         lido:objectPublishedID    
+        #                                    lido:category
+        #                                    lido:objectWorkType
+        #   ca_objects.objectnamePid            lido:conceptID
+        #                                       lido:term                        
+        #                                           pref: alternate              Type Kunstwerk
+        #   ca_objects.objectName                   pref: preferred
+        #   preferred_labels                 lido:titleSet
+        #                                       pref: alternate
+        #                                       pref: preferred              
+        #                                    lido:repositoryName                 Museum
+        #   ca_objects.contentDescription    lido:objectDescriptionSet           Info over beeldgebruik
+        #   ca_objects.dimensions            lido:displayObjectMeasurements      Afmetingen 
+        #                                    lido:eventType
+        #   related.ca_entities              lido:eventActor
+        #                                       pref: alternate
+        #                                       pref: preferred                  Kunstenaar
+        #   ca_objects.objectProductionDate  lido:displayDate                    Datering
+        #   ca_objects.objectProductionDate  lido:date
+        #                                    lido:periodName                     Periode
+        #   ca_objects.materialInfo          lido:displayMaterialsTech           Materiaal
+        #   ca_objects.assocConcept          lido:subjectConcept                 Voorstelling
+        #   intrinsic.idno                   lido:recordID                       Inventarisnummer
+        #                                    lido:recordType
+        #                                    lido:recordSource                   Museum
+
+
+
+        ### LIDO lidoRecID
+
+            do each(path: or_record.dataPid_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    do each(path: lang.value, var: dataPid)
+                        copy_field(dataPid.key, or_record.objectRecordPid.$append.key)
+                        copy_field(dataPid.value, or_record.objectRecordPid.$append.value)
+                    end
+                end
+            end
+
+            assoc(or_record.dataPid, or_record.objectRecordPid.*.key, or_record.objectRecordPid.*.value)
+
+            if all_match(or_record.dataPid.objectRecordPidDomain, '.*\S.*')
+                if all_match(or_record.dataPid.objectRecordPidID, '.*\S.*')
+
+                    # ID
+                    #
+                    # The ID in Solr is based on the data_pid. The data_pid is converted to a string
+                    # which can be safely used as an identifier in Project Blacklight. The format of
+                    # the ID field looks like this:
+                    #
+                    #   oai:datahub.vlaamsekunstcollectie.be:<domain>:<identifier>
+                    #   ex. oai:datahub.vlaamsekunstcollectie.be:kmksa.be:254
+                    #   ex. oai:datahub.vlaamsekunstcollectie.be:collectievlaamsegemeenschap.be:837
+                    #
+                    # Note: the .tld is stripped from the domainname because the . (dot) breaks the
+                    # route matching algoritm.
+
+                    copy_field(or_record.dataPid.objectRecordPidID, or_record.oaiPid)
+                    prepend(or_record.oaiPid, 'oai:datahub.vlaamsekunstcollectie.be:vlaamsekunstcollectie.be:')
+
+                    lido_baseid(
+                        lidoRecID,
+                        or_record.oaiPid,
+                        -type: urn,
+                        -source: 'Vlaamse Kunstcollectie - Arthub Flanders',
+                        -label: dataPID,
+                        -pref: preferred
+                    )
+
+                    paste(or_record.dataPid, or_record.dataPid.objectRecordPidDomain, or_record.dataPid.objectRecordPidID, join_char:"")
+
+                    lido_baseid(
+                        lidoRecID,
+                        or_record.dataPid,
+                        -type: purl,
+                        -source: 'Vlaamse Kunstcollectie',
+                        -label: dataPID,
+                        -pref: alternate
+                    )
+
+                end
+            end
+
+
+
+        ### LIDO objectPublishedID
+
+            do each(path: or_record.workPid_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    do each(path: lang.value, var: workPid)
+                        copy_field(workPid.key, or_record.objectWorkPid.$append.key)
+                        copy_field(workPid.value, or_record.objectWorkPid.$append.value)
+                    end
+                end
+            end
+
+            assoc(or_record.workPid, or_record.objectWorkPid.*.key, or_record.objectWorkPid.*.value)
+
+            if all_match(or_record.workPid.objectWorkPidDomain, '.*\S.*')
+                if all_match(or_record.workPid.objectWorkPidID, '.*\S.*')
+
+                    paste(or_record.workPid, or_record.workPid.objectWorkPidDomain, or_record.workPid.objectWorkPidID, join_char:"")
+
+                    if all_match(or_record.workPid, 'http://groeningemuseum.be/*')
+                        lido_baseid(
+                            objectPublishedID,
+                            or_record.workPid,
+                            -type: purl,
+                            -source: 'Musea Brugge - Groeningemuseum',
+                            -label: workPID
+                        )
+                    end
+
+                    if all_match(or_record.workPid, 'http://mskgent.be/*')
+                        lido_baseid(
+                            objectPublishedID,
+                            or_record.workPid,
+                            -type: purl,
+                            -source: 'Museum voor Schone Kunsten Gent',
+                            -label: workPID
+                        )
+                    end
+
+                end
+            end
+
+
+        ### LIDO category
+
+            add_field(or_record.CIDOCCategoryTerm, 'Man-Made Object')
+            add_field(or_record.CIDOCCategoryURI, 'http://www.cidoc-crm.org/crm-concepts/E22')
+
+            lido_term(
+                category,
+                or_record.CIDOCCategoryTerm,
+                -conceptid: or_record.CIDOCCategoryURI,
+                -type: purl,
+                -source: cidoc-crm
+            )
+
+
+
+        ### LIDO descriptiveMetadata
+
+        ## LIDO objectClassificationWrap
+
+        # LIDO objectWorkType
+
+            do each(path: or_record.category_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    copy_field(lang.value, or_record.category)
+                end
+            end
+
+            downcase(or_record.category.objectObjectName)
+
+            do each(path: or_record.category_aat_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    do each(path: lang.value, var: aat)
+                        copy_field(aat.key, or_record.objectnamePid.$append.key)
+                        copy_field(aat.value, or_record.objectnamePid.$append.value)
+                    end
+                end
+            end
+
+            assoc(or_record.category_aat, or_record.objectnamePid.*.key, or_record.objectnamePid.*.value)
+
+            if all_match(or_record.category.objectObjectName, '.*\S.*')
+
+                paste(or_record.category_aat, or_record.category_aat.objectnamePidDomain, or_record.category_aat.objectnamePidID, join_char:"")
+
+                if all_match(or_record.category_aat, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+                        or_record.category.objectObjectName,
+                        -conceptid: or_record.category_aat,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: preferred,
+                        -lang: en
+                    )
+
+                end
+
+                lookup_in_store(or_record.category.objectObjectName, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+                if all_match(or_record.category.objectObjectName._id, '.*\S.*')
+
+                    lido_term(
+                    descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+                    or_record.category.objectObjectName.aatterm,
+                    -conceptid: or_record.category.objectObjectName.aaturi,
+                    -type: purl,
+                    -source: AAT,
+                    -pref: alternate,
+                    -lang: nl
+                    )
+
+                end
+
+            end
+
+
+        ## LIDO objectIdentificationWrap
+
+        # LIDO titleSet
+
+            do each(path: or_record.title_tmp, var: lang)
+                copy_field(lang.key, or_record.preferred_labels.$append.key)
+                copy_field(lang.value.0, or_record.preferred_labels.$append.value_tmp)
+            end
+
+            copy_field(or_record.preferred_labels.1.value_tmp.name, or_record.preferred_labels.$append.value)
+            copy_field(or_record.preferred_labels.3.value_tmp.name, or_record.preferred_labels.$append.value)
+
+            assoc(or_record.title, or_record.preferred_labels.*.key, or_record.preferred_labels.*.value)
+
+            if all_match(or_record.title.en_US, '.*\S.*')
+
+                lido_basenameset(
+                    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.$append,
+                    or_record.title.en_US,
+                    -value_pref: alternate,
+                    -value_lang: en
+                )
+
+            end
+
+            if all_match(or_record.title.nl_BE, '.*\S.*')
+
+                lido_basenameset(
+                    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.$last,
+                    or_record.title.nl_BE,
+                    -value_pref: preferred,
+                    -value_lang: nl
+                )
+
+            end
+
+        # LIDO repositoryName
+
+            add_field(or_record.repositoryName, 'Vlaamse Kunstcollectie')
+
+            lido_basenameset(
+                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyName,
+                or_record.repositoryName
+            )
+
+        # LIDO objectDescriptionSet
+
+            do each(path: or_record.description_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    copy_field(lang.key, or_record.contentDescription.$append.key)
+                    do each(path: lang.value, var: description)
+                        copy_field(description.value, or_record.contentDescription.$append.value)
+                    end
+                end
+            end
+
+            assoc(or_record.description, or_record.contentDescription.*.key, or_record.contentDescription.*.value)
+
+            if all_match(or_record.description.nl_BE, '.*\S.*')    
+
+                lido_descriptivenote(
+                    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+                    or_record.description.nl_BE,
+                    -pref: preferred,
+                    -lang: nl
+                )
+
+            end
+
+            if all_match(or_record.description.en_US, '.*\S.*')    
+
+                lido_descriptivenote(
+                    descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+                    or_record.description.en_US,
+                    -pref: alternate,
+                    -lang: en
+                )
+
+            end
+
+        # LIDO displayObjectMeasurements
+
+            do each(path: or_record.dimensions_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    copy_field(lang.value, or_record.dimensions)
+                end
+            end
+
+            split_field(or_record.dimensions.dimensions_height, ' ')
+
+            copy_field(or_record.dimensions.dimensions_height.0, or_record.dimensions.height_value)
+            copy_field(or_record.dimensions.dimensions_height.1, or_record.dimensions.height_unit)
+            add_field(or_record.dimensions.height_type, 'hoogte')
+
+            unless all_match(or_record.dimensions.height_value, '.*\S.*')
+                set_field(or_record.dimensions.height_value, n/a)
+            end
+
+            unless all_match(or_record.dimensions.height_unit, '.*\S.*')
+                set_field(or_record.dimensions.height_unit, n/a)
+            end
+
+            lido_objectmeasurements(
+                '',
+                or_record.dimensions.height_type,
+                or_record.dimensions.height_unit,
+                or_record.dimensions.height_value
+            )
+
+            split_field(or_record.dimensions.dimensions_width, ' ')
+
+            copy_field(or_record.dimensions.dimensions_width.0, or_record.dimensions.width_value)
+            copy_field(or_record.dimensions.dimensions_width.1, or_record.dimensions.width_unit)
+            add_field(or_record.dimensions.width_type, 'breedte')
+
+            unless all_match(or_record.dimensions.width_value, '.*\S.*')
+                set_field(or_record.dimensions.width_value, n/a)
+            end
+
+            unless all_match(or_record.dimensions.width_unit, '.*\S.*')
+                set_field(or_record.dimensions.width_unit, n/a)
+            end
+
+            lido_objectmeasurements(
+                '',
+                or_record.dimensions.width_type,
+                or_record.dimensions.width_unit,
+                or_record.dimensions.width_value
+            )
+
+
+        ## LIDO eventWrap
+
+        # LIDO eventType
+
+            add_field(or_record.event_type, production)
+            
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                or_record.event_type
+            )
+
+        # Lido eventActor
+
+            do list(path: or_record.actor_tmp, var: arrays)
+                copy_field(arrays, or_record.actor.$append)
+            end
+
+            do list(path: or_record.actor, var: actor)
+
+                unless all_match(actor.relationship_type_code, '.*\S.*')
+                    set_field(actor.relationship_type_code, 'n/a')
+                end
+
+                if all_match(actor.displayname, '.*\S.*')
+
+                    lido_actor(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
+                        actor.entity_id,
+                        actor.displayname,
+                        -id_source: 'Collective Access',
+                        -id_type: local,
+                        -name_pref: preferred
+                    )
+
+                    # Role. Work around. -role switch in lido_actor does not work correctly.
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor,
+                        actor.relationship_type_code,
+                        -lang: en
+                    )
+
+                    copy_field(actor.relationship_type_code, or_record.role)
+
+                    lookup_in_store(or_record.role, DBI, data_source: "dbi:SQLite:/tmp/import.ca.sqlite")
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor,
+                        or_record.role.vertaling,
+                        -lang: nl
+                    )
+
+                end
+
+                # Add Persistent URI data to actor
+
+                copy_field(actor.displayname, actor.pid)
+
+                lookup_in_store(actor.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+
+                # Preferred label from Flemish Art Collection concordance database
+
+                if all_match(actor.pid._id, '.*\S.*')
+
+                    lido_basenameset(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
+                        actor.pid._id,
+                        -value_pref: alternate
+                    )
+
+                end
+
+                # Creator Persistent URI's
+
+                if all_match(actor.pid.viaf_uri, '.*\S.*')
+
+                    lido_baseid(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                        actor.pid.viaf_uri,
+                        -source: VIAF,
+                        -type: purl
+                    )
+
+                end
+
+                if all_match(actor.pid.rkd_uri, '.*\S.*')
+
+                    lido_baseid(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.$last.eventActor.$last.actorInRole.actor.actorID,
+                        actor.pid.rkd_uri,
+                        -source: RKD,
+                        -type: purl
+                    )
+
+                end
+
+                if all_match(actor.pid.wikidata_uri, '.*\S.*')
+
+                    lido_baseid(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.$last.eventActor.$last.actorInRole.actor.actorID,
+                        actor.pid.wikidata_uri,
+                        -source: Wikidata,
+                        -type: purl
+                    )
+
+                end
+
+            end
+
+        # LIDO displayDate
+
+            do each(path: or_record.date_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    do each(path: lang.value, var: productionDate)
+                        copy_field(productionDate.value, or_record.date)
+                    end
+                end
+            end
+
+            if all_match(or_record.date, '.*\S.*')
+
+                lido_basevalue(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+                    or_record.date
+                )
+
+            end
+
+        # LIDO date
+
+            if all_match(or_record.date, '.*\S.*')
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -earliest_date: or_record.date
+                )
+
+            end
+
+        # LIDO periodName
+
+            copy_field(or_record.date, or_record.period)
+
+            split_field(or_record.period, '')
+
+            paste(or_record.period_tmp, or_record.period.0, or_record.period.1, join_char:'')
+
+            unless all_match(or_record.period.3, '0')
+                set_field(or_record.add_one, '1')
+                copy_field(or_record.period_tmp, or_record.century.$append)
+                copy_field(or_record.add_one, or_record.century.$append)
+                sum(or_record.century)
+            end
+
+            if all_match(or_record.century, '1')
+                append(or_record.century, "ste eeuw")
+            else
+                if all_match(or_record.century, '8')
+                    append(or_record.century, "ste eeuw")
+                else
+                    if all_match (or_record.century, '2*')
+                        append(or_record.century, "ste eeuw")
+                    else
+                        append(or_record.century, "de eeuw")
+                    end
+                end
+            end
+
+            if all_match(or_record.century, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+                    or_record.century,
+                    -lang: nl
+                )
+
+            end
+
+        # LIDO displayMaterialsTech
+
+            do each(path: or_record.physical_description_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    copy_field(lang.key, or_record.material.$append.key)
+                    do each(path: lang.value, var: physical_description)
+                        copy_field(physical_description.value, or_record.material.$append.value)
+                    end
+                end
+            end
+            
+            assoc(or_record.physical_description, or_record.material.*.key, or_record.material.*.value)
+
+            if all_match(or_record.physical_description.nl_BE, '.*\S.*')
+
+                lido_basevalue(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
+                    or_record.physical_description.nl_BE,
+                    -lang: nl
+                )
+
+            end
+
+            if all_match(or_record.physical_description.en_US, '.*\S.*')
+
+                lido_basevalue(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.displayMaterialsTech,
+                    or_record.physical_description.en_US,
+                    -lang: en
+                )
+
+            end
+
+
+        ## LIDO objectRelationWrap
+
+        # LIDO subjectConcept
+
+            do each(path: or_record.subject_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    do each(path: lang.value, var: concept)
+                        copy_field(concept.value, or_record.subject.$append.value)
+                    end
+                end
+            end
+
+            do list(path: or_record.subject, var: subject)
+
+                if all_match(subject.value, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
+                        subject.value,
+                        -lang: en
+                    )
+
+                    copy_field(subject.value, or_record.item)
+
+                    lookup_in_store(or_record.item, DBI, data_source: "dbi:SQLite:/tmp/import.ca.sqlite")
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
+                        or_record.item.vertaling,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+
+
+        ### LIDO administrativeMetadata
+
+        # LIDO recordID
+
+            if all_match(or_record.object_number, '.*\S.*')
+
+                lido_baseid(
+                    administrativeMetadata.recordWrap.recordID,
+                    or_record.object_number,
+                    -type: local
+                )
+
+            end
+
+        # LIDO recordType
+
+            add_field('or_record.AATRecordTypeTerm', 'Item')
+            add_field('or_record.AATRecordTypeID', 'http://vocab.getty.edu/aat/300133025')
+
+            lido_term(
+                administrativeMetadata.recordWrap.recordType,
+                or_record.AATRecordTypeTerm,
+                -conceptid: or_record.AATRecordTypeID,
+                -type: local,
+                -source: AAT
+            )
+
+        # LIDO recordSource
+
+            lido_basenameset(
+                administrativeMetadata.recordWrap.recordSource.legalBodyName,
+                or_record.repositoryName
+            )
+
+            add_field('or_record.LegalBodyWebLink', 'http://vlaamsekunstcollectie.be')
+
+            lido_basevalue(
+                administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
+                or_record.LegalBodyWebLink
+            )
+
+
 
 end
 
-paste(or_record.objectDataPid.dataPid,
-    t.objectRecordPidDomain,
-    t.objectRecordPidID,
-    join_char: ''
-)
 
-##
-# category
-add_field(or_record.category.term, 'Man-Made Object')
-add_field(or_record.category.concept_id, 'http://www.cidoc-crm.org/crm-concepts/E22')
 
-##
-# objectWorkType
-copy_field('ca_objects\.objectObjectCategory', or_record.objectWorkType.source)
-
-do each(path: or_record.objectWorkType.source, var: o)
-
-    do each(path: o.value, var: t)
-        copy_field(t.value.objectObjectCategory, or_record.objectWorkType.term.$append.value)
-        copy_field(t.key, or_record.objectWorkType.term.$last.lang)
-        copy_field(t.value.objectObjectCategory, or_record.objectWorkType.term.$last.aat)
- #       aat_match(or_record.objectWorkType.term.$last.aat)
-    end
-
-end
-
-# classification
-copy_field('ca_objects\.objectName', or_record.classification.source)
-
-do each(path: or_record.classification.source, var: o)
-
-    do each(path: o.value, var: t)
-        copy_field(t.value.objectObjectName, or_record.classification.term.$append.value)
-        copy_field(t.key, or_record.classification.term.$last.lang)
-    end
-
-end
-
-copy_field('ca_objects\.objectnamePid', or_record.classification_id.source)
-do each(path: or_record.classification_id.source, var: t)
-
-    do each(path: t.value, var: i)
-        copy_field(i.value.objectnamePidDomain, or_record.classification_id.pid.$append)
-        copy_field(i.value.objectnamePidID, or_record.classification_id.pid.$append)
-    end
-
-end
-
-paste(or_record.classification.pid, or_record.classification_id.pid.0, or_record.classification_id.pid.1, join_char: '')
-
-do list(path: or_record.classification.term, var: t)
-    copy_field(or_record.classification.pid, t.pid)
-end
-
-##
-# titleSet
-copy_field('preferred_labels', or_record.titleSet.source)
-do each(path: or_record.titleSet.source, var: k)
-
-    set_hash(or_record.titleSet.title.$append)
-    copy_field(k.key, or_record.titleSet.title.$last.lang)
-    copy_field(k.value.$first.name, or_record.titleSet.title.$last.value)
-
-end
-
-##
-# descriptiveNoteValue
-copy_field('ca_objects\.contentDescription', or_record.descriptiveNoteValue.source)
-
-do each(path: or_record.descriptiveNoteValue.source, var: s)
-    do each(path: s.value, var: d)
-        set_hash(or_record.descriptiveNoteValue.descriptions.$append)
-        copy_field(d.key, or_record.descriptiveNoteValue.descriptions.$last.lang)
-        copy_field(d.value.contentDescription, or_record.descriptiveNoteValue.descriptions.$last.value)
-    end
-end
-
-##
-# objectMeasurements
-copy_field('ca_objects\.dimensions', or_record.objectMeasurements.source)
-set_array(or_record.objectMeasurements.measurements)
-
-do each(path: or_record.objectMeasurements.source, var: s)
-
-do each(path: s.value, var: m)
-    if exists(m.value.dimensions_width)
-        split_field(m.value.dimensions_width)
-        add_field(or_record.objectMeasurements.measurements.$append.type, 'breedte')
-        copy_field(m.value.dimensions_width.1, or_record.objectMeasurements.measurements.$last.unit)
-        copy_field(m.value.dimensions_width.0, or_record.objectMeasurements.measurements.$last.value)
-    end
-    if exists(m.value.dimensions_height)
-        split_field(m.value.dimensions_height)
-        add_field(or_record.objectMeasurements.measurements.$append.type, 'hoogte')
-        copy_field(m.value.dimensions_height.1, or_record.objectMeasurements.measurements.$last.unit)
-        copy_field(m.value.dimensions_height.0, or_record.objectMeasurements.measurements.$last.value)
-    end
-    if exists(m.value.dimensions_depth)
-        split_field(m.value.dimensions_depth)
-        add_field(or_record.objectMeasurements.measurements.$append.type, 'diepte')
-        copy_field(m.value.dimensions_depth.1, or_record.objectMeasurements.measurements.$last.unit)
-        copy_field(m.value.dimensions_depth.0, or_record.objectMeasurements.measurements.$last.value)
-    end
-    if exists(m.value.dimensions_type)
-       copy_field(m.value.dimensions_type, or_record.objectMeasurements.extent_measurements)
-    end
-end
-
-end
-
-##
-# Production event
-add_field(or_record.production.type, 'Production')
-
-# actor
-# Get the production actor. This ain't easy
-set_array(or_record.production.actors)
-do list(path: related.ca_entities, var: e)
-    if all_equal(e.relationship_type_code, 'creator')
-        copy_field(e.displayname, or_record.production.actors.$append.nameActorSet)
-        copy_field(e.entity_id, or_record.production.actors.$last.actorID)
-        copy_field(e.relationship_type_code, or_record.production.actors.$last.attributionQualifierActor)
-        copy_field(e.displayname, or_record.production.actors.$last.viaf)
-        viaf_match(or_record.production.actors.$last.viaf)
-        copy_field(e.displayname, or_record.production.actors.$last.rkd)
-        rkd_name(or_record.production.actors.$last.rkd)
-    end
-end
-
-# eventDate
-set_array(or_record.production.eventDate.dates)
-copy_field('ca_objects\.objectProductionDate', or_record.production.date.source)
-do each(path: or_record.production.date.source, var: t)
-
-    do each(path: t.value, var: d)
-        copy_field(d.key, or_record.production.eventDate.dates.$append.lang)
-        copy_field(d.value.objectProductionDate, or_record.production.eventDate.dates.$last.value)
-    end
-
-end
-
-# namePlaceSet
-
-# eventMaterialsTech
-set_array(or_record.production.eventMaterialsTech.materials)
-copy_field('ca_objects\.materialInfo', or_record.production.material.source)
-do each(path: or_record.production.material.source, var: t)
-
-    do each(path: t.value, var: m)
-        copy_field(m.key, or_record.production.eventMaterialsTech.materials.$append.lang)
-        copy_field(m.value.material, or_record.production.eventMaterialsTech.materials.$last.value)
-        copy_field(m.value.material, or_record.production.eventMaterialsTech.materials.$last.aat)
- #       aat_match(or_record.production.eventMaterialsTech.materials.$last.aat)
-    end
-
-end
-
-##
-# subjectConcept
-copy_field('ca_objects\.assocConcept', or_record.subjectConcept.source)
-
-do each(path: or_record.subjectConcept.source, var: o)
-
-    do each(path: o.value, var: t)
-        copy_field(t.value.assocConcept, or_record.subjectConcept.term.$append.value)
-        copy_field(t.key, or_record.subjectConcept.term.$last.lang)
-        copy_field(t.value.assocConcept, or_record.subjectConcept.term.$last.aat)
-#        aat_match(or_record.subjectConcept.term.$last.aat)
-    end
-
-end
-
-##
-# recordID
-copy_field(object_id, or_record.recordID.vkc)
-copy_field(idno, or_record.recordID.source)
-
-##
-# recordSource
-
-##
-# recordType
-add_field('or_record.recordType.term', 'Item')
-add_field('or_record.recordType.id', 'http://vocab.getty.edu/aat/300133025')
-
-retain(or_record)
-
-##
-# LIDO record creation
-##
-
-lido_baseid(
-    lidoRecID,
-    or_record.objectDataPid.dataPid,
-    -type: global,
-    -label: dataPID
-)
-
-lido_baseid(
-    objectPublishedID,
-    or_record.objectWorkPid.workPid,
-    -type: global,
-    -label: workPID
-)
-
-lido_term(
-    category,
-    or_record.category.term,
-    -conceptid: or_record.category.concept_id,
-    -type: URI,
-    -source: CIDOC-CRM
-)
-
-do list(path: or_record.objectWorkType.term, var: t)
-
-    lido_term(
-        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
-        t.value,
-        #-lang: t.lang,
-        -pref: preferred
-    )
-
-    if exists(t.aat.id)
-        lido_term(
-            descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
-            t.value,
-            -conceptid: t.aat.uri,
-            -source: AAT,
-            -type: URI,
-            #-lang: t.lang,
-            -pref: preferred
-        )
-    end
-
-end
-
-do list(path: or_record.classification.term, var: t)
-
-    lido_term(
-        descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-        t.value,
-        -conceptid: or_record.classification.pid,
-        #-lang: t.lang,
-        -pref: preferred,
-        -source: AAT,
-        -type: URI
-    )
-
-end
-
-do list(path: or_record.titleSet.title, var: t)
-
-    lido_basenameset(
-        descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
-        t.value,
-        #-value_lang: t.lang
-    )
-
-end
-
-do list(path: or_record.descriptiveNoteValue.descriptions, var: t)
-
-    lido_descriptivenote(
-        descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
-        t.value,
-        #-lang: t.lang
-    )
-
-end
-
-do list(path: or_record.objectMeasurements.measurements, var: t)
-
-    lido_objectmeasurements(
-        or_record.objectMeasurements.extent_measurements,
-        t.type,
-        t.unit,
-        t.value
-    )
-
-end
-
-lido_term(
-    descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
-    or_record.production.type
-)
-
-do list(path: or_record.production.actors, var: t)
-
-    lido_actor(
-        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
-        t.actorID,
-        t.nameActorSet,
-        -id_source: CollectiveAccess,
-        -id_type: local,
-        -role: t.attributionQualifierActor,
-        -name_pref: alternate
-    )
-
-    if exists(t.viaf.guid)
-
-        lido_basenameset(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$append,
-            't.viaf.skos:prefLabel',
-            -value_pref: preferred,
-            -value_lang: nl,
-            -value_type: VIAF,
-            -source: t.viaf.guid,
-            -source_lang: nl
-        )
-
-        lido_baseid(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
-            t.viaf.guid,
-            -source: VIAF,
-            -type: URI
-        )
-
-    end
-
-end
-
-do list(path: or_record.production.eventDate.dates, var: t)
-
-    lido_date(
-        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-        -earliest_date: t.value
-    )
-
-end
-
-do list(path: or_record.production.eventMaterialsTech.materials)
-
-    lido_term(
-        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.$append,
-        t.value
-    )
-
-    if exists(t.aat.id)
-        lido_term(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.$append,
-            t.value,
-            -conceptid: t.aat.uri,
-            -source: AAT,
-            -type: URI,
-            #-lang: t.lang,
-            -pref: preferred
-        )
-    end
-
-    add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.materialsTech.termMaterialsTech.*.type, 'material')
-
-end
-
-
-do list(path: or_record.subjectConcept.term, var: t)
-
-    lido_term(
-            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept,
-            t.value
-    )
-
-    if exists(t.aat.id)
-        lido_term(
-            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept,
-            t.value,
-            -conceptid: t.aat.uri,
-            -source: AAT,
-            -type: URI,
-            #-lang: t.lang,
-            -pref: preferred
-        )
-    end
-
-end
-
-lido_basenameset(
-    administrativeMetadata.recordWrap.recordSource.legalBodyName,
-    or_record.legalBodyName
-)
-
-lido_basevalue(
-    administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
-    or_record.legalBodyWeblink
-)
-
-lido_baseid(
-    administrativeMetadata.recordWrap.recordID,
-    or_record.recordID.source.value,
-    -type: local
-)
-
-lido_baseid(
-    administrativeMetadata.recordWrap.recordID,
-    or_record.recordID.vkc.value,
-    -type: VKC
-)
-
-lido_term(
-    administrativeMetadata.recordWrap.recordType,
-    or_record.recordType.term,
-    -conceptid: or_record.recordType.id,
-    -type: local,
-    -source: AAT,
-)
-
-add_field(descriptiveMetadata.lang, 'nl')
-add_field(administrativeMetadata.lang, 'nl')
+### Remove the 'or_record' structure
 
 remove_field(or_record)
