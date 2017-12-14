@@ -13,8 +13,7 @@
     copy_field(_metadata.object_number, or_record.object_number)
     copy_field(_metadata.object_category, or_record.object_category)
     copy_field('_metadata.object_category\.lref', or_record.object_category_id)
-    copy_field(_metadata.Object_name.object_name, or_record.object_name)
-    copy_field('_metadata.Object_name.object_name\.lref', or_record.object_id)
+    copy_field(_metadata.Object_name, or_record.object_name)
     copy_field(_metadata.Titel_translation, or_record.title_translation)
     copy_field(_metadata.Title, or_record.title)
     copy_field('_metadata.institution\.name', or_record.institution)
@@ -227,12 +226,12 @@
 
         # Value in Adlib
 
-        if all_match(c.value, '.*\S.*')
+        if all_match(c.object_name.value, '.*\S.*')
 
             lido_term(
                 descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-                c.value,
-                -conceptid: or_record.object_category_id,
+                c.object_name.value,
+                -conceptid: 'c.object_name\.lref',
                 -type: local,
                 -source: Adlib,
                 -pref: preferred,
@@ -243,7 +242,7 @@
     
         # Corresponding value in AAT
 
-        copy_field(c.value, c.aat)
+        copy_field(c.object_name.value, c.aat)
 
         lookup_in_store(c.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 

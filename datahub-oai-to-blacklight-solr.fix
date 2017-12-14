@@ -114,29 +114,37 @@ end
 
 # Artwork_type
 # Facet
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.0.term', var:type)
-    if all_match('type.pref', 'alternate')
-        copy_field(type._, artwork_type.$append)
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
+    do list(path: 't.term', var:type)
+        if all_match('type.pref', 'alternate')
+            copy_field(type._, artwork_type.$append)
+        end
     end
 end
 # Display
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.0.term', var:type)
-    if all_match('type.pref', 'preferred')
-        copy_field(type._, artwork_type_display.$append)
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
+    do list(path: 't.term', var:type)
+        if all_match('type.pref', 'preferred')
+            copy_field(type._, artwork_type_display.$append)
+        end
     end
 end
 
 # Artwork_subtype
 # Facet
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification.0.term', var:classification) 
-    if all_match('classification.pref', 'alternate')
-        copy_field(classification._, artwork_subtype.$append)
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c) 
+    do list(path: 'c.term', var:classification)
+        if all_match('classification.pref', 'alternate')
+            copy_field(classification._, artwork_subtype.$append)
+        end
     end
 end
 # Display
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification.0.term', var:classification) 
-    if all_match('classification.pref', 'preferred')
-        copy_field(classification._, artwork_subtype_display.$append)
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c)
+    do list(path: 'c.term', var:classification)
+        if all_match('classification.pref', 'preferred')
+            copy_field(classification._, artwork_subtype_display.$append)
+        end
     end
 end
 
