@@ -417,7 +417,7 @@
 
                     copy_field(actor.relationship_type_code, or_record.role)
 
-                    lookup_in_store(or_record.role, DBI, data_source: "dbi:SQLite:/tmp/import.ca.sqlite")
+                    lookup_in_store(or_record.role, DBI, data_source: "dbi:SQLite:/tmp/import.CA_UTF8.sqlite")
 
                     lido_term(
                         descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor,
@@ -565,7 +565,9 @@
 
                     end
                 end
+            end
 
+<<<<<<< Updated upstream
             else
 
                 if all_match(or_record.date.$last, '^[0-9]*$')
@@ -606,7 +608,7 @@
 
                     copy_field(century, or_record.century_en)
 
-                    lookup_in_store(or_record.century_en, DBI, data_source: "dbi:SQLite:/tmp/import.ca.sqlite")
+                    lookup_in_store(or_record.century_en, DBI, data_source: "dbi:SQLite:/tmp/import.CA_UTF8.sqlite")
 
                     lido_term(
                         descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
@@ -614,7 +616,11 @@
                         -lang: nl
                     )
 
-                end
+                lido_term(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+                    or_record.century,
+                    -lang: nl
+                )
 
             else
 
@@ -735,7 +741,7 @@
 
                     copy_field(subject.value, or_record.item)
 
-                    lookup_in_store(or_record.item, DBI, data_source: "dbi:SQLite:/tmp/import.ca.sqlite")
+                    lookup_in_store(or_record.item, DBI, data_source: "dbi:SQLite:/tmp/import.CA_UTF8.sqlite")
 
                     lido_term(
                         descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
