@@ -357,7 +357,7 @@
 
     else
 
-        unless is_null(or_record.description.description)
+        if all_match(or_record.description.description, '.*\S.*')
 
             lido_descriptivenote(
                 descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
