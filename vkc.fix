@@ -671,6 +671,10 @@
 end
 
 
+### Add lang attributes to descriptiveMetadata and administrativeMetadata
+
+add_field(descriptiveMetadata.lang, nl)
+add_field(administrativeMetadata.lang, nl)
 
 ### Remove the 'or_record' structure
 
