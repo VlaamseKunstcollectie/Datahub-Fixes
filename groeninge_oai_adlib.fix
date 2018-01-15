@@ -581,16 +581,26 @@
 
 # LIDO periodName
 
-    if all_match(or_record.production_period.value, '.*\S.*')
+    unless is_array(or_record.production_period) 
+        move_field(or_record.production_period, or_record.tmp)
+        set_array(or_record.production_period)
+        move_field(or_record.tmp, or_record.production_period.$last)
+    end
 
-        lido_term(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
-            or_record.production_period.value,
-            -conceptid: or_record.production_period_id,
-            -lang: nl,
-            -source: Adlib,
-            -type: local
-        )
+    do list (path: or_record.production_period, var: c)
+
+        if all_match(c.value, '.*\S.*')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                c.value,
+                -conceptid: or_record.production_period_id,
+                -lang: nl,
+                -source: Adlib,
+                -type: local
+            )
+
+        end
 
     end
 
