@@ -587,14 +587,26 @@
         move_field(or_record.tmp, or_record.production_period.$last)
     end
 
-    do list (path: or_record.production_period, var: c)
+    unless is_array(or_record.production_period_id) 
+        move_field(or_record.production_period_id, or_record.tmp)
+        set_array(or_record.production_period_id)
+        move_field(or_record.tmp, or_record.production_period_id.$last)
+    end
 
-        if all_match(c.value, '.*\S.*')
+    do list (path: or_record.production_period_id, var: c)
+        copy_field(c, or_record.production_period.$append.id)
+    end
+
+    assoc(or_record.period, or_record.production_period.*.value, or_record.production_period.*.id)
+
+    do each (path: or_record.period, var: c)
+
+        if all_match(c.key, '.*\S.*')
 
             lido_term(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
-                c.value,
-                -conceptid: or_record.production_period_id,
+                c.key,
+                -conceptid: c.value,
                 -lang: nl,
                 -source: Adlib,
                 -type: local

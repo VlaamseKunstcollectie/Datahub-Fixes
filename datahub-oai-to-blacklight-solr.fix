@@ -83,9 +83,11 @@ copy_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate
 # Period - use NL field
 do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.periodName, var:per)
     if all_match('per.term.*.lang', 'nl')
-        copy_field('per.term.*._', "period")
+        copy_field('per.term.*._', period.$append)
     end
 end
+
+sort_field(period)
 
 # Repository
 copy_field('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', 'repository')
