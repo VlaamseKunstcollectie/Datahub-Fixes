@@ -115,13 +115,23 @@ do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectMeas
             copy_field(el.measurementUnit.0._, dimensionsw.$append)
             join_field(dimensionsw, ' ')
         end
+        if all_match('el.measurementType.0._', 'diameter')
+            copy_field(el.measurementValue._, dimensionsd.$append)
+            copy_field(el.measurementUnit.0._, dimensionsd.$append)
+            join_field(dimensionsd, ' ')
+        end
     end
 end
+
 copy_field(dimensionsh, dimensions.$append)
 remove_field(dimensionsh)
 copy_field(dimensionsw, dimensions.$append)
 remove_field(dimensionsw)
 join_field(dimensions, ' x ')
+
+append(dimensionsd, " (diameter)")
+copy_field(dimensionsd, dimensions.$append)
+remove_field(dimensionsd)
 
 # Category
 do list(path: '_metadata.descriptiveMetadata.0.objectRelationWrap.subjectWrap.subjectSet.0.subject.subjectConcept.0.term', var: cat)

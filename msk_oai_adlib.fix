@@ -387,7 +387,7 @@
                 set_field(c.dimension_value, n/a)
             end
 
-            unless is_null(c.dimension_type)
+            if all_match(c.dimension_type, '.*\S.*')
 
                 lido_objectmeasurements(
                     '',
