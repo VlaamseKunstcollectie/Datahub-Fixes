@@ -21,7 +21,7 @@ unless all_match(title_display, '.*\S.*')
     end
 end
 
-# Artist - use preferred
+# Artist (preferred -> creator_display, alternate -> creator)
 
 # Set the creator_role array
 
@@ -29,32 +29,46 @@ set_array(creator_role)
 set_array(tmp_creators)
 
 do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventActor', var: c)
+    set_array(tmp_creator_index)
     set_array(tmp_creator_display)
 
     # The name of the creator
 
     do list(path:c.actorInRole.actor.nameActorSet.0.appellationValue, var:creator)
         if all_match('creator.pref', 'alternate')
+            copy_field(creator._, tmp_creator_index.$append)
+        else
             copy_field(creator._, tmp_creator_display.$append)
-            copy_field(creator._, tmp_creators.$append)
         end
+        copy_field(creator._, tmp_creators.$append)
     end
 
     # The qualifier of the creator (Attributed to, Workshop of,...)
 
     unless all_match('c.actorInRole.attributionQualifierActor.$last._', 'n/a')
+        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_index.$prepend)
         copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_display.$prepend)
     end
 
+    copy_field(c.actorInRole.roleActor, tmp_creator_index.$append)
     copy_field(c.actorInRole.roleActor, tmp_creator_display.$append)
 
+    join_field(tmp_creator_index, " ")
     join_field(tmp_creator_display, " ")
 
-    # Add each creator to the field creator_display if any exists, else remove the field creator_display
-    if all_match(tmp_creator_display, '.*\S.*')
+    # Add each creator to the field creator if any exists, else remove the field creator
+    
+    if all_match(tmp_creator_index, '.*\S.*')
+        move_field(tmp_creator_index, creator_index.$append)
         move_field(tmp_creator_display, creator_display.$append)
     else
-        remove(tmp_creator_display)
+        remove(tmp_creator_index)
+        if all_match(tmp_creator_display, '.*\S.*')
+            copy_field(tmp_creator_display, creator_index.$append)
+            move_field(tmp_creator_display, creator_display.$append)
+        else
+            remove(tmp_creator_display)
+        end
     end
 
 
@@ -78,7 +92,7 @@ end
 remove_field(tmp_creators)
 
 # ? Production date
-copy_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.date.earliestDate._', 'production_date')
+copy_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.displayDate.0._', 'production_date')
 
 # Period - use NL field
 do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.periodName, var:per)
@@ -223,6 +237,7 @@ unless all_match('work_pid', 'http://*')
     remove_field('title_display')
     remove_field('creator_role')
     remove_field('creator_display')
+    remove_field('creator_index')
     remove_field('creator')
     remove_field('production_date')
     remove_field('period')
