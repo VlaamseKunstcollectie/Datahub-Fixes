@@ -164,6 +164,26 @@
                         )
                     end
 
+                    if all_match(or_record.workPid, '^http://kmska.be/')
+                        lido_baseid(
+                            objectPublishedID,
+                            or_record.workPid,
+                            -type: purl,
+                            -source: 'Koninklijk Museum voor Schone Kunsten Antwerpen',
+                            -label: workPID
+                        )
+                    end
+
+                    if all_match(or_record.workPid, '^http://kunstenenerfgoed.be/CVG/')
+                        lido_baseid(
+                            objectPublishedID,
+                            or_record.workPid,
+                            -type: purl,
+                            -source: 'Collectie Vlaamse Gemeenschap',
+                            -label: workPID
+                        )
+                    end
+
                 end
             end
 
@@ -439,7 +459,7 @@
 
                     lido_basenameset(
                         descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
-                        actor.pid._id,
+                        actor.pid.display_name,
                         -value_pref: alternate
                     )
 
@@ -610,11 +630,16 @@
 
                     lookup_in_store(or_record.century_en, DBI, data_source: "dbi:SQLite:/tmp/import.CA_UTF8.sqlite")
 
-                    lido_term(
-                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
-                        or_record.century_en.vertaling,
-                        -lang: nl
-                    )
+                    if all_match(or_record.century_en.vertaling, '.*\S.*')
+
+                        lido_term(
+                            descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                            or_record.century_en.vertaling,
+                            -lang: nl
+                        )
+
+                    end
+
                 end
 
             else
@@ -796,6 +821,16 @@
 
 add_field(descriptiveMetadata.lang, nl)
 add_field(administrativeMetadata.lang, nl)
+
+
+
+### Retain only those records that have a work PID
+
+unless all_match(or_record.workPid, '^http://')
+    retain(or_record)
+end
+
+
 
 ### Remove the 'or_record' structure
 
