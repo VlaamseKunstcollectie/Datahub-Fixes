@@ -477,7 +477,7 @@
 
             lido_basenameset(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
-                c.creator.pid._id,
+                c.creator.pid.display_name,
                 -value_pref: alternate
             )
 
