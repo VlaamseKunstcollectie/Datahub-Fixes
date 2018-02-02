@@ -21,7 +21,7 @@ unless all_match(title_display, '.*\S.*')
     end
 end
 
-# Artist (preferred -> creator_display, alternate -> creator)
+# Artist (preferred -> creator_display, alternate -> creator_index)
 
 # Set the creator_role array
 
@@ -83,6 +83,7 @@ end
 
 set_array(creator)
 do list(path: 'tmp_creators', var: c)
+    downcase(c)
     lookup_in_store(c, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
     if all_match(c.viaf_alternate, '.*\S.*')
         copy_field(c.viaf_alternate, creator.$append)
