@@ -469,6 +469,8 @@
 
         copy_field(c.creator.value, c.creator.pid)
 
+        downcase(c.creator.pid)
+
         lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
         # Preferred label from Flemish Art Collection concordance database
