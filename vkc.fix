@@ -451,6 +451,8 @@
 
                 copy_field(actor.displayname, actor.pid)
 
+                downcase(actor.pid)
+
                 lookup_in_store(actor.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
                 # Preferred label from Flemish Art Collection concordance database
