@@ -357,7 +357,7 @@
 
     else
 
-        unless is_null(or_record.description.description)
+        if all_match(or_record.description.description, '.*\S.*')
 
             lido_descriptivenote(
                 descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
@@ -387,7 +387,7 @@
                 set_field(c.dimension_value, n/a)
             end
 
-            unless is_null(c.dimension_type)
+            if all_match(c.dimension_type, '.*\S.*')
 
                 lido_objectmeasurements(
                     '',
@@ -469,6 +469,8 @@
 
         copy_field(c.creator.value, c.creator.pid)
 
+        downcase(c.creator.pid)
+
         lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
         # Preferred label from Flemish Art Collection concordance database
@@ -477,7 +479,7 @@
 
             lido_basenameset(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
-                c.creator.pid._id,
+                c.creator.pid.display_name,
                 -value_pref: alternate
             )
 
@@ -581,16 +583,38 @@
 
 # LIDO periodName
 
-    if all_match(or_record.production_period.value, '.*\S.*')
+    unless is_array(or_record.production_period) 
+        move_field(or_record.production_period, or_record.tmp)
+        set_array(or_record.production_period)
+        move_field(or_record.tmp, or_record.production_period.$last)
+    end
 
-        lido_term(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
-            or_record.production_period.value,
-            -conceptid: or_record.production_period_id,
-            -lang: nl,
-            -source: Adlib,
-            -type: local
-        )
+    unless is_array(or_record.production_period_id) 
+        move_field(or_record.production_period_id, or_record.tmp)
+        set_array(or_record.production_period_id)
+        move_field(or_record.tmp, or_record.production_period_id.$last)
+    end
+
+    do list (path: or_record.production_period_id, var: c)
+        copy_field(c, or_record.production_period.$append.id)
+    end
+
+    assoc(or_record.period, or_record.production_period.*.value, or_record.production_period.*.id)
+
+    do each (path: or_record.period, var: c)
+
+        if all_match(c.key, '.*\S.*')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                c.key,
+                -conceptid: c.value,
+                -lang: nl,
+                -source: Adlib,
+                -type: local
+            )
+
+        end
 
     end
 
