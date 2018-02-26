@@ -201,6 +201,10 @@ copy_field('_metadata.administrativeMetadata.0.recordWrap.recordID.0._', 'object
 # Description
 copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
 
+if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.1.descriptiveNoteValue.0.lang', 'nl')
+    copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.1.descriptiveNoteValue.0._', 'description')
+end
+
 # Work_pid
 copy_field('_metadata.objectPublishedID.0._', 'work_pid')
 
