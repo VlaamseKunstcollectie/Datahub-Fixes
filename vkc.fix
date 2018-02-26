@@ -20,6 +20,7 @@
     copy_field('ca_objects\.dimensions', or_record.dimensions_tmp)
     copy_field(related.ca_entities, or_record.actor_tmp)
     copy_field('ca_objects\.objectProductionDate', or_record.date_tmp)
+    copy_field('ca_objects\.datePeriod', or_record.period_tmp)
     copy_field('ca_objects\.materialInfo', or_record.physical_description_tmp)
     copy_field('ca_objects\.assocConcept', or_record.subject_tmp)
     copy_field(intrinsic.idno, or_record.object_number)
@@ -30,7 +31,7 @@
 
 # Transform only those objects that are accessible to public
 
-    if all_match(or_record.access, '1')
+#    if all_match(or_record.access, '1')
 
 
 
@@ -59,7 +60,7 @@
         #                                       pref: preferred                  Kunstenaar
         #   ca_objects.objectProductionDate  lido:displayDate                    Datering
         #   ca_objects.objectProductionDate  lido:date
-        #                                    lido:periodName                     Periode
+        #   ca_objects.datePeriod            lido:periodName                     Periode
         #   ca_objects.materialInfo          lido:displayMaterialsTech           Materiaal
         #   ca_objects.assocConcept          lido:subjectConcept                 Voorstelling
         #   intrinsic.idno                   lido:recordID                       Inventarisnummer
@@ -143,7 +144,7 @@
 
                     paste(or_record.workPid, or_record.workPid.objectWorkPidDomain, or_record.workPid.objectWorkPidID, join_char:"")
 
-                    if all_match(or_record.workPid, 'http://groeningemuseum.be/*')
+                    if all_match(or_record.workPid, '^http://groeningemuseum.be/')
                         lido_baseid(
                             objectPublishedID,
                             or_record.workPid,
@@ -153,12 +154,32 @@
                         )
                     end
 
-                    if all_match(or_record.workPid, 'http://mskgent.be/*')
+                    if all_match(or_record.workPid, '^http://mskgent.be/')
                         lido_baseid(
                             objectPublishedID,
                             or_record.workPid,
                             -type: purl,
                             -source: 'Museum voor Schone Kunsten Gent',
+                            -label: workPID
+                        )
+                    end
+
+                    if all_match(or_record.workPid, '^http://kmska.be/')
+                        lido_baseid(
+                            objectPublishedID,
+                            or_record.workPid,
+                            -type: purl,
+                            -source: 'Koninklijk Museum voor Schone Kunsten Antwerpen',
+                            -label: workPID
+                        )
+                    end
+
+                    if all_match(or_record.workPid, '^http://kunstenenerfgoed.be/CVG/')
+                        lido_baseid(
+                            objectPublishedID,
+                            or_record.workPid,
+                            -type: purl,
+                            -source: 'Collectie Vlaamse Gemeenschap',
                             -label: workPID
                         )
                     end
@@ -253,15 +274,12 @@
                 copy_field(lang.value.0, or_record.preferred_labels.$append.value_tmp)
             end
 
-            copy_field(or_record.preferred_labels.1.value_tmp.name, or_record.preferred_labels.$append.value)
-            copy_field(or_record.preferred_labels.3.value_tmp.name, or_record.preferred_labels.$append.value)
-
-            assoc(or_record.title, or_record.preferred_labels.*.key, or_record.preferred_labels.*.value)
+            assoc(or_record.title, or_record.preferred_labels.*.key, or_record.preferred_labels.*.value_tmp.name)
 
             if all_match(or_record.title.en_US, '.*\S.*')
 
                 lido_basenameset(
-                    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.$append,
+                    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
                     or_record.title.en_US,
                     -value_pref: alternate,
                     -value_lang: en
@@ -272,7 +290,7 @@
             if all_match(or_record.title.nl_BE, '.*\S.*')
 
                 lido_basenameset(
-                    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.$last,
+                    descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
                     or_record.title.nl_BE,
                     -value_pref: preferred,
                     -value_lang: nl
@@ -419,7 +437,7 @@
 
                     copy_field(actor.relationship_type_code, or_record.role)
 
-                    lookup_in_store(or_record.role, DBI, data_source: "dbi:SQLite:/tmp/import.ca.sqlite")
+                    lookup_in_store(or_record.role, DBI, data_source: "dbi:SQLite:/tmp/import.CA_UTF8.sqlite")
 
                     lido_term(
                         descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor,
@@ -433,6 +451,8 @@
 
                 copy_field(actor.displayname, actor.pid)
 
+                downcase(actor.pid)
+
                 lookup_in_store(actor.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
                 # Preferred label from Flemish Art Collection concordance database
@@ -441,7 +461,7 @@
 
                     lido_basenameset(
                         descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
-                        actor.pid._id,
+                        actor.pid.display_name,
                         -value_pref: alternate
                     )
 
@@ -494,62 +514,306 @@
                 end
             end
 
-            if all_match(or_record.date, '.*\S.*')
+            if all_match(or_record.date, '^[0-9]*$')
+                
+                prepend(or_record.date, 'n/a ')
+                
+                split_field(or_record.date, ' ')
 
                 lido_basevalue(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
-                    or_record.date
+                    or_record.date.$last,
                 )
+
+            else
+
+                if all_match(or_record.date, '.*\S.*')
+
+                    copy_field(or_record.date, or_record.date_display)
+
+                    split_field(or_record.date_display, ' ')
+
+                    if all_match(or_record.date_display.$first, '^[0-9]*$')
+                        set_field(or_record.date_type, 'n/a')
+                    else
+                        copy_field(or_record.date_display.$first, or_record.date_type)
+                    end
+
+                    do list(path: or_record.date_display, var: d)
+                        if all_match(d, '^[0-9]*$')
+                            copy_field(d, or_record.dates.$append)
+                        end
+                    end
+
+                copy_field(or_record.dates, or_record.dates_display)
+
+                join_field(or_record.dates_display, ' - ')
+
+                lido_basevalue(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+                    or_record.dates_display,
+                )
+
+                end
 
             end
 
-        # LIDO date
+            split_field(or_record.date, ' ')
 
             if all_match(or_record.date, '.*\S.*')
 
-                lido_date(
-                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                    -earliest_date: or_record.date
-                )
+                if all_match(or_record.dates.$first, '^[0-9]*$')
+                    if all_match(or_record.dates.$last, '^[0-9]*$')
+
+                        lido_date(
+                            descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                            -earliest_date: or_record.dates.$first,
+                            -earliest_date_type: 'or_record.date_type',
+                            -latest_date: or_record.dates.$last,
+                            -latest_date_type: 'or_record.date_type'
+                        )
+
+                    else
+
+                        if all_match(or_record.dates.$first, '^[0-9]*$')
+
+                            lido_date(
+                                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                                -earliest_date: or_record.dates.$first,
+                                -earliest_date_type: 'or_record.date_type'
+                            )
+
+                        end
+
+                    end
+                end
+
+            else
+
+                if all_match(or_record.date.$last, '^[0-9]*$')
+
+                    lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -earliest_date: or_record.date.$last,
+                        -earliest_date_type: 'or_record.date.$first'
+                    )
+
+                end
+
+            lido_date(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                -earliest_date: or_record.date.$last,
+                -earliest_date_type: 'or_record.date.$first'
+            )
 
             end
 
         # LIDO periodName
 
-            copy_field(or_record.date, or_record.period)
-
-            split_field(or_record.period, '')
-
-            paste(or_record.period_tmp, or_record.period.0, or_record.period.1, join_char:'')
-
-            unless all_match(or_record.period.3, '0')
-                set_field(or_record.add_one, '1')
-                copy_field(or_record.period_tmp, or_record.century.$append)
-                copy_field(or_record.add_one, or_record.century.$append)
-                sum(or_record.century)
-            end
-
-            if all_match(or_record.century, '1')
-                append(or_record.century, "ste eeuw")
-            else
-                if all_match(or_record.century, '8')
-                    append(or_record.century, "ste eeuw")
-                else
-                    if all_match (or_record.century, '2*')
-                        append(or_record.century, "ste eeuw")
-                    else
-                        append(or_record.century, "de eeuw")
+            do each(path: or_record.period_tmp, var: id)
+                do each(path: id.value, var: lang)
+                    do each(path: lang.value, var: datePeriod)
+                        copy_field(datePeriod.value, or_record.period.$append)
                     end
                 end
             end
 
-            if all_match(or_record.century, '.*\S.*')
+            if all_match(or_record.period.$first, '.*\S.*')
 
-                lido_term(
-                    descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
-                    or_record.century,
-                    -lang: nl
-                )
+                do list(path: or_record.period, var: century)
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                        century,
+                        -lang: en
+                    )
+
+                    copy_field(century, or_record.century_en)
+
+                    lookup_in_store(or_record.century_en, DBI, data_source: "dbi:SQLite:/tmp/import.CA_UTF8.sqlite")
+
+                    if all_match(or_record.century_en.vertaling, '.*\S.*')
+
+                        lido_term(
+                            descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                            or_record.century_en.vertaling,
+                            -lang: nl
+                        )
+
+                    end
+
+                end
+
+            else
+
+                if all_match(or_record.date.$last, '^[0-9]*$')
+
+                    copy_field(or_record.date.$last, or_record.period)
+
+                    split_field(or_record.period, '')
+
+                    paste(or_record.period_tmp, or_record.period.0, or_record.period.1, join_char:'')
+
+                    paste(or_record.period_tmp2, or_record.period.2, or_record.period.3, join_char:'')
+
+                    if all_match(or_record.period_tmp2, '00')
+                        copy_field(or_record.period_tmp, or_record.century)
+                    else
+                        set_field(or_record.add_one, '1')
+                        copy_field(or_record.period_tmp, or_record.century.$append)
+                        copy_field(or_record.add_one, or_record.century.$append)
+                        sum(or_record.century)
+                    end
+
+                    if all_match(or_record.century, '^[1]$')
+                        append(or_record.century, "ste eeuw")
+                    else
+                        if all_match(or_record.century, '^1')
+                            append(or_record.century, "de eeuw")
+                        else                
+                            if all_match(or_record.century, '^[8]$')
+                                append(or_record.century, "ste eeuw")
+                            else
+                                if all_match(or_record.century, '^[2]$')
+                                    append(or_record.century, "de eeuw")
+                                else
+                                    if all_match (or_record.century, '^2')
+                                        append(or_record.century, "ste eeuw")
+                                    else
+                                        append(or_record.century, "de eeuw")
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    if all_match(or_record.century, '.*\S.*')
+
+                        lido_term(
+                            descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+                            or_record.century,
+                            -lang: nl
+                        )
+
+                    end
+
+                else
+
+                    if all_match(or_record.dates.$first, '^[0-9]*$')
+
+                        copy_field(or_record.dates.$first, or_record.period)
+
+                        split_field(or_record.period, '')
+
+                        paste(or_record.period_tmp, or_record.period.0, or_record.period.1, join_char:'')
+
+                        paste(or_record.period_tmp2, or_record.period.2, or_record.period.3, join_char:'')
+
+                        if all_match(or_record.period_tmp2, '00')
+                            copy_field(or_record.period_tmp, or_record.century)
+                        else
+                            set_field(or_record.add_one, '1')
+                            copy_field(or_record.period_tmp, or_record.century.$append)
+                            copy_field(or_record.add_one, or_record.century.$append)
+                            sum(or_record.century)
+                        end
+
+                        if all_match(or_record.century, '^[1]$')
+                            append(or_record.century, "ste eeuw")
+                        else
+                            if all_match(or_record.century, '^1')
+                                append(or_record.century, "de eeuw")
+                            else                
+                                if all_match(or_record.century, '^[8]$')
+                                    append(or_record.century, "ste eeuw")
+                                else
+                                    if all_match(or_record.century, '^[2]$')
+                                        append(or_record.century, "de eeuw")
+                                    else
+                                        if all_match (or_record.century, '^2')
+                                            append(or_record.century, "ste eeuw")
+                                        else
+                                            append(or_record.century, "de eeuw")
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        if all_match(or_record.century, '.*\S.*')
+
+                            lido_term(
+                                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+                                or_record.century,
+                                -lang: nl
+                            )
+
+                        end
+
+                    end
+
+                    if all_match(or_record.dates.$last, '^[0-9]*$')
+
+                        unless in(or_record.dates.$first, or_record.dates.$last)
+
+                            copy_field(or_record.dates.$last, or_record.period)
+
+                            split_field(or_record.period, '')
+
+                            paste(or_record.period_tmp, or_record.period.0, or_record.period.1, join_char:'')
+
+                            paste(or_record.period_tmp2, or_record.period.2, or_record.period.3, join_char:'')
+
+                            if all_match(or_record.period_tmp2, '00')
+                                copy_field(or_record.period_tmp, or_record.century2)
+                            else
+                                set_field(or_record.add_one, '1')
+                                copy_field(or_record.period_tmp, or_record.century2.$append)
+                                copy_field(or_record.add_one, or_record.century2.$append)
+                                sum(or_record.century2)
+                            end
+
+                            if all_match(or_record.century2, '^[1]$')
+                                append(or_record.century2, "ste eeuw")
+                            else
+                                if all_match(or_record.century2, '^1')
+                                    append(or_record.century2, "de eeuw")
+                                else                
+                                    if all_match(or_record.century2, '^[8]$')
+                                        append(or_record.century2, "ste eeuw")
+                                    else
+                                        if all_match(or_record.century2, '^[2]$')
+                                            append(or_record.century2, "de eeuw")
+                                        else
+                                            if all_match (or_record.century2, '^2')
+                                                append(or_record.century2, "ste eeuw")
+                                            else
+                                                append(or_record.century2, "de eeuw")
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+
+                            if all_match(or_record.century2, '.*\S.*')
+
+                                unless in(or_record.century, or_record.century2)
+
+                                    lido_term(
+                                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                                        or_record.century2,
+                                        -lang: nl
+                                    )
+
+                                end
+
+                            end
+
+                        end
+
+                    end
+
+                end
 
             end
 
@@ -611,7 +875,7 @@
 
                     copy_field(subject.value, or_record.item)
 
-                    lookup_in_store(or_record.item, DBI, data_source: "dbi:SQLite:/tmp/import.ca.sqlite")
+                    lookup_in_store(or_record.item, DBI, data_source: "dbi:SQLite:/tmp/import.CA_UTF8.sqlite")
 
                     lido_term(
                         descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.subject.subjectConcept,
@@ -668,13 +932,23 @@
 
 
 
-end
+# end
 
 
 ### Add lang attributes to descriptiveMetadata and administrativeMetadata
 
 add_field(descriptiveMetadata.lang, nl)
 add_field(administrativeMetadata.lang, nl)
+
+
+
+### Retain only those records that have a work PID
+
+unless all_match(or_record.workPid, '^http://')
+    retain(or_record)
+end
+
+
 
 ### Remove the 'or_record' structure
 
