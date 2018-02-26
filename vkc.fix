@@ -697,6 +697,122 @@
 
                     end
 
+                else
+
+                    if all_match(or_record.dates.$first, '^[0-9]*$')
+
+                        copy_field(or_record.dates.$first, or_record.period)
+
+                        split_field(or_record.period, '')
+
+                        paste(or_record.period_tmp, or_record.period.0, or_record.period.1, join_char:'')
+
+                        paste(or_record.period_tmp2, or_record.period.2, or_record.period.3, join_char:'')
+
+                        if all_match(or_record.period_tmp2, '00')
+                            copy_field(or_record.period_tmp, or_record.century)
+                        else
+                            set_field(or_record.add_one, '1')
+                            copy_field(or_record.period_tmp, or_record.century.$append)
+                            copy_field(or_record.add_one, or_record.century.$append)
+                            sum(or_record.century)
+                        end
+
+                        if all_match(or_record.century, '^[1]$')
+                            append(or_record.century, "ste eeuw")
+                        else
+                            if all_match(or_record.century, '^1')
+                                append(or_record.century, "de eeuw")
+                            else                
+                                if all_match(or_record.century, '^[8]$')
+                                    append(or_record.century, "ste eeuw")
+                                else
+                                    if all_match(or_record.century, '^[2]$')
+                                        append(or_record.century, "de eeuw")
+                                    else
+                                        if all_match (or_record.century, '^2')
+                                            append(or_record.century, "ste eeuw")
+                                        else
+                                            append(or_record.century, "de eeuw")
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        if all_match(or_record.century, '.*\S.*')
+
+                            lido_term(
+                                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+                                or_record.century,
+                                -lang: nl
+                            )
+
+                        end
+
+                    end
+
+                    if all_match(or_record.dates.$last, '^[0-9]*$')
+
+                        unless in(or_record.dates.$first, or_record.dates.$last)
+
+                            copy_field(or_record.dates.$last, or_record.period)
+
+                            split_field(or_record.period, '')
+
+                            paste(or_record.period_tmp, or_record.period.0, or_record.period.1, join_char:'')
+
+                            paste(or_record.period_tmp2, or_record.period.2, or_record.period.3, join_char:'')
+
+                            if all_match(or_record.period_tmp2, '00')
+                                copy_field(or_record.period_tmp, or_record.century2)
+                            else
+                                set_field(or_record.add_one, '1')
+                                copy_field(or_record.period_tmp, or_record.century2.$append)
+                                copy_field(or_record.add_one, or_record.century2.$append)
+                                sum(or_record.century2)
+                            end
+
+                            if all_match(or_record.century2, '^[1]$')
+                                append(or_record.century2, "ste eeuw")
+                            else
+                                if all_match(or_record.century2, '^1')
+                                    append(or_record.century2, "de eeuw")
+                                else                
+                                    if all_match(or_record.century2, '^[8]$')
+                                        append(or_record.century2, "ste eeuw")
+                                    else
+                                        if all_match(or_record.century2, '^[2]$')
+                                            append(or_record.century2, "de eeuw")
+                                        else
+                                            if all_match (or_record.century2, '^2')
+                                                append(or_record.century2, "ste eeuw")
+                                            else
+                                                append(or_record.century2, "de eeuw")
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+
+                            if all_match(or_record.century2, '.*\S.*')
+
+                                unless in(or_record.century, or_record.century2)
+
+                                    lido_term(
+                                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                                        or_record.century2,
+                                        -lang: nl
+                                    )
+
+                                end
+
+                            end
+
+                        end
+
+                    end
+
                 end
 
             end
