@@ -8,3 +8,6 @@ catmandu import CSV to DBI --data_source dbi:SQLite:/tmp/import.CREATORS_UTF8.sq
 
 echo "Generating AAT vocabulary.";
 catmandu import CSV to DBI --data_source dbi:SQLite:/tmp/import.AAT_UTF8.sqlite < ~/workspace/authority-files/AAT_UTF8.csv
+
+echo "Generating CA vocabulary.";
+catmandu import CSV to DBI --data_source dbi:SQLite:/tmp/import.CA_UTF8.sqlite < ~/workspace/authority-files/CA_UTF8.csv
