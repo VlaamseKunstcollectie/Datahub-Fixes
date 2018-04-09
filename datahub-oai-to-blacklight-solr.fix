@@ -92,8 +92,12 @@ end
 
 remove_field(tmp_creators)
 
-# ? Production date
-copy_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.displayDate.0._', 'production_date')
+# Production date
+do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.displayDate, var:dat)
+    copy_field(dat._, production_date.$append)
+end
+
+sort_field(production_date)
 
 # Period - use NL field
 do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.periodName, var:per)
