@@ -521,65 +521,6 @@
 
     end
 
-# LIDO displayDate
-
-    if all_match('or_record.production_date.production\.date\.start', '.*\S.*')
-
-        if all_match('or_record.production_date.production\.date\.end', '.*\S.*')
-
-            paste(or_record.displayDate, 'or_record.production_date.production\.date\.start', 'or_record.production_date.production\.date\.end', join_char:' - ')
-
-        else
-
-            copy_field('or_record.production_date.production\.date\.start', or_record.displayDate)
-
-        end
-
-        if all_match('or_record.production_date.production\.date\.start\.prec', circa)
-            paste(or_record.displayDate, 'or_record.production_date.production\.date\.start\.prec', or_record.displayDate)
-        end
-
-        lido_basevalue(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
-            or_record.displayDate
-        )
-
-    end
-
-# LIDO date
-
-    unless all_match('or_record.production_date.production\.date\.start\.prec', '.*\S.*')
-        set_field('or_record.production_date.production\.date\.start\.prec', n/a)
-    end
-
-    unless all_match('or_record.production_date.production\.date\.end\.prec', '.*\S.*')
-        set_field('or_record.production_date.production\.date\.end\.prec', n/a)
-    end
-
-    if all_match('or_record.production_date.production\.date\.start', '.*\S.*')
-
-        if all_match('or_record.production_date.production\.date\.end', '.*\S.*')
-
-            lido_date(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -earliest_date: 'or_record.production_date.production\.date\.start',
-                -earliest_date_type: 'or_record.production_date.production\.date\.start\.prec',
-                -latest_date: 'or_record.production_date.production\.date\.end',
-                -latest_date_type: 'or_record.production_date.production\.date\.end\.prec'
-            )
-
-        else
-
-            lido_date(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -earliest_date: 'or_record.production_date.production\.date\.start',
-                -earliest_date_type: 'or_record.production_date.production\.date\.start\.prec'
-            )
-
-        end
-
-    end
-
 # LIDO periodName
 
     unless is_array(or_record.production_period) 
@@ -688,6 +629,124 @@
                 -value_pref: preferred,
                 -value_lang: nl
             )
+
+    end
+
+# LIDO displayDate
+
+    unless is_array(or_record.production_date) 
+        move_field(or_record.production_date, or_record.tmp)
+        set_array(or_record.production_date)
+        move_field(or_record.tmp, or_record.production_date.$last)
+    end
+
+    do list(path:or_record.production_date, var:d)
+
+        if all_match('d.production\.date\.start', '.*\S.*')
+
+            if all_match('d.production\.date\.end', '.*\S.*')
+
+                if all_match('d.production\.date\.end\.prec', '.*\S.*')
+
+                    paste(or_record.date_end, 'd.production\.date\.end\.prec', 'd.production\.date\.end')
+
+                    paste(or_record.displayDate, 'd.production\.date\.start', or_record.date_end, join_char:' - ')
+
+                else
+
+                    paste(or_record.displayDate, 'or_record.production_date.production\.date\.start', 'or_record.production_date.production\.date\.end', join_char:' - ')
+
+                end
+
+            else
+
+                copy_field('d.production\.date\.start', or_record.displayDate)
+
+            end
+
+            if all_match('d.production\.date\.start\.prec', '.*\S.*')
+                paste(or_record.displayDate, 'd.production\.date\.start\.prec', or_record.displayDate)
+            end
+
+        else
+
+            if all_match('d.production\.date\.end', '.*\S.*')
+
+                copy_field('d.production\.date\.end', or_record.displayDate)
+
+                if all_match('d.production\.date\.end\.prec', '.*\S.*')
+                    paste(or_record.displayDate, 'd.production\.date\.end\.prec', or_record.displayDate)
+                end
+
+            end
+
+        end
+
+        lido_basevalue(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+            or_record.displayDate
+        )
+
+    end
+
+# LIDO date
+
+    do list(path:or_record.production_date, var:d)
+
+        if all_match(or_record.counter, '.*\S.*')
+    
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                or_record.event_type
+            )
+
+        end
+
+        unless all_match('d.production\.date\.start\.prec', '.*\S.*')
+            set_field('d.production\.date\.start\.prec', n/a)
+        end
+
+        unless all_match('d.production\.date\.end\.prec', '.*\S.*')
+            set_field('d.production\.date\.end\.prec', n/a)
+        end
+
+        if all_match('d.production\.date\.start', '.*\S.*')
+
+            if all_match('d.production\.date\.end', '.*\S.*')
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -earliest_date: 'd.production\.date\.start',
+                    -earliest_date_type: 'd.production\.date\.start\.prec',
+                    -latest_date: 'd.production\.date\.end',
+                    -latest_date_type: 'd.production\.date\.end\.prec'
+                )
+
+            else
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -earliest_date: 'd.production\.date\.start',
+                    -earliest_date_type: 'd.production\.date\.start\.prec'
+                )
+
+            end
+
+        else
+
+            if all_match('d.production\.date\.end', '.*\S.*')
+
+                lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -latest_date: 'd.production\.date\.end',
+                        -latest_date_type: 'd.production\.date\.end\.prec'
+                    )
+
+            end
+
+        end
+
+        set_field(or_record.counter, "more than one")
 
     end
 
