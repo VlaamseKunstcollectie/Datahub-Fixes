@@ -654,7 +654,7 @@
 
                 else
 
-                    paste(or_record.displayDate, 'or_record.production_date.production\.date\.start', 'or_record.production_date.production\.date\.end', join_char:' - ')
+                    paste(or_record.displayDate, 'd.production\.date\.start', 'd.production\.date\.end', join_char:' - ')
 
                 end
 
