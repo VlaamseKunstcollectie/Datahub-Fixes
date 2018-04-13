@@ -667,15 +667,23 @@
 
             if all_match('d.production\.date\.end', '.*\S.*')
 
-                if all_match('d.production\.date\.end\.prec', '.*\S.*')
+                if in('d.production\.date\.start', 'd.production\.date\.end')
 
-                    paste(or_record.date_end, 'd.production\.date\.end\.prec', 'd.production\.date\.end')
-
-                    paste(or_record.displayDate, 'd.production\.date\.start', or_record.date_end, join_char:' - ')
-
+                    copy_field('d.production\.date\.start', or_record.displayDate)
+                    
                 else
 
-                    paste(or_record.displayDate, 'd.production\.date\.start', 'd.production\.date\.end', join_char:' - ')
+                    if all_match('d.production\.date\.end\.prec', '.*\S.*')
+
+                        paste(or_record.date_end, 'd.production\.date\.end\.prec', 'd.production\.date\.end')
+
+                        paste(or_record.displayDate, 'd.production\.date\.start', or_record.date_end, join_char:' - ')
+
+                    else
+
+                        paste(or_record.displayDate, 'd.production\.date\.start', 'd.production\.date\.end', join_char:' - ')
+
+                    end
 
                 end
 
