@@ -223,6 +223,11 @@ do list(path: '_metadata.lidoRecID', var:lidoRecID)
     end
 end
 
+# Representation_pid
+copy_field('work_pid', 'representation_pid')
+parse_text('representation_pid', '(.*)/collection/work/id/(.*)')
+join_field('representation_pid', '/collection/work/representation/')
+
 # ID
 #
 # The ID in Solr is based on the data_pid. The data_pid is converted to a string
