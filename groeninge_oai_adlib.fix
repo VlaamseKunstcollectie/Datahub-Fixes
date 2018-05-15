@@ -462,6 +462,11 @@
             set_field('c.creator\.date_of_death', 'n/a')
         end
 
+        if all_match('c.creator\.qualifier', '.*\S.*')
+            set_field('c.creator\.date_of_birth', 'n/a')
+            set_field('c.creator\.date_of_death', 'n/a')
+        end
+
         if all_match(c.creator.value, '.*\S.*')
 
             lido_actor(
@@ -865,6 +870,43 @@
         administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
         or_record.LegalBodyWebLink
     )
+
+
+## LIDO resourceWrap
+
+# LIDO resourceID & linkResource
+
+    do list(path:or_record.dataPid, var: c)
+
+        if all_match('c.digital_reference\.description.value', 'datapid')
+
+            copy_field(c.digital_reference, or_record.representationPid)
+            parse_text(or_record.representationPid, '(.*)/collection/work/data/(.*)')
+            join_field(or_record.representationPid, '/collection/work/representation/')
+
+            copy_field(or_record.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
+            add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
+
+            copy_field(or_record.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+            
+        end
+
+    end
+
+# LIDO rightsResource
+
+    copy_field(or_record.object_number, or_record.identificator)
+
+    lookup_in_store(or_record.identificator, DBI, data_source: 'dbi:SQLite:/tmp/import.RIGHTS.sqlite')
+
+    if all_match(or_record.identificator.rights, '.*\S.*')
+
+        lido_basenameset(
+            administrativeMetadata.resourceWrap.resourceSet.rightsResource.rightsHolder.legalBodyName,
+            or_record.identificator.rights
+        )
+
+    end
 
 
 
