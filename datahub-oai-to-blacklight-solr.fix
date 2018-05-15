@@ -224,9 +224,7 @@ do list(path: '_metadata.lidoRecID', var:lidoRecID)
 end
 
 # Representation_pid
-copy_field('work_pid', 'representation_pid')
-parse_text('representation_pid', '(.*)/collection/work/id/(.*)')
-join_field('representation_pid', '/collection/work/representation/')
+copy_field('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resourceID', 'representation_pid')
 
 # ID
 #
