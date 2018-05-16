@@ -462,7 +462,7 @@
             set_field('c.creator\.date_of_death', 'n/a')
         end
 
-        if all_match('c.creator\.qualifier', '.*\S.*')
+        unless all_match('c.creator\.qualifier', 'n/a')
             set_field('c.creator\.date_of_birth', 'n/a')
             set_field('c.creator\.date_of_death', 'n/a')
         end
