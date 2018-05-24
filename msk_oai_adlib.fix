@@ -118,7 +118,7 @@
             lidoRecID,
             or_record.identificator.dataPid,
             -type: purl,
-            -source: 'Musea Brugge - Groeningemuseum',
+            -source: 'Museum voor Schone Kunsten Gent',
             -label: dataPID,
             -pref: alternate
         )
@@ -437,6 +437,11 @@
         end
 
         unless all_match('c.creator\.date_of_death', '.*\S.*')
+            set_field('c.creator\.date_of_death', 'n/a')
+        end
+
+        unless all_match('c.creator\.qualifier', 'n/a')
+            set_field('c.creator\.date_of_birth', 'n/a')
             set_field('c.creator\.date_of_death', 'n/a')
         end
 
@@ -785,6 +790,8 @@
 
 ### LIDO administrativeMetadata
 
+## LIDO recordWrap
+
 # LIDO recordID
 
     if all_match(or_record.object_number, '.*\S.*')
@@ -844,6 +851,37 @@
         administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
         or_record.LegalBodyWebLink
     )
+
+
+## LIDO resourceWrap
+
+# LIDO resourceID & linkResource
+
+    if all_match(or_record.identificator.dataPid, '.*\S.*')
+
+        copy_field('or_record.identificator.dataPid', 'or_record.identificator.representationPid')
+        parse_text('or_record.identificator.representationPid', '(.*)/collection/work/data/(.*)')
+        join_field('or_record.identificator.representationPid', '/collection/work/representation/')
+
+        copy_field(or_record.identificator.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
+
+        copy_field(or_record.identificator.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+        
+    end
+
+# LIDO rightsResource
+
+    lookup_in_store(or_record.identificator, DBI, data_source: 'dbi:SQLite:/tmp/import.RIGHTS.sqlite')
+
+    if all_match(or_record.identificator.rights, '.*\S.*')
+
+        lido_basenameset(
+            administrativeMetadata.resourceWrap.resourceSet.rightsResource.rightsHolder.legalBodyName,
+            or_record.identificator.rights
+        )
+
+    end
 
 
 
