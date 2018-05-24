@@ -1,105 +1,323 @@
-# Catmandu Fix script to convert LIDO XML data into JSON data for Solr
-# (MSK data version)
+# Catmandu Fix script
 #
-# USAGE
-# Convert to JSON
-# catmandu convert OAI --url "http://datahub_ubuntu:8000/oai/" --metadataPrefx oai_lido --handler lido to JSON --pretty 1 --fix oai.fix > out-fix.json && cat out-fix.json
+# Convert data from the VKC Datahub to the VKC Arthub.
 #
-# Import into Solr
-# catmandu import OAI --url "http://datahub_ubuntu:8000/oai/" --metadataPrefx oai_lido --handler lido --fix oai.fix to pbsolr
+# This Fix script will take LIDO XML records as an input and transform
+# them into JSON objects that can be uploaded into an Apache Solr store.
+#
+# The Solr schema has been optimised for Project Blacklight (http://projectblacklight.org).
+# The JSON objects should conform to the schema.
+#
+# See: https://github.com/VlaamseKunstcollectie/Arthub-Frontend/tree/master/jetty/solr
+# 
+# Usage:
+#
+#  $ catmandu convert OAI --url "http://endpoint/oai/" --metadataPrefix oai_lido 
+#    --handler lido to JSON --pretty 1 --fix datahub-oai-to-blacklight-solr.fix > out.json
+#
+# In order to import data into the Solr core, create a pipeline and use the Datahub::Factory:
+#
+# see: 
+#
+# arthub.ini:
+#
+#    [Indexer]
+#    plugin = Solr
+#
+#    [plugin_indexer_Solr]
+#    file_name = '/tmp/bulk.json'
+#    request_handler = 'http://datahub.box:8983/solr/blacklight-core/update/json'
+#
+# Usage:
+#
+#  $ catmandu convert OAI --url http://datahub.box/oai --handler lido 
+#    to JSON --fix datahub-oai-to-blacklight-solr.fix > /tmp/bulk.json
+#  $ dhconveyor index -p ../pipelines/arthub.ini -v
+#
 
-# Title - use NL
-# Use dutch title if exists, else use English title
+### MAPPING
+
+# @todo document the mapping between LIDO elements and Solr fields
+
+## Title - use NL
+
+#  Use dutch title if exists, else use English title
+
 do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
     if all_match('el.lang', 'nl')
         copy_field('el._', "title_display")
     end
 end
+
 unless all_match(title_display, '.*\S.*')
     do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
         copy_field('el._', "title_display")
     end
 end
 
-# Artist (preferred -> creator_display, alternate -> creator_index)
-
-# Set the creator_role array
-
+## Creators
+ 
+set_array(creator)
+set_array(creator_dod)
+set_array(creator_dob)
+set_array(creator_viaf_dod)
 set_array(creator_role)
-set_array(tmp_creators)
+set_array(creator_display)
+set_array(creator_index)
 
 do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventActor', var: c)
-    set_array(tmp_creator_index)
     set_array(tmp_creator_display)
+    set_array(tmp_creator_index)
 
-    # The name of the creator
+    # Get the name of the creator from LIDO (preferred name)
+
+    # Display the name as established by the museum.
 
     do list(path:c.actorInRole.actor.nameActorSet.0.appellationValue, var:creator)
-        if all_match('creator.pref', 'alternate')
-            copy_field(creator._, tmp_creator_index.$append)
-        else
+        if all_match('creator.pref', 'preferred')
             copy_field(creator._, tmp_creator_display.$append)
+            copy_field(creator._, tmp_creator_index.$append)
         end
-        copy_field(creator._, tmp_creators.$append)
     end
 
-    # The qualifier of the creator (Attributed to, Workshop of,...)
+    # Add VIAF vital dates & alternate name from CREATORS_UTF8.csv
 
-    unless all_match('c.actorInRole.attributionQualifierActor.$last._', 'n/a')
-        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_index.$prepend)
-        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_display.$prepend)
-    end
+    # The original LIDO data doesn't contain those. It only contains the
+    # data sanctioned by the institutions, not the actual VIAF data itself.
 
-    copy_field(c.actorInRole.roleActor, tmp_creator_index.$append)
-    copy_field(c.actorInRole.roleActor, tmp_creator_display.$append)
+    copy_field(creator_display.$last, tmp_creator_concord)
+    downcase(tmp_creator_concord)
+    lookup_in_store(tmp_creator_concord, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
-    join_field(tmp_creator_index, " ")
-    join_field(tmp_creator_display, " ")
+    # The VIAF vital dates are used to determine the copyright further on.
+    # If the institution doesn't provide vital dates, we fall back on the
+    # VIAF data.
 
-    # Add each creator to the field creator if any exists, else remove the field creator
-    
-    if all_match(tmp_creator_index, '.*\S.*')
-        move_field(tmp_creator_index, creator_index.$append)
-        move_field(tmp_creator_display, creator_display.$append)
+    if all_match(tmp_creator_concord.viaf_death, '.*\S.*')
+        copy_field(tmp_creator_concord.viaf_death, creator_viaf_dod.$append)
     else
-        remove(tmp_creator_index)
-        if all_match(tmp_creator_display, '.*\S.*')
-            copy_field(tmp_creator_display, creator_index.$append)
-            move_field(tmp_creator_display, creator_display.$append)
-        else
-            remove(tmp_creator_display)
+       add_field(tmp_viaf_death, 'n/a')
+       copy_field(tmp_viaf_death, creator_viaf_dod.$append)
+       remove_field(tmp_viaf_death)
+    end
+
+    # We store the VIAF alternate name in creator search field. 
+    # This allows users to search on name variants of the creator.
+
+    if all_match(tmp_creator_concord.viaf_alternate, '.*\S.*')
+        copy_field(tmp_creator_concord.viaf_alternate, creator.$append)
+    else
+       add_field(tmp_viaf_alternate, 'n/a')
+       copy_field(tmp_viaf_alternate, creator.$append)
+       remove_field(tmp_viaf_alternate)
+    end
+
+    remove_field(tmp_creator_concord)
+
+    # Add LIDO vital dates (birth, death) of the creator
+
+    if all_match(c.actorInRole.actor.vitalDatesActor.latestDate._, '.*\S.*')
+        copy_field(c.actorInRole.actor.vitalDatesActor.latestDate._, creator_dod.$append)
+    else
+        add_field(tmp_creator_dod, 'n/a')
+        copy_field(tmp_creator_dod, creator_dod.$append)
+        remove_field(tmp_creator_dod)
+    end
+
+    if all_match(c.actorInRole.actor.vitalDatesActor.earliestDate._, '.*\S.*')
+        copy_field(c.actorInRole.actor.vitalDatesActor.earliestDate._, creator_dob.$append)
+    else
+        add_field(tmp_creator_dob, 'n/a')
+        copy_field(tmp_creator_dob, creator_dob.$append)
+        remove_field(tmp_creator_dob)
+    end
+
+    # LIDO qualifier (copy after, attributed to,...)
+
+    if all_match('c.actorInRole.attributionQualifierActor.$last._', '.*\S.*')
+        unless all_match('c.actorInRole.attributionQualifierActor.$last._', 'n/a')
+            
+            # add the attribution to the creator_display and creator_index
+
+            copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_display.$prepend)
+            copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_index.$prepend)
+
+            # We remove the vital dates from works tentatively "attributed to" an artist
+            #
+            # Why? Because we can't reliable establish that the work was truly created
+            # by the attributed artist. i.e. The qualifier "copy after" implies
+            # that this work was created by someone else.
+            # 
+            # We reset the vital dates here because we use them later on to establish
+            # copyright. "copy after Anthony van Dyck" might have us erroneously 
+            # infer that the work was created by Anthony van Dyck while it may have
+            # actually been created in the 20th century.
+
+            set_field(creator_dob.$last, 'n/a')
+            set_field(creator_dod.$last, 'n/a')
+            set_field(creator_viaf_dod.$last, 'n/a')
         end
     end
 
+    # Creator role (Publisher, Painter,...)
 
-    # The role of the creator (if any, if roleActor is an empty node, add 'n/a' as default)
-
-    unless all_match('c.actorInRole.roleActor.$last.term.$last._', '.*\S.*')
+    if all_match('c.actorInRole.roleActor.$last.term.$last._', '.*\S.*')
+        copy_field(c.actorInRole.roleActor.$last.term.$last._, creator_role.$append)
+    else
         add_field(creator_role.$append, 'n/a')
     end
 
-    copy_field(c.actorInRole.roleActor.$last.term.$last._, creator_role.$append)
+    # Flatten creator_display & creator_index
+
+    join_field(tmp_creator_display, " ")
+    move_field(tmp_creator_display, creator_display.$append)
+
+    join_field(tmp_creator_index, " ")
+    move_field(tmp_creator_index, creator_index.$append)    
 end
 
-set_array(creator)
-do list(path: 'tmp_creators', var: c)
-    downcase(c)
-    lookup_in_store(c, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
-    if all_match(c.viaf_alternate, '.*\S.*')
-        copy_field(c.viaf_alternate, creator.$append)
-    end
-end
+## Production date
 
-remove_field(tmp_creators)
-
-# Production date
 do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.displayDate, var:dat)
     copy_field(dat._, production_date.$append)
 end
 
 sort_field(production_date)
 
-# Period - use NL field
+## Publish image
+
+# This algorithm establishes wether or not a digital representation
+# may be published based on copyright rules.
+#
+#  General rule: date of death artist < current date - 70 years
+#
+# Since we don't always know the date of death of the artist, we perform
+# additional checks in order to tentatively assert the copyright. We
+# gracefully degrade over these fields:
+#
+#  * The LIDO date of death of the longest living contributor to the work.
+#  * The VIAF date of death of the longest living contributor to the work.
+#  * The production date of the work, that is, the most recent asserted date.
+#
+# When asserting copyright via the production date of the work, we use
+# this rule: production date < current date - 150 years.
+#
+# Assuming a max life expectancy of 90 years, we rule out all works 
+# created in the past 150 years (70 after presumable death + 80 years).
+# This would rule out the edge case of a creator who died in his 90's, exactly
+# 70 years ago and made his first known works in his teenage years.
+
+add_field(publish_image, "true")
+add_field(determined, "false")
+
+set_array(pretty_dod)
+set_array(pretty_viaf_dod)
+
+do list(path: 'creators_dod', var: 'dod')
+    copy_field(dod, tmp_dod)
+    if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        copy_field(tmp_dod.$first, pretty_dod.$append)
+    else 
+        copy_field(tmp_dod, pretty_dod.$append)
+    end
+    remove_field(tmp_dod)
+end
+
+do list(path: 'creators_viaf_dod', var: 'dod')
+    copy_field(dod, tmp_dod)
+    if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        copy_field(tmp_dod.$first, pretty_viaf_dod.$append)
+    else 
+        copy_field(tmp_dod, pretty_viaf_dod.$append)
+    end
+    remove_field(tmp_dod)
+end
+
+copy_field(production_date, pretty_production_date)
+
+# The production date is often very messy. It's hard to establish
+# an exact year in most cases. Registrators often fall back a fuzzy
+# dating description. It's impossible to cover all possible variations. 
+# We only try to parse the majority of known patterns (80/20)
+#
+#   circa 1900 - circa 1910
+#   circa 1900-circa 1910
+#   circa1900-circa1910
+#   circa1900-circa 1910
+#   circa1900- circa1910
+#   circa1900 -circa1910
+#   circa 1900-circa1910
+#   circa 1900
+#   circa1900
+#   circa (1900)
+#   circa(1900)
+#   -1900
+#   - 1900
+#   1800-1900
+#   1800 - 1900
+#   1800 -1900
+#   1800- 1900
+#   (1800-1900)
+#   (1800 - 1900)
+#   (1800 -1900)
+#   (1800- 1900)
+
+if all_match(pretty_production_date.*, "(\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
+    parse_text(pretty_production_date.*, "(?:\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
+end
+
+flatten(pretty_production_date)
+
+if all_equal(determined, "false")
+    do list(path: 'pretty_dod', var: 'dod')
+        if is_number(dod)
+            if greater_than(dod, 1948)
+                set_field(publish_image, "false")
+            end
+            set_field(determined, "true")
+        end
+    end
+end
+
+if all_equal(determined, "false")
+    do list(path: 'pretty_viaf_dod', var: 'dod')
+        if is_number(dod)
+            if greater_than(dod, 1948)
+                set_field(publish_image, "false")
+            end
+            set_field(determined, "true")
+        end
+    end
+end
+
+if all_equal(determined, "false")
+    do list(path: 'pretty_production_date', var: 'pdp')
+        if is_number(pdp)
+            if greater_than(pdp, 1870)
+                set_field(publish_image, "false")
+            end
+            set_field(determined, "true")
+        end
+    end
+end
+
+if all_equal(determined, "false")
+    set_field(publish_image, "false")
+end
+
+# Remove unnecessary fields
+remove_field(creator_dob)
+remove_field(creator_dod)
+remove_field(creator_viaf_dod)
+remove_field(pretty_dod)
+remove_field(pretty_viaf_dod)
+remove_field(pretty_production_date)
+remove_field(determined)
+
+## Period - use NL field
+
 do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.periodName, var:per)
     if all_match('per.term.*.lang', 'nl')
         copy_field('per.term.*._', period.$append)
@@ -108,10 +326,12 @@ end
 
 sort_field(period)
 
-# Repository
+## Repository
+
 copy_field('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', 'repository')
 
-# Material
+## Material
+
 do list(path: '_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventMaterialsTech', var: mat)
     do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var: prefMaterial)
         if all_match('prefMaterial.pref', 'preferred')
@@ -121,7 +341,8 @@ do list(path: '_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventM
 end
 
 
-# Dimensions
+## Dimensions
+
 do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet, var:el2)
     do list(path:el2.objectMeasurements.measurementsSet, var:el)
         if all_match('el.measurementType.0._', 'hoogte')
@@ -152,7 +373,8 @@ append(dimensionsd, " (diameter)")
 copy_field(dimensionsd, dimensions.$append)
 remove_field(dimensionsd)
 
-# Category
+## Category
+
 do list(path: '_metadata.descriptiveMetadata.0.objectRelationWrap.subjectWrap.subjectSet.0.subject.subjectConcept.0.term', var: cat)
     if all_match(cat.lang, 'nl')
         copy_field(cat._, artwork_category.$append)
@@ -177,8 +399,10 @@ do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWo
     end
 end
 
-# Artwork_subtype
+## Artwork_subtype
+
 # Facet
+
 do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c) 
     do list(path: 'c.term', var:classification)
         if all_match('classification.pref', 'alternate')
@@ -186,7 +410,9 @@ do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classifi
         end
     end
 end
+
 # Display
+
 do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c)
     do list(path: 'c.term', var:classification)
         if all_match('classification.pref', 'preferred')
@@ -195,24 +421,29 @@ do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classifi
     end
 end
 
-# References
+## References
+
 copy_field('_metadata.administrativeMetadata.0.recordWrap.recordInfoSet.0.recordInfoLink.0._', 'references')
 
-# Object_number
+## Object_number
+
 copy_field('_metadata.administrativeMetadata.0.recordWrap.recordID.0._', 'object_number')
 # copy_field('_metadata.administrativeMetadata.0.recordWrap.recordID.0._', 'id')
 
-# Description
+## Description
+
 copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
 
 if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.1.descriptiveNoteValue.0.lang', 'nl')
     copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.1.descriptiveNoteValue.0._', 'description')
 end
 
-# Work_pid
+## Work_pid
+
 copy_field('_metadata.objectPublishedID.0._', 'work_pid')
 
-# Data_pid
+## Data_pid
+
 do list(path: '_metadata.lidoRecID', var:lidoRecID)
     if all_match('lidoRecID.type', 'purl')
         copy_field(lidoRecID._, data_pid)
@@ -223,11 +454,12 @@ do list(path: '_metadata.lidoRecID', var:lidoRecID)
     end
 end
 
-# Representation_pid
+## Representation_pid
+
 copy_field('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resourceID', 'representation_pid')
 
-# ID
-#
+## ID
+
 # The ID in Solr is based on the data_pid. The data_pid is converted to a string
 # which can be safely used as an identifier in Project Blacklight. The format of
 # the ID field looks like this:
@@ -269,6 +501,7 @@ unless all_match('work_pid', 'http://*')
 end
 
 # remove all original fields and only retain the ones we set
+
 remove_field('_id')
 remove_field('_identifier')
 remove_field('_status')
