@@ -57,13 +57,19 @@
 
     # production actor (production)
 
-    copy_field(DisplayName, or_record.creator.display)
+    copy_field(ConstituentID, constituent)
+    lookup_in_store(constituent, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.constituents.sqlite')
+
+    copy_field(constituent.DisplayName, or_record.creator.display)
     copy_field(NameID, or_record.creator.id)
     copy_field(Role, or_record.creator.role)
+    copy_field(constituent.AlphaSort, or_record.creator.viaf)
+    copy_field(constituent.BeginDateISO, or_record.creator.birth)
+    copy_field(constituent.EndDateISO, or_record.creator.death)
+
     trim(or_record.creator.display)
     trim(or_record.creator.pid)
     trim(or_record.creator.role)
-    copy_field(AlphaSort, or_record.creator.viaf)
 
     # production date (production)
 
@@ -278,15 +284,35 @@
 
 # LIDO eventActor
 
-    lido_actor(
-        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
-        or_record.creator.id,
-        or_record.creator.display,
-        -id_source: TMS,
-        -id_type: local,
-        -role: or_record.creator.role,
-        -name_pref: preferred
-    )
+    set_array(qualifiers, "atelier van", "kopie naar", "navolger van", "omgeving van", "school van", "toegeschreven aan", "x")
+
+    if in(or_record.creator.role, qualifiers)
+        lido_actor(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+            or_record.creator.id,
+            or_record.creator.display,
+            -id_source: TMS,
+            -id_type: local,
+            -birthdate: or_record.creator.birth,
+            -deathdate: 'or_record.creator.death',
+            -qualifier: or_record.creator.role,
+            -name_pref: preferred
+        )
+    else
+        lido_actor(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor,
+            or_record.creator.id,
+            or_record.creator.display,
+            -id_source: TMS,
+            -id_type: local,
+            -birthdate: or_record.creator.birth,
+            -deathdate: 'or_record.creator.death',
+            -role: or_record.creator.role,
+            -name_pref: preferred
+        )
+    end
+
+    remove_field(qualifiers)
 
 # Add Persistent URI data to actor
 
