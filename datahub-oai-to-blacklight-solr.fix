@@ -198,6 +198,9 @@ sort_field(production_date)
 #  * The LIDO date of death of the longest living contributor to the work.
 #  * The VIAF date of death of the longest living contributor to the work.
 #  * The production date of the work, that is, the most recent asserted date.
+#    * Check the latestDate value (should be ISO compliant)
+#    * Check the earliestDate value (should be ISO compliant)
+#    * Check the displayDate (Hail mary attempt of determining the date)
 #
 # When asserting copyright via the production date of the work, we use
 # this rule: production date < current date - 150 years.
@@ -206,14 +209,30 @@ sort_field(production_date)
 # created in the past 150 years (70 after presumable death + 80 years).
 # This would rule out the edge case of a creator who died in his 90's, exactly
 # 70 years ago and made his first known works in his teenage years.
+#
+# The algorithm is a two step process:
+#
+#  1. Clean up the date formatting of fields we're going to check against.
+#     They all need to be of the ISO format YYYY. This requires some regex fu.
+#  2. Check against the dates according to the algorithm.
+#
 
-add_field(publish_image, "true")
+# This field is what ultimately determines whether an image can be published
+# or not. The default assumption is 'false'. We need to prove that we are
+# allowed to publish the digital image.
+
+add_field(publish_image, "false")
+
+# This is a 'sentinel' variable. As soon as the copyright has been 
+# determined (true), we bail out of the algorithm.
+
 add_field(determined, "false")
 
-set_array(pretty_dod)
-set_array(pretty_viaf_dod)
+# Step 1: Clean out the date formatting ...
 
-do list(path: 'creators_dod', var: 'dod')
+set_array(pretty_dod)
+
+do list(path: 'creator_dod', var: 'dod')
     copy_field(dod, tmp_dod)
     if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
         parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
@@ -224,7 +243,9 @@ do list(path: 'creators_dod', var: 'dod')
     remove_field(tmp_dod)
 end
 
-do list(path: 'creators_viaf_dod', var: 'dod')
+set_array(pretty_viaf_dod)
+
+do list(path: 'creator_viaf_dod', var: 'dod')
     copy_field(dod, tmp_dod)
     if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
         parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
@@ -235,46 +256,92 @@ do list(path: 'creators_viaf_dod', var: 'dod')
     remove_field(tmp_dod)
 end
 
-copy_field(production_date, pretty_production_date)
+copy_field(_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate, dates)
 
-# The production date is often very messy. It's hard to establish
-# an exact year in most cases. Registrators often fall back a fuzzy
-# dating description. It's impossible to cover all possible variations. 
-# We only try to parse the majority of known patterns (80/20)
-#
-#   circa 1900 - circa 1910
-#   circa 1900-circa 1910
-#   circa1900-circa1910
-#   circa1900-circa 1910
-#   circa1900- circa1910
-#   circa1900 -circa1910
-#   circa 1900-circa1910
-#   circa 1900
-#   circa1900
-#   circa (1900)
-#   circa(1900)
-#   -1900
-#   - 1900
-#   1800-1900
-#   1800 - 1900
-#   1800 -1900
-#   1800- 1900
-#   (1800-1900)
-#   (1800 - 1900)
-#   (1800 -1900)
-#   (1800- 1900)
+add_field(production_date_copyright, 'n/a')
 
-if all_match(pretty_production_date.*, "(\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
-    parse_text(pretty_production_date.*, "(?:\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
+if all_match(dates.date.latestDate._, '.*\S.*')
+    if any_match(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        parse_text(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        copy_field(dates.date.latestDate._.$first, tmp_date)
+    else 
+        copy_field(dates.date.latestDate._, tmp_date)
+    end
+
+    if is_number(tmp_date)
+        move_field(tmp_date, production_date_copyright)
+    else
+        remove_field(tmp_date)
+    end
 end
 
-flatten(pretty_production_date)
+if all_equal(production_date_copyright, 'n/a')
+    if any_match(dates.date.earliestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        parse_text(dates.date.earliestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
+        copy_field(dates.date.earliestDate._.$first, tmp_date)
+    else 
+        copy_field(dates.date.earliestDate._, tmp_date)
+    end
+
+    if is_number(tmp_date)
+        move_field(tmp_date, production_date_copyright)
+    else
+        remove_field(tmp_date)
+    end
+end
+
+if all_equal(production_date_copyright, 'n/a')
+    set_array(tmp_date)
+
+    do list(path:dates.displayDate, var:date)
+        copy_field(date._, tmp_date.$append)
+    end
+
+    # The displayDate is often very messy. It's hard to establish
+    # an exact year in most cases. Registrators often fall back a fuzzy
+    # dating description. It's impossible to cover all possible variations. 
+    # We only try to parse the majority of known patterns (80/20)
+    #
+    #   circa 1900 - circa 1910
+    #   circa 1900-circa 1910
+    #   circa1900-circa1910
+    #   circa1900-circa 1910
+    #   circa1900- circa1910
+    #   circa1900 -circa1910
+    #   circa 1900-circa1910
+    #   circa 1900
+    #   circa1900
+    #   circa (1900)
+    #   circa(1900)
+    #   -1900
+    #   - 1900
+    #   1800-1900
+    #   1800 - 1900
+    #   1800 -1900
+    #   1800- 1900
+    #   (1800-1900)
+    #   (1800 - 1900)
+    #   (1800 -1900)
+    #   (1800- 1900)
+
+    if all_match(tmp_date.*, "(\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
+        parse_text(tmp_date.*, "(?:\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
+ 
+        flatten(tmp_date)
+        sort_field(tmp_date, numeric: 1)
+        copy_field(tmp_date.$last, production_date_copyright)
+    end
+
+    remove_field(tmp_date)
+end
+
+# Step 2: Actual determination of the copyright starts here ...
 
 if all_equal(determined, "false")
-    do list(path: 'pretty_dod', var: 'dod')
-        if is_number(dod)
-            if greater_than(dod, 1948)
-                set_field(publish_image, "false")
+    do list(path: 'pretty_dod', var: 'date')
+        if is_number(date)
+            if less_than(date, 1948)
+                set_field(publish_image, "true")
             end
             set_field(determined, "true")
         end
@@ -282,10 +349,10 @@ if all_equal(determined, "false")
 end
 
 if all_equal(determined, "false")
-    do list(path: 'pretty_viaf_dod', var: 'dod')
-        if is_number(dod)
-            if greater_than(dod, 1948)
-                set_field(publish_image, "false")
+    do list(path: 'pretty_viaf_dod', var: 'date')
+        if is_number(date)
+            if less_than(date, 1948)
+                set_field(publish_image, "true")
             end
             set_field(determined, "true")
         end
@@ -293,27 +360,23 @@ if all_equal(determined, "false")
 end
 
 if all_equal(determined, "false")
-    do list(path: 'pretty_production_date', var: 'pdp')
-        if is_number(pdp)
-            if greater_than(pdp, 1870)
-                set_field(publish_image, "false")
-            end
-            set_field(determined, "true")
+    if is_number(production_date_copyright)
+        if less_than(production_date_copyright, 1870)
+            set_field(publish_image, "true")
         end
+        set_field(determined, "true")
     end
 end
 
-if all_equal(determined, "false")
-    set_field(publish_image, "false")
-end
+# Done. Remove fields. We don't need them anymore.
 
-# Remove unnecessary fields
 remove_field(creator_dob)
 remove_field(creator_dod)
 remove_field(creator_viaf_dod)
 remove_field(pretty_dod)
 remove_field(pretty_viaf_dod)
-remove_field(pretty_production_date)
+remove_field(production_date_copyright)
+remove_field(dates)
 remove_field(determined)
 
 ## Period - use NL field
