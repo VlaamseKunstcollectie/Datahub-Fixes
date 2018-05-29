@@ -85,7 +85,7 @@ do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventAc
     # The original LIDO data doesn't contain those. It only contains the
     # data sanctioned by the institutions, not the actual VIAF data itself.
 
-    copy_field(creator_display.$last, tmp_creator_concord)
+    copy_field(tmp_creator_display.$last, tmp_creator_concord)
     downcase(tmp_creator_concord)
     lookup_in_store(tmp_creator_concord, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
@@ -183,6 +183,7 @@ do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDat
 end
 
 sort_field(production_date)
+copy_field(production_date.$last, production_date_sort)
 
 ## Publish image
 
