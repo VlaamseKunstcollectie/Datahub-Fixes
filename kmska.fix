@@ -73,9 +73,21 @@
 
     # production date (production)
 
-    copy_field(DateBegin, or_record.date.begin)
-    copy_field(DateEnd, or_record.date.end)
-    copy_field(Dated, or_record.date.display)
+    add_field(or_record.date.begin, 'n/a')
+    unless all_equal('DateBegin', '0')
+        copy_field(DateBegin, or_record.date.begin)
+    end
+
+    add_field('or_record.date.end', 'n/a')
+    unless all_equal(DateEnd, '0')
+        copy_field(DateEnd, or_record.date.end)
+    end
+
+    add_field('or_record.date.display', 'n/a')
+    if all_match('Dated', '.*\S.*')
+        copy_field(Dated, or_record.date.display)
+    end
+
     trim(or_record.date.begin)
     trim(or_record.date.end)
     trim(or_record.date.display)
