@@ -15,8 +15,20 @@
     copy_field(ObjectNumber, or_record.object_number.local)
     copy_field(ObjectID, or_record.object_number.tms)
 
-    copy_field(ObjectNumber, or_record.object_number.pid)
-    lookup_in_store(or_record.object_number.pid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.Cit_KMSKApids_conversie_gecorrigeerd.sqlite')
+    copy_field(ObjectNumber, or_record.object_number.datapid)
+    lookup_in_store(or_record.object_number.datapid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.datapids.sqlite')
+    move_field(or_record.object_number.datapid.dataPid, or_record.object_number.pid.dataPid)
+    remove_field(or_record.object_number.datapid)
+
+    copy_field(ObjectNumber, or_record.object_number.workpid)
+    lookup_in_store(or_record.object_number.workpid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.workpids.sqlite')
+    move_field(or_record.object_number.workpid.workPid, or_record.object_number.pid.workPid)
+    remove_field(or_record.object_number.workpid)
+
+    copy_field(ObjectNumber, or_record.object_number.representationpid)
+    lookup_in_store(or_record.object_number.representationpid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.representationpids.sqlite')
+    move_field(or_record.object_number.representationpid.representationPid, or_record.object_number.pid.representationPid)
+    remove_field(or_record.object_number.representationpid)
 
     # objectWorkType
 
