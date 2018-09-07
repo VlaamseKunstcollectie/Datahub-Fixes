@@ -47,9 +47,12 @@
 
     # title
 
-    copy_field(Title, or_record.titleSet.appellationValue)
+    copy_field(ObjectNumber, or_record.title.db)
+    lookup_in_store(or_record.title.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.objtitles.sqlite')
+
+    copy_field(or_record.title.db.title, or_record.titleSet.appellationValue)
     trim(or_record.titleSet.appellationValue)
-    copy_field(TitleID, or_record.titleSet.sourceAppellation)
+    copy_field(or_record.title.db.titleid, or_record.titleSet.sourceAppellation)
     trim(or_record.titleSet.sourceAppellation)
 
     # description
