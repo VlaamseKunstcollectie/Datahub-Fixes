@@ -33,176 +33,313 @@
 #  $ catmandu convert OAI --url http://datahub.box/oai --handler lido 
 #    to JSON --fix datahub-oai-to-blacklight-solr.fix > /tmp/bulk.json
 #  $ dhconveyor index -p ../pipelines/arthub.ini -v
-#
 
-### MAPPING
 
-# @todo document the mapping between LIDO elements and Solr fields
+### Mapping between LIDO elements and Solr fields
 
-## Title - use NL
+# Mapping
+# --------------------------------------------------------------------------
+# LIDO                                          Solr
+#                                                   id
+# lido:lidoRecID
+#   type: purl                                      data_pid
+# lido:objectPublishedID                            work_pid
+# lido:objectWorkType
+#   lido:term
+#       pref: preferred                             artwork_subtype_display
+#       pref: alternate                             artwork_subtype
+# lido:classification
+#   type: objectcategorie
+#       lido:term
+#           pref: preferred                         artwork_type_display
+#           pref: alternate                         artwork_type  
+#   type: hoofdmotief
+#       lido:term
+#           pref: preferred                         artwork_category_display
+#           pref: alternate                         artwork_category  
+# lido:titleSet                                     
+#   pref: preferred                                 title_display
+# lido:workID
+#   type: objectnummer                              object_number
+# lido:objectDescriptionSet                         description
+# lido:objectMeasurementsSet
+#   lido:measurementsSet
+#       lido:extentMeasurements
+#           geheel                                  dimensions
+#                                                   creator
+# lido:eventType
+#   lido:term
+#       production
+#           lido:eventActor
+#               lido:nameActorSet
+#                   pref: preferred                 creator_display
+#                   pref: alternate                 creator_index
+#               lido:roleActor                      creator_role
+#               lido:attributionQualifierActor      
+#           lido:eventDate
+#               lido:displayDate                    production_date
+#           lido:periodName
+#               lido:term
+#                   lang: nl                        period
+#           lido:termMaterialsTech
+#               lido:term
+#                   pref: preferred                 material_display
+#                   pref: alternate                 material
+# lido:recordWrap          
+#   lido:recordSource
+#       lido:legalBodyName                          repository
+# lido:resourceWrap
+#   lido:resourceID                                 representation_pid
+#                                                   publish_image          
 
-#  Use dutch title if exists, else use English title
+
+## Title
+
+# Get preferred title from LIDO if exists
 
 do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
-    if all_match('el.lang', 'nl')
-        copy_field('el._', "title_display")
+    if all_match('el.pref', 'preferred')
+        if all_match('el._', '.*\S.*')
+            copy_field('el._', "title_display")
+        end
     end
 end
+
+# If no preferred title exists, try to get any title from LIDO
 
 unless all_match(title_display, '.*\S.*')
     do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
-        copy_field('el._', "title_display")
+        if all_match('el._', '.*\S.*')
+            copy_field('el._', "title_display")
+        end
     end
 end
 
-## Creators
+# If no title exists, use n/a (not available)
+
+unless all_match('title_display', '.*\S.*')
+    add_field('title_display', 'n/a')
+end
+
+
+## Creator
  
 set_array(creator)
 set_array(creator_dod)
-set_array(creator_dob)
-set_array(creator_viaf_dod)
 set_array(creator_role)
 set_array(creator_display)
 set_array(creator_index)
 
-do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventActor', var: c)
-    set_array(tmp_creator_display)
-    set_array(tmp_creator_index)
+# Use the event 'production'
 
-    # Get the name of the creator from LIDO (preferred name)
-
-    # Display the name as established by the museum.
-
-    do list(path:c.actorInRole.actor.nameActorSet.0.appellationValue, var:creator)
-        if all_match('creator.pref', 'preferred')
-            copy_field(creator._, tmp_creator_display.$append)
-            copy_field(creator._, tmp_creator_index.$append)
-        end
-    end
-
-    # Add VIAF vital dates & alternate name from CREATORS_UTF8.csv
-
-    # The original LIDO data doesn't contain those. It only contains the
-    # data sanctioned by the institutions, not the actual VIAF data itself.
-
-    copy_field(tmp_creator_display.$last, tmp_creator_concord)
-    downcase(tmp_creator_concord)
-    lookup_in_store(tmp_creator_concord, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
-
-    # The VIAF vital dates are used to determine the copyright further on.
-    # If the institution doesn't provide vital dates, we fall back on the
-    # VIAF data.
-
-    if all_match(tmp_creator_concord.viaf_death, '.*\S.*')
-        copy_field(tmp_creator_concord.viaf_death, creator_viaf_dod.$append)
-    else
-       add_field(tmp_viaf_death, 'n/a')
-       copy_field(tmp_viaf_death, creator_viaf_dod.$append)
-       remove_field(tmp_viaf_death)
-    end
-
-    # We store the VIAF alternate name in creator search field. 
-    # This allows users to search on name variants of the creator.
-
-    if all_match(tmp_creator_concord.viaf_alternate, '.*\S.*')
-        copy_field(tmp_creator_concord.viaf_alternate, creator.$append)
-    else
-       add_field(tmp_viaf_alternate, 'n/a')
-       copy_field(tmp_viaf_alternate, creator.$append)
-       remove_field(tmp_viaf_alternate)
-    end
-
-    remove_field(tmp_creator_concord)
-
-    # Add LIDO vital dates (birth, death) of the creator
-
-    if all_match(c.actorInRole.actor.vitalDatesActor.latestDate._, '.*\S.*')
-        copy_field(c.actorInRole.actor.vitalDatesActor.latestDate._, creator_dod.$append)
-    else
-        add_field(tmp_creator_dod, 'n/a')
-        copy_field(tmp_creator_dod, creator_dod.$append)
-        remove_field(tmp_creator_dod)
-    end
-
-    if all_match(c.actorInRole.actor.vitalDatesActor.earliestDate._, '.*\S.*')
-        copy_field(c.actorInRole.actor.vitalDatesActor.earliestDate._, creator_dob.$append)
-    else
-        add_field(tmp_creator_dob, 'n/a')
-        copy_field(tmp_creator_dob, creator_dob.$append)
-        remove_field(tmp_creator_dob)
-    end
-
-    # LIDO qualifier (copy after, attributed to,...)
-
-    if all_match('c.actorInRole.attributionQualifierActor.$last._', '.*\S.*')
-        unless all_match('c.actorInRole.attributionQualifierActor.$last._', 'n/a')
-            
-            # add the attribution to the creator_display and creator_index
-
-            copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_display.$prepend)
-            copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_index.$prepend)
-
-            # We remove the vital dates from works tentatively "attributed to" an artist
-            #
-            # Why? Because we can't reliable establish that the work was truly created
-            # by the attributed artist. i.e. The qualifier "copy after" implies
-            # that this work was created by someone else.
-            # 
-            # We reset the vital dates here because we use them later on to establish
-            # copyright. "copy after Anthony van Dyck" might have us erroneously 
-            # infer that the work was created by Anthony van Dyck while it may have
-            # actually been created in the 20th century.
-
-            set_field(creator_dob.$last, 'n/a')
-            set_field(creator_dod.$last, 'n/a')
-            set_field(creator_viaf_dod.$last, 'n/a')
-        end
-    end
-
-    # Creator role (Publisher, Painter,...)
-
-    if all_match('c.actorInRole.roleActor.$last.term.$last._', '.*\S.*')
-        copy_field(c.actorInRole.roleActor.$last.term.$last._, creator_role.$append)
-    else
-        add_field(creator_role.$append, 'n/a')
-    end
-
-    # Flatten creator_display & creator_index
-
-    join_field(tmp_creator_display, " ")
-    move_field(tmp_creator_display, creator_display.$append)
-
-    join_field(tmp_creator_index, " ")
-    move_field(tmp_creator_index, creator_index.$append)    
+unless is_array('_metadata.descriptiveMetadata.0.eventWrap.eventSet')
+    move_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet', tmp)
+    set_array('_metadata.descriptiveMetadata.0.eventWrap.eventSet')
+    move_field(tmp,'_metadata.descriptiveMetadata.0.eventWrap.eventSet.$append')
 end
+
+do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
+
+    do list(path:e.event.eventType.term, var:p)
+    
+        if all_match(p._, 'production')
+
+            # Get the name of the creator from LIDO
+
+            do list(path:e.event.eventActor, var:c)
+                set_array(tmp_creator_display)
+                set_array(tmp_creator_index)
+
+                # Use the name as established by the museum for the detail page (preferred name)
+                # Use the alternate name in the search results if exists, else use the preferred name
+                # If no creator name exists, use n/a (not available)
+
+                do list(path:c.actorInRole.actor.nameActorSet.0.appellationValue, var:d)
+                    if all_match('d.pref', 'preferred')
+                        if all_match(d._, '.*\S.*')
+                            copy_field(d._, tmp_creator_display.$append)
+                            copy_field(d._, tmp_creator_index.$append)
+                        else
+                            add_field(creator_display_na, 'n/a')
+                            copy_field(creator_display_na, tmp_creator_display.$append)
+                            copy_field(creator_display_na, tmp_creator_index.$append)
+                            remove_field(creator_display_na)
+                        end
+                    end
+                end
+
+                do list(path:c.actorInRole.actor.nameActorSet.0.appellationValue, var:d)
+                    if all_match('d.pref', 'alternate')
+                        if all_match(d._, '.*\S.*')
+                            copy_field(d._, tmp_creator_index.$last)
+                        end
+                    end                
+                end
+
+                # Add VIAF alternate names from CREATORS_UTF8.csv
+
+                # The original LIDO data doesn't contain those. It only contains the
+                # data sanctioned by the institutions, not the actual VIAF data itself.
+
+                copy_field(tmp_creator_display.$last, tmp_creator_concord)
+                downcase(tmp_creator_concord)
+                lookup_in_store(tmp_creator_concord, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+
+                # We store the VIAF alternate names in creator search field. 
+                # This allows users to search on name variants of the creator.
+                # If no VIAF alternate names are found, use n/a (not available)
+
+                if all_match(tmp_creator_concord.viaf_alternate, '.*\S.*')
+                    copy_field(tmp_creator_concord.viaf_alternate, creator.$append)
+                else
+                    add_field(tmp_creator, 'n/a')
+                    copy_field(tmp_creator, creator.$append)
+                    remove_field(tmp_creator)
+                end
+
+                remove_field(tmp_creator_concord)
+
+                # Add LIDO date of death of the creator
+                # If no date of death exists, use n/a (not available)
+                # We use the date of death later on to establish copyright.
+                # Thererfor we don't need the date of birth of the creator.
+
+                if all_match(c.actorInRole.actor.vitalDatesActor.latestDate._, '.*\S.*')
+                    copy_field(c.actorInRole.actor.vitalDatesActor.latestDate._, creator_dod.$append)
+                else
+                    add_field(tmp_creator_dod, 'n/a')
+                    copy_field(tmp_creator_dod, creator_dod.$append)
+                    remove_field(tmp_creator_dod)
+                end
+
+                # LIDO qualifier (copy after, attributed to ...)
+
+                if all_match('c.actorInRole.attributionQualifierActor.$last._', '.*\S.*')
+                    if all_match('c.actorInRole.attributionQualifierActor.$last._', '.*\S.*')
+                        
+                        # add the attribution to the creator_display and creator_index
+
+                        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_display.$prepend)
+                        copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_index.$prepend)
+
+                        # We use the date of death later on to establish copyright.
+                        #
+                        # In case the work is tentatively "attributed to" an artist, we don't take
+                        # the date of death into account.
+                        #
+                        # Why? Because we can't reliable establish that the work was truly created
+                        # by the attributed artist. i.e. The qualifier "copy after" implies
+                        # that this work was created by someone else. "copy after Anthony van Dyck" 
+                        # might have us erroneously infer that the work was created by Anthony van Dyck
+                        # while it may have actually been created in the 20th century.
+                        #
+                        # Instead we'll check the production date for these works.
+
+                        set_field(check_production_date, 'true')
+
+                    end
+                end
+
+                # Creator role (Publisher, Painter,...)
+                # If no creator role exists, use n/a (not available)
+
+                if all_match('c.actorInRole.roleActor.$last.term.$last._', '.*\S.*')
+                    copy_field(c.actorInRole.roleActor.$last.term.$last._, creator_role.$append)
+                else
+                    add_field(tmp_creator_role, 'n/a')
+                    copy_field(tmp_creator_role, creator_role.$append)
+                    remove_field(tmp_creator_role)
+                end
+
+                # Flatten creator_display & creator_index
+
+                join_field(tmp_creator_display, " ")
+                move_field(tmp_creator_display, creator_display.$append)
+
+                join_field(tmp_creator_index, " ")
+                move_field(tmp_creator_index, creator_index.$append)    
+            end
+
+        end
+
+    end
+
+end
+
+# If the fields for creator are empty, use n/a (not available)
+   
+unless all_match(creator.$first, '.*\S.*')
+    set_field(creator.$first, 'n/a')
+end
+
+unless all_match(creator_dod.$first, '.*\S.*')
+    set_field(creator_dod.$first, 'n/a')
+end
+   
+unless all_match(creator_role.$first, '.*\S.*')
+    set_field(creator_role.$first, 'n/a')
+end
+
+unless all_match(creator_display.$first, '.*\S.*')
+    set_field(creator_display.$first, 'n/a')
+end
+
+unless all_match(creator_index.$first, '.*\S.*')
+    set_field(creator_index.$first, 'n/a')
+end
+
 
 ## Production date
 
-do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate.displayDate, var:dat)
-    copy_field(dat._, production_date.$append)
+set_array(production_date)
+
+# Use the event 'production'
+
+do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
+
+    do list(path:e.event.eventType.term, var:p)
+
+        if all_match(p._, 'production')
+
+            # Get production date from LIDO
+            # If no production date exists, use n/a (not available)
+
+            do list(path:e.event.eventDate.displayDate, var:dat)
+                if all_match(dat._, '.*\S.*')
+                    copy_field(dat._, production_date.$append)
+                else
+                    add_field(tmp_production_date, 'n/a')
+                    copy_field(tmp_production_date, production_date.$append)
+                    remove_field(tmp_production_date)
+                end
+            end
+
+        end
+
+    end
+
 end
 
-sort_field(production_date)
-copy_field(production_date.$last, production_date_sort)
+# If the field for production date is empty, use n/a (not available)
+
+unless all_match(production_date.$first, '.*\S.*')
+    set_field(production_date.$first, 'n/a')
+end
+
 
 ## Publish image
 
 # This algorithm establishes wether or not a digital representation
 # may be published based on copyright rules.
 #
-#  General rule: date of death artist < current date - 70 years
+# General rule: date of death artist < current date - 70 years
+# 
+# We check if the LIDO date of death of the longest living contributor to the
+# work is more than 70 years ago.
 #
-# Since we don't always know the date of death of the artist, we perform
-# additional checks in order to tentatively assert the copyright. We
-# gracefully degrade over these fields:
-#
-#  * The LIDO date of death of the longest living contributor to the work.
-#  * The VIAF date of death of the longest living contributor to the work.
-#  * The production date of the work, that is, the most recent asserted date.
-#    * Check the latestDate value (should be ISO compliant)
-#    * Check the earliestDate value (should be ISO compliant)
-#    * Check the displayDate (Hail mary attempt of determining the date)
-#
+# In case the work is tentatively "attributed to" an artist, we check the
+# production date, that is, the most recent asserted date instead.
+# 
 # When asserting copyright via the production date of the work, we use
 # this rule: production date < current date - 150 years.
 #
@@ -217,7 +354,6 @@ copy_field(production_date.$last, production_date_sort)
 #     They all need to be of the ISO format YYYY. This requires some regex fu.
 #  2. Check against the dates according to the algorithm.
 #
-
 # This field is what ultimately determines whether an image can be published
 # or not. The default assumption is 'false'. We need to prove that we are
 # allowed to publish the digital image.
@@ -229,298 +365,578 @@ add_field(publish_image, "false")
 
 add_field(determined, "false")
 
-# Step 1: Clean out the date formatting ...
+# Step 1: Clean out the date formatting
 
+set_field(production_date_copyright)
 set_array(pretty_dod)
-
-do list(path: 'creator_dod', var: 'dod')
-    copy_field(dod, tmp_dod)
-    if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        copy_field(tmp_dod.$first, pretty_dod.$append)
-    else 
-        copy_field(tmp_dod, pretty_dod.$append)
-    end
-    remove_field(tmp_dod)
-end
-
-set_array(pretty_viaf_dod)
-
-do list(path: 'creator_viaf_dod', var: 'dod')
-    copy_field(dod, tmp_dod)
-    if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        copy_field(tmp_dod.$first, pretty_viaf_dod.$append)
-    else 
-        copy_field(tmp_dod, pretty_viaf_dod.$append)
-    end
-    remove_field(tmp_dod)
-end
 
 copy_field(_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate, dates)
 
-add_field(production_date_copyright, 'n/a')
+if all_match(check_production_date, 'true')
 
-if all_match(dates.date.latestDate._, '.*\S.*')
-    if any_match(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        parse_text(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        copy_field(dates.date.latestDate._.$first, tmp_date)
-    else 
-        copy_field(dates.date.latestDate._, tmp_date)
+    if all_match(dates.date.latestDate._, '.*\S.*')
+        if any_match(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
+            parse_text(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
+            if is_number(dates.date.latestDate._.$first)
+                copy_field(dates.date.latestDate._.$first, production_date_copyright)
+            end
+        else 
+            if any_match(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)')
+                parse_text(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)')
+                if is_number(dates.date.latestDate._.$first)
+                    copy_field(dates.date.latestDate._.$first, production_date_copyright)
+                end
+            else
+                if any_match(dates.date.latestDate._, '(\d\d\d\d)')
+                    if is_number(dates.date.latestDate._)
+                        copy_field(dates.date.latestDate._, production_date_copyright)
+                    end
+                else
+                    set_field(determined, "true")
+                end
+            end
+        end
     end
 
-    if is_number(tmp_date)
-        move_field(tmp_date, production_date_copyright)
-    else
-        remove_field(tmp_date)
+else
+
+    do list(path: 'creator_dod', var: 'dod')
+        copy_field(dod, tmp_dod)
+        if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
+            parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)-(\d\d)')
+            if is_number(tmp_dod.$first)
+                copy_field(tmp_dod.$first, pretty_dod.$append)
+            end
+        else
+            if any_match(tmp_dod, '(\d\d\d\d)-(\d\d)')
+                parse_text(tmp_dod, '(\d\d\d\d)-(\d\d)')
+                if is_number(tmp_dod.$first)
+                    copy_field(tmp_dod.$first, pretty_dod.$append)
+                end
+            else
+                if any_match(tmp_dod, '(\d\d\d\d)')
+                    if is_number(tmp_dod)
+                        copy_field(tmp_dod, pretty_dod.$append)
+                    end
+                else
+                    set_field(determined, "true")
+                end
+            end
+        end
+        remove_field(tmp_dod)
     end
+
 end
 
-if all_equal(production_date_copyright, 'n/a')
-    if any_match(dates.date.earliestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        parse_text(dates.date.earliestDate._, '(\d\d\d\d)-(\d\d)-(\d\d)')
-        copy_field(dates.date.earliestDate._.$first, tmp_date)
-    else 
-        copy_field(dates.date.earliestDate._, tmp_date)
-    end
+# Step 2: Actual determination of the copyright
 
-    if is_number(tmp_date)
-        move_field(tmp_date, production_date_copyright)
-    else
-        remove_field(tmp_date)
-    end
-end
+if all_match(check_production_date, 'true')
 
-if all_equal(production_date_copyright, 'n/a')
-    set_array(tmp_date)
-
-    do list(path:dates.displayDate, var:date)
-        copy_field(date._, tmp_date.$append)
-    end
-
-    # The displayDate is often very messy. It's hard to establish
-    # an exact year in most cases. Registrators often fall back a fuzzy
-    # dating description. It's impossible to cover all possible variations. 
-    # We only try to parse the majority of known patterns (80/20)
-    #
-    #   circa 1900 - circa 1910
-    #   circa 1900-circa 1910
-    #   circa1900-circa1910
-    #   circa1900-circa 1910
-    #   circa1900- circa1910
-    #   circa1900 -circa1910
-    #   circa 1900-circa1910
-    #   circa 1900
-    #   circa1900
-    #   circa (1900)
-    #   circa(1900)
-    #   -1900
-    #   - 1900
-    #   1800-1900
-    #   1800 - 1900
-    #   1800 -1900
-    #   1800- 1900
-    #   (1800-1900)
-    #   (1800 - 1900)
-    #   (1800 -1900)
-    #   (1800- 1900)
-
-    if all_match(tmp_date.*, "(\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
-        parse_text(tmp_date.*, "(?:\(?(?:circa)?\s?(\d\d\d\d)\s?-?\s?)?(?:circa)?\s?(\d\d\d\d)\)?")
- 
-        flatten(tmp_date)
-        sort_field(tmp_date, numeric: 1)
-        copy_field(tmp_date.$last, production_date_copyright)
-    end
-
-    remove_field(tmp_date)
-end
-
-# Step 2: Actual determination of the copyright starts here ...
-
-if all_equal(determined, "false")
-    do list(path: 'pretty_dod', var: 'date')
-        if is_number(date)
-            if less_than(date, 1948)
+    if all_equal(determined, "false")
+        if all_match(production_date_copyright, ".*\S.*")
+            if less_than(production_date_copyright, 1870)
                 set_field(publish_image, "true")
             end
             set_field(determined, "true")
         end
     end
-end
 
-if all_equal(determined, "false")
-    do list(path: 'pretty_viaf_dod', var: 'date')
-        if is_number(date)
-            if less_than(date, 1948)
+    remove_field(check_production_date)
+
+else
+
+    if all_equal(determined, "false")
+        sort_field(pretty_dod, numeric: 1)
+        if all_match(pretty_dod.$last, ".*\S.*")
+            if less_than(pretty_dod.$last, 1948)
                 set_field(publish_image, "true")
             end
             set_field(determined, "true")
         end
     end
-end
 
-if all_equal(determined, "false")
-    if is_number(production_date_copyright)
-        if less_than(production_date_copyright, 1870)
-            set_field(publish_image, "true")
-        end
-        set_field(determined, "true")
-    end
 end
 
 # Done. Remove fields. We don't need them anymore.
 
-remove_field(creator_dob)
 remove_field(creator_dod)
-remove_field(creator_viaf_dod)
 remove_field(pretty_dod)
-remove_field(pretty_viaf_dod)
 remove_field(production_date_copyright)
 remove_field(dates)
 remove_field(determined)
 
-## Period - use NL field
 
-do list(path:_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.periodName, var:per)
-    if all_match('per.term.*.lang', 'nl')
-        copy_field('per.term.*._', period.$append)
+## Period
+
+set_array(period)
+
+# Use the event 'production'
+
+do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var: e)
+    
+    do list(path:e.event.eventType.term, var:p)
+
+        if all_match(p._, 'production')
+
+            # Get period from LIDO
+            # If no period exists, use n/a (not available)
+
+            do list(path:e.event.periodName, var:per)
+
+                # Use NL field
+
+                if all_match('per.term.*.lang', 'nl')
+                    if all_match('per.term.*._', '.*\S.*')
+                        copy_field('per.term.*._', period.$append)
+                    else
+                        add_field(tmp_period, 'n/a')
+                        copy_field(tmp_period, period.$append)
+                        remove_field(tmp_period)
+                    end
+                end
+            end
+
+        end
+
     end
+
+end
+
+# If the field for period is empty, use n/a (not available)
+
+unless all_match(period.$first, '.*\S.*')
+    set_field(period.$first, 'n/a')
 end
 
 sort_field(period)
 
+
 ## Repository
 
-copy_field('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', 'repository')
+# Get repository from LIDO if exists (repository = data provider / source of record)
+# If no repository exists, use n/a (not available)
+
+if all_match('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', '.*\S.*')
+    copy_field('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', 'repository')
+else
+    add_field('repository', 'n/a')
+end
+
 
 ## Material
 
-do list(path: '_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventMaterialsTech', var: mat)
-    do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var: prefMaterial)
-        if all_match('prefMaterial.pref', 'preferred')
-            copy_field(prefMaterial._, material.$append)
+set_array(material_display)
+set_array(material)
+
+# Use the event 'production'
+
+do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
+    
+    do list(path:e.event.eventType.term, var:p)
+
+        if all_match(p._, 'production')
+
+            # Get materials from LIDO           
+
+            do list(path:e.event.eventMaterialsTech, var:mat)
+
+                # Use the preferred term for the detail page
+                # Use the alternate term in the search results / facet if exists, else use the preferred term
+                # If no material exists, use n/a (not available)
+
+                do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var:prefMaterial)
+                    if all_match('prefMaterial.pref', 'preferred')
+                        if all_match(prefMaterial._, '.*\S.*')
+                            copy_field(prefMaterial._, material_display.$append)
+                            copy_field(prefMaterial._, material.$append)
+                        else
+                            add_field(tmp_material, 'n/a')
+                            copy_field(tmp_material, material_display.$append)
+                            copy_field(tmp_material, material.$append)
+                            remove_field(tmp_material)
+                        end
+                    end
+                end
+
+                do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var:prefMaterial)
+                    if all_match('prefMaterial.pref', 'alternate')
+                        if all_match(prefMaterial._, '.*\S.*')
+                            copy_field(prefMaterial._, material.$last)
+                        end
+                    end
+                end
+
+            end
+
         end
+
     end
+
+end
+
+# If the fields for material are empty, use n/a (not available)
+
+unless all_match(material_display.$first, '.*\S.*')
+    set_field(material_display.$first, 'n/a')
+end
+
+unless all_match(material.$first, '.*\S.*')
+    set_field(material.$first, 'n/a')
 end
 
 
 ## Dimensions
 
+set_array(dimensions)
+
+# Use extent 'geheel'
+
 do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet, var:el2)
-    do list(path:el2.objectMeasurements.measurementsSet, var:el)
-        if all_match('el.measurementType.0._', 'hoogte')
-            copy_field(el.measurementValue._, dimensionsh.$append)
-            copy_field(el.measurementUnit.0._, dimensionsh.$append)
-            join_field(dimensionsh, ' ')
+
+    if all_match(el2.objectMeasurements.extentMeasurements.0._, 'geheel')
+
+        # Get measurements from LIDO
+        # If no measurement exist, use n/a (not available)
+
+        do list(path:el2.objectMeasurements.measurementsSet, var:el)
+            if all_match('el.measurementType.0._', 'hoogte')
+                if all_match(el.measurementValue._, '.*\S.*')
+                    copy_field(el.measurementValue._, dimensionsh.$append)
+                else
+                    add_field(tmp_dimensionsh, 'n/a')
+                    copy_field(tmp_dimensionsh, dimensionsh.$append)
+                    remove_field(tmp_dimensionsh)
+                end
+                if all_match(el.measurementUnit.0._, '.*\S.*')
+                    copy_field(el.measurementUnit.0._, dimensionsh.$append)
+                else
+                    add_field(tmp_dimensionsh, 'n/a')
+                    copy_field(tmp_dimensionsh, dimensionsh.$append)
+                    remove_field(tmp_dimensionsh)
+                end
+                join_field(dimensionsh, ' ')
+                if all_match(dimensionsh, 'n/a n/a')
+                    remove_field(dimensionsh)
+                else
+                    prepend(dimensionsh, 'h ')
+                    move_field(dimensionsh, dimensions.$append)
+                end
+            end
+            if all_match('el.measurementType.0._', 'breedte')
+                if all_match(el.measurementValue._, '.*\S.*')
+                    copy_field(el.measurementValue._, dimensionsw.$append)
+                else
+                    add_field(tmp_dimensionsw, 'n/a')
+                    copy_field(tmp_dimensionsw, dimensionsw.$append)
+                    remove_field(tmp_dimensionsw)                    
+                end
+                if all_match(el.measurementUnit.0._, '.*\S.*')
+                    copy_field(el.measurementUnit.0._, dimensionsw.$append)
+                else
+                    add_field(tmp_dimensionsw, 'n/a')
+                    copy_field(tmp_dimensionsw, dimensionsw.$append)
+                    remove_field(tmp_dimensionsw) 
+                end
+                join_field(dimensionsw, ' ')
+                if all_match(dimensionsw, 'n/a n/a')
+                    remove_field(dimensionsw)
+                else
+                    prepend(dimensionsw, 'b ')
+                    move_field(dimensionsw, dimensions.$append)
+                end
+            end
+            if all_match('el.measurementType.0._', 'diepte')
+                if all_match(el.measurementValue._, '.*\S.*')
+                    copy_field(el.measurementValue._, dimensionsd.$append)
+                else
+                    add_field(tmp_dimensionsd, 'n/a')
+                    copy_field(tmp_dimensionsd, dimensionsd.$append)
+                    remove_field(tmp_dimensionsd)                    
+                end
+                if all_match(el.measurementUnit.0._, '.*\S.*')
+                    copy_field(el.measurementUnit.0._, dimensionsd.$append)
+                else
+                    add_field(tmp_dimensionsd, 'n/a')
+                    copy_field(tmp_dimensionsd, dimensionsd.$append)
+                    remove_field(tmp_dimensionsd) 
+                end
+                join_field(dimensionsd, ' ')
+                if all_match(dimensionsd, 'n/a n/a')
+                    remove_field(dimensionsd)
+                else
+                    prepend(dimensionsd, 'd ')
+                    move_field(dimensionsd, dimensions.$append)
+                end
+            end
+            if all_match('el.measurementType.0._', 'diameter')
+                if all_match(el.measurementValue._, '.*\S.*')
+                    copy_field(el.measurementValue._, dimensionsr.$append)
+                else
+                    add_field(tmp_dimensionsr, 'n/a')
+                    copy_field(tmp_dimensionsr, dimensionsr.$append)
+                    remove_field(tmp_dimensionsr) 
+                end
+                if all_match(el.measurementUnit.0._, '.*\S.*')
+                    copy_field(el.measurementUnit.0._, dimensionsr.$append)
+                else
+                    add_field(tmp_dimensionsr, 'n/a')
+                    copy_field(tmp_dimensionsr, dimensionsr.$append)
+                    remove_field(tmp_dimensionsr) 
+                end
+                join_field(dimensionsr, ' ')
+                if all_match(dimensionsr, 'n/a n/a')
+                    remove_field(dimensionsr)
+                else
+                    append(dimensionsr, ' (diameter)')
+                    move_field(dimensionsr, dimensions.$append)
+                end
+            end
+
         end
-        if all_match('el.measurementType.0._', 'breedte')
-            copy_field(el.measurementValue._, dimensionsw.$append)
-            copy_field(el.measurementUnit.0._, dimensionsw.$append)
-            join_field(dimensionsw, ' ')
-        end
-        if all_match('el.measurementType.0._', 'diameter')
-            copy_field(el.measurementValue._, dimensionsd.$append)
-            copy_field(el.measurementUnit.0._, dimensionsd.$append)
-            join_field(dimensionsd, ' ')
-        end
+
     end
+
 end
 
-copy_field(dimensionsh, dimensions.$append)
-remove_field(dimensionsh)
-copy_field(dimensionsw, dimensions.$append)
-remove_field(dimensionsw)
-join_field(dimensions, ' x ')
+# If the field for dimensions is empty, use n/a (not available)
 
-append(dimensionsd, " (diameter)")
-copy_field(dimensionsd, dimensions.$append)
-remove_field(dimensionsd)
+unless all_match(dimensions.$first, '.*\S.*')
+    set_field(dimensions.$first, 'n/a')
+end
+
 
 ## Category
 
-do list(path: '_metadata.descriptiveMetadata.0.objectRelationWrap.subjectWrap.subjectSet.0.subject.subjectConcept.0.term', var: cat)
-    if all_match(cat.lang, 'nl')
-        copy_field(cat._, artwork_category.$append)
+set_array(artwork_category_display)
+set_array(artwork_category)
+
+# Use type 'hoofdmotief'
+
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c)
+    
+    if all_match(c.type, 'hoofdmotief')
+
+        # Get artwork category from LIDO
+        # Use the preferred term for the detail page
+        # Use the alternate term in the search results / facet if exists, else use the preferred term
+        # If no artwork category exists, use n/a (not available)
+
+        do list(path: 'c.term', var:classification)
+            if all_match('classification.pref', 'preferred')
+                if all_match(classification._, '.*\S.*')
+                    copy_field(classification._, artwork_category_display.$append)
+                    copy_field(classification._, artwork_category.$append)
+                else
+                    add_field(tmp_artwork_category_display, 'n/a')
+                    copy_field(tmp_artwork_category_display, artwork_category_display.$append)
+                    copy_field(tmp_artwork_category_display, artwork_category.$append)
+                    remove_field(tmp_artwork_category_display)
+                end
+            end
+        end
+
+        do list(path: 'c.term', var:classification)
+            if all_match('classification.pref', 'alternate')
+                if all_match(classification._, '.*\S.*')
+                    copy_field(classification._, artwork_category.$last)
+                end
+            end
+        end
+
     end
+
 end
 
-# Artwork_type
-# Facet
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
-    do list(path: 't.term', var:type)
-        if all_match('type.pref', 'alternate')
-            copy_field(type._, artwork_type.$append)
-        end
-    end
+# If the fields for artwork category are empty, use n/a (not available)
+
+unless all_match(artwork_category_display.$first, '.*\S.*')
+    set_field(artwork_category_display.$first, 'n/a')
 end
-# Display
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
-    do list(path: 't.term', var:type)
-        if all_match('type.pref', 'preferred')
-            copy_field(type._, artwork_type_display.$append)
-        end
-    end
+
+unless all_match(artwork_category.$first, '.*\S.*')
+    set_field(artwork_category.$first, 'n/a')
 end
+
+
+## Artwork_type
+
+set_array(artwork_type_display)
+set_array(artwork_type)
+
+# Use type 'objectcategorie'
+
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c)
+    
+    if all_match(c.type, 'objectcategorie')
+        
+        # Get artwork type from LIDO
+        # Use the preferred term for the detail page
+        # Use the alternate term in the search results / facet if exists, else use the preferred term
+        # If no artwork type exists, use n/a (not available)
+
+        do list(path: 'c.term', var:classification)
+            if all_match('classification.pref', 'preferred')
+                if all_match(classification._, '.*\S.*')
+                    copy_field(classification._, artwork_type_display.$append)
+                    copy_field(classification._, artwork_type.$append)
+                else
+                    add_field(tmp_artwork_type_display, 'n/a')
+                    copy_field(tmp_artwork_type_display, artwork_type_display.$append)
+                    copy_field(tmp_artwork_type_display, artwork_type.$append)
+                    remove_field(tmp_artwork_type_display)
+                end
+            end
+        end
+
+        do list(path: 'c.term', var:classification)
+            if all_match('classification.pref', 'alternate')
+                if all_match(classification._, '.*\S.*')
+                    copy_field(classification._, artwork_type.$last)
+                end
+            end
+        end
+
+    end
+
+end
+
+# If the fields for artwork type are empty, use n/a (not available)
+
+unless all_match(artwork_type_display.$first, '.*\S.*')
+    set_field(artwork_type_display.$first, 'n/a')
+end
+
+unless all_match(artwork_type.$first, '.*\S.*')
+    set_field(artwork_type.$first, 'n/a')
+end
+
 
 ## Artwork_subtype
 
-# Facet
+set_array(artwork_subtype_display)
+set_array(artwork_subtype)
 
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c) 
-    do list(path: 'c.term', var:classification)
-        if all_match('classification.pref', 'alternate')
-            copy_field(classification._, artwork_subtype.$append)
+# Get artwork subtype from LIDO
+# Use the preferred term for the detail page
+# Use the alternate term in the search results / facet if exists, else use the preferred term
+# If no artwork subtype exists, use n/a (not available)
+
+do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
+    
+    do list(path: 't.term', var:type)
+        if all_match('type.pref', 'preferred')
+            if all_match(type._, '.*\S.*')
+                copy_field(type._, artwork_subtype_display.$append)
+                copy_field(type._, artwork_subtype.$append)
+            else
+                add_field(tmp_artwork_subtype_display, 'n/a')
+                copy_field(tmp_artwork_subtype_display, artwork_subtype_display.$append)
+                copy_field(tmp_artwork_subtype_display, artwork_subtype.$append)
+                remove_field(tmp_artwork_subtype_display)
+            end
         end
     end
-end
 
-# Display
-
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c)
-    do list(path: 'c.term', var:classification)
-        if all_match('classification.pref', 'preferred')
-            copy_field(classification._, artwork_subtype_display.$append)
+    do list(path: 't.term', var:type)
+        if all_match('type.pref', 'alternate')
+            if all_match(type._, '.*\S.*')
+                copy_field(type._, artwork_subtype.$last)
+            end
         end
     end
+
 end
 
-## References
+# If the fields for artwork subtype are empty, use n/a (not available)
 
-copy_field('_metadata.administrativeMetadata.0.recordWrap.recordInfoSet.0.recordInfoLink.0._', 'references')
+unless all_match(artwork_subtype_display.$first, '.*\S.*')
+    set_field(artwork_subtype_display.$first, 'n/a')
+end
+
+unless all_match(artwork_subtype.$first, '.*\S.*')
+    set_field(artwork_subtype.$first, 'n/a')
+end
+
 
 ## Object_number
 
-copy_field('_metadata.administrativeMetadata.0.recordWrap.recordID.0._', 'object_number')
-# copy_field('_metadata.administrativeMetadata.0.recordWrap.recordID.0._', 'id')
+if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0.type', 'objectnummer')
+    if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0._', '.*\S.*')
+        copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0._', 'object_number')
+    else
+        add_field('object_number', 'n/a')
+    end
+end
+
+unless exists(object_number)
+    add_field(object_number, 'n/a')
+end
+
 
 ## Description
 
-copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
-
-if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.1.descriptiveNoteValue.0.lang', 'nl')
-    copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.1.descriptiveNoteValue.0._', 'description')
+if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', '.*\S.*')
+    if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', '.*\S.*')
+        copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
+    else
+        add_field('description', 'n/a')
+    end
 end
+
+unless exists(description)
+    add_field(description, 'n/a')
+end
+
 
 ## Work_pid
 
-copy_field('_metadata.objectPublishedID.0._', 'work_pid')
+if all_match('_metadata.objectPublishedID.0._', '.*\S.*')
+    copy_field('_metadata.objectPublishedID.0._', 'work_pid')
+else
+    add_field('work_pid', 'n/a')
+end
+
+unless exists(work_pid)
+    add_field(work_pid, 'n/a')
+end
+
 
 ## Data_pid
 
 do list(path: '_metadata.lidoRecID', var:lidoRecID)
     if all_match('lidoRecID.type', 'purl')
-        copy_field(lidoRecID._, data_pid)
+        if all_match(lidoRecID._, '.*\S.*')
+            copy_field(lidoRecID._, data_pid)
+        else
+            add_field(data_pid, 'n/a')
+        end
     end
+
+    # The field 'raw' is used in process.pl to map the entire LIDO XML to a Solr field called 'xml' and is removed there at the end
+    # See: https://github.com/VlaamseKunstcollectie/Datahub-Fixes/blob/master/scripts/process.pl
 
     if all_match('lidoRecID.type', 'urn')
         copy_field(lidoRecID._, raw)
     end
 end
 
+unless exists(data_pid)
+    add_field(data_pid, 'n/a')
+end
+
+
 ## Representation_pid
 
-copy_field('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resourceID', 'representation_pid')
+if all_match('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resourceID', '.*\S.*')
+    copy_field('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resourceID', 'representation_pid')
+else
+    add_field('representation_pid', 'n/a')
+end
+
+unless exists(representation_pid)
+    add_field(representation_pid, 'n/a')
+end
+
 
 ## ID
 
@@ -535,37 +951,24 @@ copy_field('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resource
 # Note: the .tld is stripped from the domainname because the . (dot) breaks the
 # route matching algoritm.
 
-copy_field('data_pid', 'id')
-parse_text('id', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
-replace_all('id.0', '([^.]*)\.[^.]{2,3}(?:\.[^.]{2,3})?$', '$1')
-join_field(id, ':')
+unless all_match(data_pid, 'n/a')
+    copy_field('data_pid', 'id')
+    parse_text('id', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
+    replace_all('id.0', '([^.]*)\.[^.]{2,3}(?:\.[^.]{2,3})?$', '$1')
+    join_field(id, ':')
+end
+
+unless exists(id)
+    add_field(id, 'n/a')
+end
+
 
 # Retain only those records that have a workPid
 unless all_match('work_pid', 'http://*')
-    remove_field('title_display')
-    remove_field('creator_role')
-    remove_field('creator_display')
-    remove_field('creator_index')
-    remove_field('creator')
-    remove_field('production_date')
-    remove_field('period')
-    remove_field('repository')
-    remove_field('material')
-    remove_field('dimensions')
-    remove_field('artwork_category')
-    remove_field('artwork_type')
-    remove_field('artwork_type_display')
-    remove_field('artwork_subtype')
-    remove_field('artwork_subtype_display')
-    remove_field('references')
-    remove_field('object_number')
-    remove_field('description')
-    remove_field('data_pid')
-    remove_field('id')
+    reject()
 end
 
-# remove all original fields and only retain the ones we set
-
+# Remove all original fields and only retain the ones we set
 remove_field('_id')
 remove_field('_identifier')
 remove_field('_status')
