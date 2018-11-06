@@ -486,7 +486,7 @@
         if all_match(or_record.creator.pid._id, '.*\S.*')
 
             lido_basenameset(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$last,
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
                 or_record.creator.pid.display_name,
                 -value_pref: alternate
             )
@@ -498,7 +498,7 @@
         if all_match(or_record.creator.pid.viaf_uri, '.*\S.*')
 
             lido_baseid(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
                 or_record.creator.pid.viaf_uri,
                 -source: VIAF,
                 -type: purl
@@ -509,7 +509,7 @@
         if all_match(or_record.creator.pid.rkd_uri, '.*\S.*')
 
             lido_baseid(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
                 or_record.creator.pid.rkd_uri,
                 -source: RKD,
                 -type: purl
@@ -520,7 +520,7 @@
         if all_match(or_record.creator.pid.wikidata_uri, '.*\S.*')
 
             lido_baseid(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.actorID,
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
                 or_record.creator.pid.wikidata_uri,
                 -source: Wikidata,
                 -type: purl
