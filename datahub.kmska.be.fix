@@ -27,7 +27,7 @@
 
     copy_field(ObjectNumber, or_record.object_number.representationpid)
     lookup_in_store(or_record.object_number.representationpid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.representationpids.sqlite')
-    move_field(or_record.object_number.representationpid.representationPid, or_record.object_number.pid.representationPid)
+    move_field(or_record.object_number.representationpid.representationpid, or_record.object_number.pid.representationpid)
     remove_field(or_record.object_number.representationpid)
 
     # objectWorkType
@@ -133,9 +133,9 @@
     # which can be safely used as an identifier in Project Blacklight. The format of
     # the ID field looks like this:
     #
-    #   oai:datahub.vlaamsekunstcollectie.be:<domain>:<identifier>
-    #   ex. oai:datahub.vlaamsekunstcollectie.be:kmksa.be:254
-    #   ex. oai:datahub.vlaamsekunstcollectie.be:collectievlaamsegemeenschap.be:837
+    #   oai:datahub.kmska.be:<domain>:<identifier>
+    #   ex. oai:datahub.kmska.be:kmksa.be:254
+    #   ex. oai:datahub.kmska.be:collectievlaamsegemeenschap.be:837
     #
     # Note: the .tld is stripped from the domainname because the . (dot) breaks the
     # route matching algoritm.
@@ -143,7 +143,7 @@
     copy_field('or_record.object_number.pid.dataPid', 'or_record.object_number.pid.oaiPid')
     parse_text('or_record.object_number.pid.oaiPid', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
     join_field('or_record.object_number.pid.oaiPid', ':')
-    prepend('or_record.object_number.pid.oaiPid', 'oai:datahub.vlaamsekunstcollectie.be:')
+    prepend('or_record.object_number.pid.oaiPid', 'oai:datahub.kmska.be:')
 
     lido_baseid(
         lidoRecID,
@@ -158,7 +158,7 @@
         lidoRecID,
         or_record.object_number.pid.oaiPid,
         -type: urn,
-        -source: 'Vlaamse Kunstcollectie - Arthub Flanders',
+        -source: 'Koninklijk Museum voor Schone Kunsten Antwerpen',
         -label: dataPID,
         -pref: preferred
     )
@@ -486,7 +486,7 @@
         if all_match(or_record.creator.pid._id, '.*\S.*')
 
             lido_basenameset(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$last,
                 or_record.creator.pid.display_name,
                 -value_pref: alternate
             )
@@ -703,12 +703,12 @@ lido_baseid(
 
 # LIDO resourceID & linkResource
 
-    if all_match(or_record.object_number.pid.representationPid, '.*\S.*')
+    if all_match(or_record.object_number.pid.representationpid, '.*\S.*')
 
-        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
+        copy_field(or_record.object_number.pid.representationpid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
         add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
 
-        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+        copy_field(or_record.object_number.pid.representationpid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
 
     end
 
