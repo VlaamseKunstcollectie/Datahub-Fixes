@@ -695,7 +695,7 @@
 
         if all_match(c.description, '.*\S.*')
 
-            copy_field(c.description, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+            copy_field(c.description, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.$append._)
 
         end
 
