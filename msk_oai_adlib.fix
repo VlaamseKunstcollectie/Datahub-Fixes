@@ -1064,11 +1064,11 @@
 
         if all_match('d.production\.date\.start', '.*\S.*')
 
-            prepend('d.production\.date\.start', 'date')
+            prepend('d.production\.date\.start', 'vkcdate')
 
             if all_match('d.production\.date\.start\.prec', '.*\S.*')
 
-                prepend('d.production\.date\.start\.prec', 'prec')
+                prepend('d.production\.date\.start\.prec', 'vkcprec')
                 paste('d.production\.date\.start','d.production\.date\.start','d.production\.date\.start\.prec',join_char:"")
 
             end
@@ -1079,11 +1079,11 @@
 
         if all_match('d.production\.date\.end', '.*\S.*')
 
-            prepend('d.production\.date\.end', 'date')
+            prepend('d.production\.date\.end', 'vkcdate')
 
             if all_match('d.production\.date\.end\.prec', '.*\S.*')
 
-                prepend('d.production\.date\.end\.prec', 'prec')
+                prepend('d.production\.date\.end\.prec', 'vkcprec')
                 paste('d.production\.date\.end','d.production\.date\.end','d.production\.date\.end\.prec',join_char:"")
 
             end
@@ -1097,24 +1097,24 @@
     if all_match(or_record.earliest_dates.0, '.*\S.*')
 
         sort_field(or_record.earliest_dates)
-        if any_match(or_record.earliest_dates.0, 'date(.*)prec(.*)')
-            parse_text(or_record.earliest_dates.0, 'date(.*)prec(.*)')
+        if any_match(or_record.earliest_dates.0, 'vkcdate(.*)vkcprec(.*)')
+            parse_text(or_record.earliest_dates.0, 'vkcdate(.*)vkcprec(.*)')
         else
-            if any_match(or_record.earliest_dates.0, 'date(.*)')
-                parse_text(or_record.earliest_dates.0, 'date(.*)')
+            if any_match(or_record.earliest_dates.0, 'vkcdate(.*)')
+                parse_text(or_record.earliest_dates.0, 'vkcdate(.*)')
             end
         end
 
     end
 
     if all_match(or_record.latest_dates.0, '.*\S.*')
-    
+
         sort_field(or_record.latest_dates, reverse:1)
-        if any_match(or_record.latest_dates.0, 'date(.*)prec(.*)')
-            parse_text(or_record.latest_dates.0, 'date(.*)prec(.*)')
+        if any_match(or_record.latest_dates.0, 'vkcdate(.*)vkcprec(.*)')
+            parse_text(or_record.latest_dates.0, 'vkcdate(.*)vkcprec(.*)')
         else
-            if any_match(or_record.latest_dates.0, 'date(.*)')
-                parse_text(or_record.latest_dates.0, 'date(.*)')
+            if any_match(or_record.latest_dates.0, 'vkcdate(.*)')
+                parse_text(or_record.latest_dates.0, 'vkcdate(.*)')
             end
         end
 
