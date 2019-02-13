@@ -1650,23 +1650,6 @@
         
     end
 
-# LIDO rightsResource
-
-    do list(path: or_record.object_number, var: c)
-
-        lookup_in_store(c, DBI, data_source: 'dbi:SQLite:/tmp/import.RIGHTS.sqlite')
-
-        if all_match(c.rights, '.*\S.*')
-
-            lido_basenameset(
-                administrativeMetadata.resourceWrap.resourceSet.rightsResource.rightsHolder.legalBodyName,
-                c.rights
-            )
-
-        end
-
-    end
-
 
 
 ### Add lang attributes to descriptiveMetadata and administrativeMetadata (required LIDO attributes)
