@@ -114,8 +114,6 @@
 
     if all_match(Institution, '.*\S.*')
         copy_field(Institution, or_record.legalBodyName)
-    else
-        add_field(or_record.legalBodyName, 'Koninklijk Museum voor Schone Kunsten Antwerpen')
     end
     trim(or_record.legalBodyName)
 
@@ -368,6 +366,15 @@
     )
 
 # LIDO repositoryName
+
+    if all_match(or_record.legalBodyName, '.*\S.*')
+
+        lido_basenameset(
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyName,
+            or_record.legalBodyName
+        )
+
+    end
 
 # LIDO workID
 
@@ -685,6 +692,10 @@ lido_baseid(
     )
 
 # LIDO recordSource
+
+    unless all_match(or_record.legalBodyName, '.*\S.*')
+        add_field(or_record.legalBodyName, 'Koninklijk Museum voor Schone Kunsten Antwerpen')
+    end
 
     lido_basenameset(
         administrativeMetadata.recordWrap.recordSource.legalBodyName,
