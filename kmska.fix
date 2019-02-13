@@ -461,8 +461,6 @@
                 c.DisplayName,
                 -id_source: TMS,
                 -id_type: local,
-                -birthdate: c.BeginDateISO,
-                -deathdate: c.EndDateISO,
                 -qualifier: c.Role,
                 -name_pref: preferred
             )
