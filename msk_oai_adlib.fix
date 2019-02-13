@@ -73,8 +73,8 @@
 #   content\.motif\.general\.lref                                   pref: preferred
 #                                                                   pref: alternate                                                 identificatie hoofdmotief
 #                                                               lido:term
-#   content\.motif\.general                                       pref: preferred                           Onderwerp               term hoofdmotief
-#                                                                 pref: alternate                           Onderwerp
+#   content\.motif\.general                                         pref: preferred                         Onderwerp               term hoofdmotief
+#                                                                   pref: alternate                         Onderwerp
 #                                                       lido:titleSet
 #   Title                                                   pref: preferred                                                         titel
 #   Titel_translation                                       pref: alternate
@@ -84,7 +84,7 @@
 #   Description                                         lido:objectDescriptionSet                           Beschrijving            korte beschrijving
 #                                                       lido:objectMeasurementsSet
 #                                                           lido:measurementsSet
-#   Dimension.dimension\.type.value                             lido:measurementType                                                dimensie afmeting
+#   Dimension.dimension\.type.value                             lido:measurementType                        Dimensies               dimensie afmeting
 #   Dimension.dimension\.unit.value                             lido:measurementUnit                        Dimensies               eenheid afmeting
 #   Dimension.dimension\.value                                  lido:measurementValue                       Dimensies               waarde afmeting
 #   Dimension.dimension\.part                               lido:extentMeasurements                                                 onderdeel afmeting
@@ -136,9 +136,9 @@
 #   Material.material\.lref                                                 pref: preferred
 #                                                                           pref: alternate                                         identificatie materiaal
 #                                                                       lido:term
-#   Material.material.value                                                 pref: preferred                 Materiaal               term materiaal
+#   Material.material.value                                                 pref: preferred                                         term materiaal
 #                                                                           pref: alternate
-#   physical_description                                            lido:displayMaterialsTech
+#   physical_description                                            lido:displayMaterialsTech               Materiaal
 #                                                       lido:eventType
 #                                                           lido:term
 #                                                               check
@@ -178,12 +178,8 @@
 #                                                                   type:conceptID                                                  identificatie rechten status
 #                                                                   type:term                                                       term rechten status
 #                                                       lido:resourceWrap
-#   Digital_reference.digital_reference                         lido:resourceID
-#   Digital_reference.digital_reference                         lido:resourceRepresentation
-#                                                           lido:rightsResource
-#                                                               lido:rightsType
-#                                                                   type:conceptID                                                  identificatie rechten digitale representatie
-#                                                                   type:term                                                       term rechten digitale representatie
+#   Digital_reference.digital_reference                     lido:resourceID
+#   Digital_reference.digital_reference                     lido:resourceRepresentation
 
 
 
