@@ -900,12 +900,16 @@
                 -name_pref: preferred
             )
 
-            if all_match('c.creator\.date_of_birth', '.*\S.*')
-                copy_field('c.creator\.date_of_birth', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.earliestDate._)
-            end
+            unless all_match('c.creator\.qualifier', '.*\S.*')
 
-            if all_match('c.creator\.date_of_death', '.*\S.*')
-                copy_field('c.creator\.date_of_death', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.latestDate._)
+                if all_match('c.creator\.date_of_birth', '.*\S.*')
+                    copy_field('c.creator\.date_of_birth', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.earliestDate._)
+                end
+
+                if all_match('c.creator\.date_of_death', '.*\S.*')
+                    copy_field('c.creator\.date_of_death', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.latestDate._)
+                end
+
             end
 
             if all_match('c.creator\.qualifier', '.*\S.*')
