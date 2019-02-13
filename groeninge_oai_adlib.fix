@@ -1212,7 +1212,7 @@
         move_field(or_record.tmp, or_record.materials.$append)
     end
 
-    # We'll have multiple classifications: the corresponding value in AAT (type:alternate) and the value from the Adlib field object_name itself (type:preferred)
+    # We'll have multiple termMaterialsTechs: the corresponding value in AAT (type:alternate) and the value from the Adlib field object_name itself (type:preferred)
 
     do list(path: or_record.materials, var: c)
 
