@@ -876,11 +876,9 @@ end
 ## Description
 
 if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', '.*\S.*')
-    if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', '.*\S.*')
-        copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
-    else
-        add_field('description', 'n/a')
-    end
+    copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
+else
+    add_field('description', 'n/a')
 end
 
 unless exists(description)
