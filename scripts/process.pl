@@ -5,6 +5,7 @@ use Catmandu;
 use Try::Tiny::ByClass;
 use Data::Dumper;
 
+my $oai_endpoint = shift or die "Usage: $0 OAI\n";
 
 sub prepare {
 	if (-e "/tmp/index.oai_raw.sqlite") {
@@ -18,7 +19,7 @@ sub prepare {
 
 	my $importer = Catmandu->importer(
 		'OAI',
-	     url => 'http://datahub.box/oai',
+	     url => $oai_endpoint,
 	     handler => 'raw',
 	     metadataPrefix => 'oai_lido',	
 	);
