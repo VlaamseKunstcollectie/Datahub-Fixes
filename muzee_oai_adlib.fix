@@ -36,6 +36,7 @@
     copy_field(_metadata.Content_person, or_record.depicted_person)
     copy_field(_metadata.Content_subject, or_record.depicted_subject)
     copy_field(_metadata.priref, or_record.priref)
+    copy_field('_metadata.dimension\.free', or_record.displaydimension)  
 
 # Remove all Adlib fields, retaining only the fields to create the lido structure
 
@@ -81,7 +82,7 @@
 #   object_number                                           type: objectnummer                              Inventarisnummer        waarde objectnummer
 #   Description                                         lido:objectDescriptionSet                           Beschrijving            korte beschrijving
 #                                                       lido:objectMeasurementsSet
-#   dimension\.free                                         lido:displayObjectMeasurements                  Dimensies
+#   dimension\.free                                         lido:displayObjectMeasurements                  Dimensies               Mu.Zee zet dimensies in dimension.free als string
 #                                                           lido:objectMeasurements
 #                                                               lido:measurementsSet
 #   Dimension.dimension\.type.value                                 lido:measurementType                                            dimensie afmeting
@@ -133,8 +134,9 @@
 #   Production.production\.place.value                                      type: preferred
 #                                                                   lido:termMaterialsTech
 #                                                                       lido:conceptID
-#   Material.material\.lref                                                 pref: preferred
-#                                                                           pref: alternate                                         identificatie materiaal
+#    Material.material\.notes                                              pref: preferred                                          Mu.Zee zet volzinnen met materiaaltechnische beschrijving in material.notes, dit zou beter gebruikt worden dan de lref.
+#    Material.material\.lref                                               pref: alternate                                         identificatie materiaal.  
+#    Material.material\.notes                                       lido: sourceMaterialsTech                                       Binnen de materials notes zet Mu.Zee de bron van de beschrijving tussen haakjes. Dit zou geëxtraheerd kunnen worden en in dit veld gestoken worden. Geen idee hoe consistent dit tussen haakjes wordt gezet.                                     
 #                                                                       lido:term
 #   Material.material.value                                                 pref: preferred                                         term materiaal
 #                                                                           pref: alternate
@@ -661,14 +663,33 @@
 
 # LIDO objectMeasurementsWrap
 
-    unless is_array(or_record.dimensions) 
+#Take the string out of displaydimension and put it in displayObjectMeasurements in LIDO. 
+    
+    unless is_array(or_record.displaydimension) 
+        move_field(or_record.displaydimension, or_record.tmp)
+        set_array(or_record.displaydimension)
+        move_field(or_record.tmp, or_record.displaydimension.$append)
+    end
+
+    do list(path:or_record.displaydimension, var:c)
+
+        add_field(descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$append)
+
+        if all_match('c', '.*\S.*')
+            copy_field('c', descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$last.displayObjectMeasurements._)
+        end
+    end
+
+# Generate height, width, depth using the dimensions type, unit, and part params
+
+  unless is_array(or_record.dimensions) 
         move_field(or_record.dimensions, or_record.tmp)
         set_array(or_record.dimensions)
-        move_field(or_record.tmp, or_record.dimensions.$append)
+       move_field(or_record.tmp, or_record.dimensions.$append)
     end
 
     do list(path:or_record.dimensions, var:c)
-
+        
         add_field(descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$append)
 
         if all_match('c.dimension\.type.value', '.*\S.*')
@@ -1216,6 +1237,14 @@
         # Value in Adlib
 
         if all_match(c.material.value, '.*\S.*')
+
+            # get full material string stored in the notes 
+
+            if all_match('c.material\.notes', '.*\S.*')
+
+                copy_field('c.material\.notes',descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.displayMaterialsTech.$append)
+
+            end 
 
             if all_match('c.material\.lref', '.*\S.*')
 
