@@ -630,31 +630,31 @@
 
 # LIDO date
 
-    unless all_match(or_record.date.begin, '.*\S.*')
+    if all_match(or_record.date.begin, '.*\S.*')
 
         if all_match(or_record.date.end, '.*\S.*')
 
             lido_date(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                -earliest_date: or_record.date.begin,
                 -latest_date: or_record.date.end
+            )
+
+        else
+
+            lido_date(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                -earliest_date: or_record.date.begin
             )
 
         end
 
     else
 
-        unless all_match(or_record.date.end, '.*\S.*')
+        if all_match(or_record.date.end, '.*\S.*')
 
             lido_date(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -earliest_date: or_record.date.begin
-            )            
-
-        else
-
-            lido_date(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -earliest_date: or_record.date.begin,
                 -latest_date: or_record.date.end
             )
 
