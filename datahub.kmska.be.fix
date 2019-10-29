@@ -773,7 +773,9 @@ lido_baseid(
 
     lido_baseid(
         administrativeMetadata.recordWrap.recordSource.legalBodyID,
-        or_record.department.db.DepartmentID
+        or_record.department.db.DepartmentID,
+        -type: local,
+        -source: TMS
     )
 
     lido_basenameset(
