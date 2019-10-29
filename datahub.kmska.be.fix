@@ -100,6 +100,8 @@
 
     copy_field(Medium, or_record.eventMaterialsTech.display)
 
+    # recordSource
+
     if all_match(Institution, '.*\S.*')
         copy_field(Institution, or_record.legalBodyName)
     else
