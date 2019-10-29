@@ -6,6 +6,7 @@
 # Created: 8/11/2017
 
 
+
 ### Prepare an intermediate structure
 
 # Copy relevant fields in order to create a dedicated lido structure
@@ -122,6 +123,105 @@
 # Remove all TMS fields, retaining only the fields to create the lido structure
 
     retain(or_record)
+
+
+
+### Mapping to lido structure
+
+# Mapping Facets
+# ---------------------------------------------------------------------------------------------------------------------------------------------------
+# TMS - MySQL                             LIDO                                                VKC                     Invulboek veld
+#                                             lido:lidoRecID
+#   vdatapids.dataPid                             type: purl                                                              waarde databanknummer
+#                                                 type: urn
+#   vworkpids.workPid                         lido:objectPublishedID                              Work PURL               waarde objectnummer
+#                                             lido:category
+#                                             lido:objectWorkType
+#                                                 lido:conceptID
+#   vobjects.TermID                                  pref: preferred
+#                                                    pref: alternate                                                      identificatie objectnaam
+#                                                 lido:term
+#   vobjects.object                                  pref: preferred                              Subtype                 term objectnaam
+#                                                    pref: alternate                              Subtype
+#                                             lido:classification
+#                                                 type: objectcategorie
+#                                                    lido:conceptID
+#   vclassifications.ClassificationID                     pref: preferred
+#                                                         pref: alternate                                                 identificatie
+#                                                    lido:term
+#   vclassifications.Classification                       pref: preferred                         Type                    term
+#                                                         pref: alternate                         Type
+#                                                 type: hoofdmotief
+#                                                    lido:conceptID
+#   vsubjects.TermID                                      pref: preferred
+#                                                         pref: alternate                                                 identificatie hoofdmotief
+#                                                    lido:term
+#   vsubjects.subject                                     pref: preferred                         Onderwerp               term hoofdmotief
+#                                                         pref: alternate                         Onderwerp
+#                                             lido:titleSet
+#   vobjtitles.title                              pref: preferred                                                         titel
+#                                                 pref: alternate
+#                                             lido:repositoryName                                 Instelling              naam bewaarinstelling
+#                                             lido:workID
+#   CITvgsrpObjTombstoneD_RO.ObjectNumber         type: objectnummer                              Inventarisnummer        waarde objectnummer
+#   vdescriptions.description                 lido:objectDescriptionSet                           Beschrijving            korte beschrijving
+#                                             lido:objectMeasurementsSet
+#   vdimensions.display                           lido:displayObjectMeasurements
+#                                                 lido:objectMeasurements
+#                                                     lido:measurementsSet
+#   vdimensions.type                                      lido:measurementType                                            dimensie afmeting
+#   vdimensions.unit                                      lido:measurementUnit                    Dimensies               eenheid afmeting
+#   vdimensions.dimension                                 lido:measurementValue                   Dimensies               waarde afmeting
+#   vdimensions.element                               lido:extentMeasurements                                             onderdeel afmeting
+#                                             lido:eventType
+#                                                 lido:term
+#                                                     production
+#                                                         lido:eventActor
+#                                                             lido:actorID
+#   vconstituents.ConstituentID                                   type: local
+#                                                                 type: purl                                              identificatie vervaardiger
+#                                                             lido:nameActorSet
+#   vconstituents.DisplayName                                     pref: preferred                 Vervaardiger            naam vervaardiger
+#                                                                 pref: alternate
+#                                                             lido:vitalDatesActor
+#   vconstituents.BeginDateISO                                    lido:earliestDate
+#   vconstituents.EndDateISO                                      lido:latestDate
+#   vconstituents.Role                                        lido:roleActor                      Vervaardiger            rol vervaardiger
+#   vconstituents.Role                                        lido:attributionQualifierActor      Vervaardiger            kwalificatie vervaardiger
+#                                                         lido:eventDate
+#   CITvgsrpObjTombstoneD_RO.Dated                            lido:displayDate                    Datering
+#   CITvgsrpObjTombstoneD_RO.DateBegin                        lido:earliestDate                                           begindatum
+#                                                                 type
+#   CITvgsrpObjTombstoneD_RO.DateEnd                          lido:latestDate                                             einddatum
+#                                                                 type
+#                                                         lido:periodName
+#   vperiods.term                                             lido:term
+#                                                         lido:termMaterialsTech
+#                                                             lido:conceptID
+#   vmaterials.TermID                                             pref: preferred
+#                                                                 pref: alternate                                         identificatie materiaal
+#                                                             lido:term
+#   vmaterials.material                                           pref: preferred                 Materiaal               term materiaal
+#                                                                 pref: alternate
+#   CITvgsrpObjTombstoneD_RO.Medium                       lido:displayMaterialsTech
+#                                             lido:rightsWorkWrap
+#                                                 lido:rightsType
+#                                                     lido:conceptID                                                      identificatie rechten werk
+#                                                     lido:term                                                           term rechten werk
+#                                             lido:recordWrap
+#                                                 lido:recordID
+#   vdatapids.dataPid                                 type: global                                Data PURL               waarde databanknummer
+#   CITvgsrpObjTombstoneD_RO.ObjectID                 type: local                                                         waarde databanknummer
+#                                                 lido:recordType
+#                                                     lido:conceptID
+#                                                     lido:term
+#                                                 lido:recordSource
+#   vdepartments.DepartmentID                         lido:legalBodyID                                                    identificatie data provider
+#   vdepartments.department                           lido:legalBodyName                                                  naam data provider
+#                                                     lido:legalBodyWeblink
+#                                             lido:resourceWrap
+#   vrepresentationpids.representationPid         lido:resourceID
+#   vrepresentationpids.representationPid         lido:resourceRepresentation
 
 
 
