@@ -102,12 +102,8 @@
 
     # recordSource
 
-    if all_match(Institution, '.*\S.*')
-        copy_field(Institution, or_record.legalBodyName)
-    else
-        add_field(or_record.legalBodyName, 'Koninklijk Museum voor Schone Kunsten Antwerpen')
-    end
-    trim(or_record.legalBodyName)
+    copy_field(ObjectID, or_record.department.db)
+    lookup_in_store(or_record.department.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.departments.sqlite')
 
 # Remove all TMS fields, retaining only the fields to create the lido structure
 
@@ -775,9 +771,14 @@ lido_baseid(
 
 # LIDO recordSource
 
+    lido_baseid(
+        administrativeMetadata.recordWrap.recordSource.legalBodyID,
+        or_record.department.db.DepartmentID
+    )
+
     lido_basenameset(
         administrativeMetadata.recordWrap.recordSource.legalBodyName,
-        or_record.legalBodyName
+        or_record.department.db.department
     )
 
     add_field(or_record.legalBodyWeblink, 'http://kmska.be')
