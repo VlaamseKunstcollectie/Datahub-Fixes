@@ -31,14 +31,13 @@
     move_field(or_record.object_number.representationpid.representationPid, or_record.object_number.pid.representationPid)
     remove_field(or_record.object_number.representationpid)
 
-    # objectWorkType
-
-    copy_field(ObjectID, or_record.classificationWrap.db)
-    lookup_in_store(or_record.classificationWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.classifications.sqlite')
-
     # objectWrap
     copy_field(ObjectID, or_record.objectWrap.db)
     lookup_in_store(or_record.objectWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.objects.sqlite')
+
+    # classificationWrap
+    copy_field(ObjectID, or_record.classificationWrap.db)
+    lookup_in_store(or_record.classificationWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.classifications.sqlite')
 
     # subjectWrap
     copy_field(ObjectID, or_record.subjectWrap.db)
