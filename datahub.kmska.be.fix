@@ -75,20 +75,15 @@
 
     # production date (production)
 
-    add_field(or_record.date.begin, 'n/a')
     unless all_equal('DateBegin', '0')
         copy_field(DateBegin, or_record.date.begin)
     end
 
-    add_field('or_record.date.end', 'n/a')
     unless all_equal(DateEnd, '0')
         copy_field(DateEnd, or_record.date.end)
     end
 
-    add_field('or_record.date.display', 'n/a')
-    if all_match('Dated', '.*\S.*')
-        copy_field(Dated, or_record.date.display)
-    end
+    copy_field(Dated, or_record.date.display)
 
     trim(or_record.date.begin)
     trim(or_record.date.end)
@@ -104,13 +99,6 @@
     # eventMaterialsTech
 
     copy_field(Medium, or_record.eventMaterialsTech.display)
-    unless all_match(Medium, '.*\S.*')
-        add_field(or_record.eventMaterialsTech.display, 'n/a')
-    end
-
-    if is_null(Medium)
-       add_field(or_record.eventMaterialsTech.display, 'n/a')
-    end
 
     if all_match(Institution, '.*\S.*')
         copy_field(Institution, or_record.legalBodyName)
@@ -633,7 +621,7 @@
 
 # LIDO displayDate
 
-    unless all_match(or_record.date.display, 'n/a')
+    if all_match(or_record.date.display, '.*\S.*')
 
         lido_basevalue(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
@@ -644,9 +632,9 @@
 
 # LIDO date
 
-    if all_match(or_record.date.begin, 'n/a')
+    unless all_match(or_record.date.begin, '.*\S.*')
 
-        unless all_match(or_record.date.end, 'n/a')
+        if all_match(or_record.date.end, '.*\S.*')
 
             lido_date(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
@@ -657,7 +645,7 @@
 
     else
 
-        if all_match(or_record.date.end, 'n/a')
+        unless all_match(or_record.date.end, '.*\S.*')
 
             lido_date(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
@@ -739,7 +727,7 @@
 
 # LIDO displayMaterialsTech
 
-    unless all_match(or_record.eventMaterialsTech.display, 'n/a')
+    if all_match(or_record.eventMaterialsTech.display, '.*\S.*')
 
         lido_basevalue(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.displayMaterialsTech,
