@@ -9,6 +9,10 @@
 
 ### Prepare an intermediate structure
 
+# Retain only those records where DepartmentID equals 1
+
+    select all_match(DepartmentID, '1')
+
 # Copy relevant fields in order to create a dedicated lido structure
 
     # Identifiers
