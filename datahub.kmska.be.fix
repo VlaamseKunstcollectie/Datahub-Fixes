@@ -571,7 +571,7 @@
         if all_match(or_record.creator.pid._id, '.*\S.*')
 
             lido_basenameset(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.actorInRole.actor.nameActorSet.$last,
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
                 or_record.creator.pid.display_name,
                 -value_pref: alternate
             )
