@@ -202,6 +202,7 @@
 #                                                 lido:rightsType
 #                                                     lido:conceptID                                                      identificatie rechten werk
 #                                                     lido:term                                                           term rechten werk
+#                                                 lido:creditLine
 #                                             lido:recordWrap
 #                                                 lido:recordID
 #   vdatapids.dataPid                                 type: global                                Data PURL               waarde databanknummer
@@ -980,6 +981,57 @@
 
 
 ### LIDO administrativeMetadata
+
+# LIDO rightsWorkWrap
+
+    do list(path:or_record.constituentWrap.db.constituents, var:c)
+
+        copy_field(c.copyright, or_record.copyrights.$append)
+
+    end
+
+    do list(path:or_record.copyrights, var: c)
+
+        trim(c)
+
+        if all_match(c, '.*SABAM.*')
+
+            copy_field(c, or_record.copyright)
+
+        elsif all_match(c, 'CC0')
+
+            unless exists(or_record.copyright)
+
+                copy_field(c, or_record.copyright)
+
+            end
+
+        end
+
+    end
+
+    if all_match(or_record.copyright, 'CC0')
+
+        set_field(or_record.copyrightUrl, 'https://creativecommons.org/publicdomain/zero/1.0/')
+
+        lido_term(
+            administrativeMetadata.rightsWorkWrap.rightsWorkSet.rightsType,
+            or_record.copyright,
+            -conceptid: or_record.copyrightUrl,
+            -source: 'Creative Commons',
+            -type: 'purl'
+        )
+
+    end
+
+    if all_match(or_record.copyright, '.*\S.*')
+
+        lido_basevalue(
+            administrativeMetadata.rightsWorkWrap.rightsWorkSet.creditLine,
+            or_record.copyright
+        )
+
+    end
 
 # LIDO recordID
 
