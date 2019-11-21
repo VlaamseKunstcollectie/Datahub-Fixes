@@ -104,6 +104,11 @@
     copy_field(ObjectID, or_record.iconclass.db)
     lookup_in_store(or_record.iconclass.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.iconclass.sqlite')
 
+    # relatedWorksWrap
+
+    copy_field(ObjectID, or_record.relationWrap.db)
+    lookup_in_store(or_record.relationWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.relations.sqlite')
+
     # recordSource
 
     copy_field(ObjectID, or_record.department.db)
@@ -198,6 +203,14 @@
 #                                                     lido:subjectConcept
 #   viconclass                                            lido:conceptID                                                  identificatie afgebeeld concept
 #   viconclass                                            lido:term                                                       term afgebeeld concept
+#                                             lido:relatedWorksWrap
+#                                                 lido:relatedWork
+#                                                     lido:objectID
+#   vrelations.relatedObjectNumber                        type: local
+#                                                         type: oai
+#                                                 lido:relatedWorkRelType
+#   vrelations.relationshipID1(2)                     lido:conceptID
+#   vrelations.relationship                           lido:term
 #                                             lido:rightsWorkWrap
 #                                                 lido:rightsType
 #                                                     lido:conceptID                                                      identificatie rechten werk
@@ -975,6 +988,127 @@
             copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         end
+
+    end
+
+# LIDO relatedWorksWrap
+
+    # Loop over the different relations from TMS
+
+    do list(path:or_record.relationWrap.db.relations, var:r)
+
+        # Add a new, empty LIDO relationWorkSet field
+
+        add_field(descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$append)
+
+        # Add objectnumber from TMS as LIDO objectID
+
+        lido_baseid(
+            descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectID,
+            r.relatedObjectNumber,
+            -type: local,
+            -source: TMS
+        )
+
+        # Reconstruate datahub record ID
+
+        copy_field(r.relatedObjectNumber, or_record.relatedOaiPid)
+        lookup_in_store(or_record.relatedOaiPid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.datapids.sqlite')
+        parse_text(or_record.relatedOaiPid.dataPid, '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
+        join_field(or_record.relatedOaiPid.dataPid, ':')
+        prepend(or_record.relatedOaiPid.dataPid, 'oai:datahub.kmska.be:')
+
+        # Add the reconstruated datahub record ID as LIDO objectID
+
+        lido_baseid(
+            descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectID,
+            or_record.relatedOaiPid.dataPid,
+            -type: oai
+        )
+
+        # Determine the relationships conform Dublin Core
+
+        if all_match(r.relationshipID1, '.*\S.*')
+
+            copy_field(r.relationshipID1, or_record.relationshipID)
+
+            if all_match(r.relationshipID1, '0')
+                set_field(or_record.relationshipDC, 'Has Part')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
+            elsif all_match(r.relationshipID1, '1')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID1, '2')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID1, '3')
+                set_field(or_record.relationshipDC, 'References')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/references')
+            elsif all_match(r.relationshipID1, '6')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID1, '7')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID1, '8')
+                set_field(or_record.relationshipDC, 'Is Part Of')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
+            else
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            end
+
+        else
+
+            copy_field(r.relationshipID2, or_record.relationshipID)
+
+            if all_match(r.relationshipID2, '0')
+                set_field(or_record.relationshipDC, 'Is Part Of')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
+            elsif all_match(r.relationshipID2, '1')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID2, '2')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID2, '3')
+                set_field(or_record.relationshipDC, 'Is Referenced By')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/isReferencedBy')
+            elsif all_match(r.relationshipID2, '6')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID2, '7')
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            elsif all_match(r.relationshipID2, '8')
+                set_field(or_record.relationshipDC, 'Has Part')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
+            else
+                set_field(or_record.relationshipDC, 'Relation')
+                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+            end
+
+        end
+
+        # Add relationship term from TMS to LIDO relatedWorkRelType as LIDO term along with the relationshipID from TMS as LIDO conceptID
+
+        lido_term(
+            descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWorkRelType,
+            r.relationship,
+            -conceptid: or_record.relationshipID,
+            -source: TMS,
+            -type: local
+        )
+
+        # Add relationship term from Dublin Core to LIDO relatedWorkRelType as LIDO term along with the URI from Dublin Core as LIDO conceptID
+
+        lido_term(
+            descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWorkRelType,
+            or_record.relationshipDC,
+            -conceptid: or_record.relationshipDCURI,
+            -lang: en,
+            -type: URI
+        )
 
     end
 
