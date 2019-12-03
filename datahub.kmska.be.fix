@@ -370,18 +370,18 @@
 
         # Corresponding value in AAT, not (yet) retrievable via TMS
 
-        copy_field(c.Classification, or_record.classification.aat)
+        copy_field(c.Classification, c.classification.aat)
 
-        lookup_in_store(or_record.classification.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        lookup_in_store(c.classification.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-        if all_match(or_record.classification.aat.aatterm, '.*\S.*')
+        if all_match(c.classification.aat.aatterm, '.*\S.*')
 
-            if all_match(or_record.classification.aat.aaturi, '.*\S.*')
+            if all_match(c.classification.aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    or_record.classification.aat.aatterm,
-                    -conceptid: or_record.classification.aat.aaturi,
+                    c.classification.aat.aatterm,
+                    -conceptid: c.classification.aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -392,7 +392,7 @@
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    or_record.classification.aat.aatterm,
+                    c.classification.aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )                
@@ -481,11 +481,11 @@
 
         if all_match(t.languageid, 2)
 
-            copy_field(t.title, or_record.dutch_title)
+            copy_field(t.title, t.dutch_title)
 
             lido_basenameset(
                 descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
-                or_record.dutch_title,
+                t.dutch_title,
                 -value_pref: preferred,
                 -value_lang: nl,
                 -source: t.titleid
@@ -497,7 +497,7 @@
 
         if all_match(t.languageid, 1)
 
-            copy_field(t.title, or_record.english_title)
+            copy_field(t.title, t.english_title)
 
             lido_basenameset(
                 descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
@@ -619,19 +619,19 @@
 
         # Add Persistent URI data to actor
 
-        copy_field(c.DisplayName, or_record.creator.pid)
+        copy_field(c.DisplayName, c.creator.pid)
 
-        downcase(or_record.creator.pid)
+        downcase(c.creator.pid)
 
-        lookup_in_store(or_record.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+        lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
         # Preferred label from Flemish Art Collection concordance database
 
-        if all_match(or_record.creator.pid._id, '.*\S.*')
+        if all_match(c.creator.pid._id, '.*\S.*')
 
             lido_basenameset(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
-                or_record.creator.pid.display_name,
+                c.creator.pid.display_name,
                 -value_pref: alternate
             )
 
@@ -639,33 +639,33 @@
 
         # Creator Persistent URI's
 
-        if all_match(or_record.creator.pid.viaf_uri, '.*\S.*')
+        if all_match(c.creator.pid.viaf_uri, '.*\S.*')
 
             lido_baseid(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                or_record.creator.pid.viaf_uri,
+                c.creator.pid.viaf_uri,
                 -source: VIAF,
                 -type: purl
             )
 
         end
 
-        if all_match(or_record.creator.pid.rkd_uri, '.*\S.*')
+        if all_match(c.creator.pid.rkd_uri, '.*\S.*')
 
             lido_baseid(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                or_record.creator.pid.rkd_uri,
+                c.creator.pid.rkd_uri,
                 -source: RKD,
                 -type: purl
             )
 
         end
 
-        if all_match(or_record.creator.pid.wikidata_uri, '.*\S.*')
+        if all_match(c.creator.pid.wikidata_uri, '.*\S.*')
 
             lido_baseid(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                or_record.creator.pid.wikidata_uri,
+                c.creator.pid.wikidata_uri,
                 -source: Wikidata,
                 -type: purl
             )
@@ -823,18 +823,18 @@
 
             parse_text(ic, '(^\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?)$')
 
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.2, or_record.iconclassTerm)
+            copy_field(ic.0, ic.iconclassId)
+            copy_field(ic.2, ic.iconclassTerm)
 
             # Downcase the iconclass term
 
-            downcase(or_record.iconclassTerm)
+            downcase(ic.iconclassTerm)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -846,7 +846,7 @@
 
             # Add iconclass term from TMS as LIDO term
 
-            copy_field(or_record.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(ic.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         # Condition if the iconclass concept matches a format like "47(+22)"
 
@@ -858,13 +858,13 @@
 
             # Copy the iconclass ID from the iconclass concept
 
-            copy_field(ic, or_record.iconclassId)
+            copy_field(ic, ic.iconclassId)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -886,20 +886,20 @@
 
             parse_text(ic, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?) ([^\d].*)$')
 
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.2, or_record.iconclassTerm)
-            copy_field(ic.3, or_record.iconclassCategory)
+            copy_field(ic.0, ic.iconclassId)
+            copy_field(ic.2, ic.iconclassTerm)
+            copy_field(ic.3, ic.iconclassCategory)
 
             # Downcase the iconclass term and remove unnecessary whitespaces from the iconclass category
 
-            downcase(or_record.iconclassTerm)
-            trim(or_record.iconclassCategory)
+            downcase(ic.iconclassTerm)
+            trim(ic.iconclassCategory)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -911,11 +911,11 @@
 
             # Add iconclass term from TMS as LIDO term
 
-            copy_field(or_record.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(ic.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
             # Add iconclass category from TMS as LIDO term
 
-            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(ic.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         # Condition if the iconclass concept matches a format like "47C21(+8) uitgraven, landbouw"
 
@@ -929,18 +929,18 @@
 
             parse_text(ic, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?(?:\(\+\d+\))?) ([^\d].*)$')
 
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.2, or_record.iconclassCategory)
+            copy_field(ic.0, ic.iconclassId)
+            copy_field(ic.2, ic.iconclassCategory)
 
             # Remove unnecessary whitespaces from the iconclass category
 
-            trim(or_record.iconclassCategory)
+            trim(ic.iconclassCategory)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -952,7 +952,7 @@
 
             # Add iconclass category from TMS as LIDO term
 
-            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(ic.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         # Condition if the iconclass concept matches a format like "480(+354) Tekenkunst"
 
@@ -966,14 +966,14 @@
 
             parse_text(ic, '^(480(?:\(\+\d+\))?) ([^\d].*)$')
 
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.1, or_record.iconclassCategory)
+            copy_field(ic.0, ic.iconclassId)
+            copy_field(ic.1, ic.iconclassCategory)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -985,7 +985,7 @@
 
             # Add iconclass category from TMS as LIDO term
 
-            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(ic.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         end
 
@@ -1012,17 +1012,17 @@
 
         # Reconstruate datahub record ID
 
-        copy_field(r.relatedObjectNumber, or_record.relatedOaiPid)
-        lookup_in_store(or_record.relatedOaiPid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.datapids.sqlite')
-        parse_text(or_record.relatedOaiPid.dataPid, '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
-        join_field(or_record.relatedOaiPid.dataPid, ':')
-        prepend(or_record.relatedOaiPid.dataPid, 'oai:datahub.kmska.be:')
+        copy_field(r.relatedObjectNumber, r.relatedOaiPid)
+        lookup_in_store(r.relatedOaiPid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.datapids.sqlite')
+        parse_text(r.relatedOaiPid.dataPid, '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
+        join_field(r.relatedOaiPid.dataPid, ':')
+        prepend(r.relatedOaiPid.dataPid, 'oai:datahub.kmska.be:')
 
         # Add the reconstruated datahub record ID as LIDO objectID
 
         lido_baseid(
             descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectID,
-            or_record.relatedOaiPid.dataPid,
+            r.relatedOaiPid.dataPid,
             -type: oai
         )
 
@@ -1030,62 +1030,62 @@
 
         if all_match(r.relationshipID1, '.*\S.*')
 
-            copy_field(r.relationshipID1, or_record.relationshipID)
+            copy_field(r.relationshipID1, r.relationshipID)
 
             if all_match(r.relationshipID1, '0')
-                set_field(or_record.relationshipDC, 'Has Part')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
+                set_field(r.relationshipDC, 'Has Part')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
             elsif all_match(r.relationshipID1, '1')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID1, '2')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID1, '3')
-                set_field(or_record.relationshipDC, 'References')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/references')
+                set_field(r.relationshipDC, 'References')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/references')
             elsif all_match(r.relationshipID1, '6')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID1, '7')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID1, '8')
-                set_field(or_record.relationshipDC, 'Is Part Of')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
+                set_field(r.relationshipDC, 'Is Part Of')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
             else
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             end
 
         else
 
-            copy_field(r.relationshipID2, or_record.relationshipID)
+            copy_field(r.relationshipID2, r.relationshipID)
 
             if all_match(r.relationshipID2, '0')
-                set_field(or_record.relationshipDC, 'Is Part Of')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
+                set_field(r.relationshipDC, 'Is Part Of')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
             elsif all_match(r.relationshipID2, '1')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID2, '2')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID2, '3')
-                set_field(or_record.relationshipDC, 'Is Referenced By')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/isReferencedBy')
+                set_field(r.relationshipDC, 'Is Referenced By')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/isReferencedBy')
             elsif all_match(r.relationshipID2, '6')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID2, '7')
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             elsif all_match(r.relationshipID2, '8')
-                set_field(or_record.relationshipDC, 'Has Part')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
+                set_field(r.relationshipDC, 'Has Part')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
             else
-                set_field(or_record.relationshipDC, 'Relation')
-                set_field(or_record.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipDC, 'Relation')
+                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
             end
 
         end
@@ -1095,7 +1095,7 @@
         lido_term(
             descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWorkRelType,
             r.relationship,
-            -conceptid: or_record.relationshipID,
+            -conceptid: r.relationshipID,
             -source: TMS,
             -type: local
         )
@@ -1104,8 +1104,8 @@
 
         lido_term(
             descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWorkRelType,
-            or_record.relationshipDC,
-            -conceptid: or_record.relationshipDCURI,
+            r.relationshipDC,
+            -conceptid: r.relationshipDCURI,
             -lang: en,
             -type: URI
         )
