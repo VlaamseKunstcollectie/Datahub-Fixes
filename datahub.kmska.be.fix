@@ -942,18 +942,18 @@
 
             parse_text(ic, '(^\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?)$')
 
-            copy_field(ic.0, ic.iconclassId)
-            copy_field(ic.2, ic.iconclassTerm)
+            copy_field(ic.0, or_record.iconclassId)
+            copy_field(ic.2, or_record.iconclassTerm)
 
             # Downcase the iconclass term
 
-            downcase(ic.iconclassTerm)
+            downcase(or_record.iconclassTerm)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -965,7 +965,7 @@
 
             # Add iconclass term from TMS as LIDO term
 
-            copy_field(ic.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(or_record.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         # Condition if the iconclass concept matches a format like "47(+22)"
 
@@ -977,13 +977,13 @@
 
             # Copy the iconclass ID from the iconclass concept
 
-            copy_field(ic, ic.iconclassId)
+            copy_field(ic, or_record.iconclassId)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -1005,20 +1005,20 @@
 
             parse_text(ic, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?) ([^\d].*)$')
 
-            copy_field(ic.0, ic.iconclassId)
-            copy_field(ic.2, ic.iconclassTerm)
-            copy_field(ic.3, ic.iconclassCategory)
+            copy_field(ic.0, or_record.iconclassId)
+            copy_field(ic.2, or_record.iconclassTerm)
+            copy_field(ic.3, or_record.iconclassCategory)
 
             # Downcase the iconclass term and remove unnecessary whitespaces from the iconclass category
 
-            downcase(ic.iconclassTerm)
-            trim(ic.iconclassCategory)
+            downcase(or_record.iconclassTerm)
+            trim(or_record.iconclassCategory)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -1030,11 +1030,11 @@
 
             # Add iconclass term from TMS as LIDO term
 
-            copy_field(ic.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(or_record.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
             # Add iconclass category from TMS as LIDO term
 
-            copy_field(ic.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         # Condition if the iconclass concept matches a format like "47C21(+8) uitgraven, landbouw"
 
@@ -1048,18 +1048,18 @@
 
             parse_text(ic, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?(?:\(\+\d+\))?) ([^\d].*)$')
 
-            copy_field(ic.0, ic.iconclassId)
-            copy_field(ic.2, ic.iconclassCategory)
+            copy_field(ic.0, or_record.iconclassId)
+            copy_field(ic.2, or_record.iconclassCategory)
 
             # Remove unnecessary whitespaces from the iconclass category
 
-            trim(ic.iconclassCategory)
+            trim(or_record.iconclassCategory)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -1071,7 +1071,7 @@
 
             # Add iconclass category from TMS as LIDO term
 
-            copy_field(ic.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         # Condition if the iconclass concept matches a format like "480(+354) Tekenkunst"
 
@@ -1085,14 +1085,14 @@
 
             parse_text(ic, '^(480(?:\(\+\d+\))?) ([^\d].*)$')
 
-            copy_field(ic.0, ic.iconclassId)
-            copy_field(ic.1, ic.iconclassCategory)
+            copy_field(ic.0, or_record.iconclassId)
+            copy_field(ic.1, or_record.iconclassCategory)
 
             ## Create the LIDO fields
 
             # Add iconclass ID from TMS as LIDO conceptID
 
-            copy_field(ic.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
+            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
 
             # Add type of LIDO conceptID
 
@@ -1104,9 +1104,15 @@
 
             # Add iconclass category from TMS as LIDO term
 
-            copy_field(ic.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
+            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
 
         end
+
+        # Prevent reusing the same values in the next iteration
+
+        remove_field(or_record.iconclassId)
+        remove_field(or_record.iconclassTerm)
+        remove_field(or_record.iconclassCategory)
 
     end
 
