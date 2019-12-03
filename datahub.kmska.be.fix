@@ -507,6 +507,22 @@
 
 # LIDO repositoryName
 
+    # Add department ID from TMS to LIDO repositoryName as LIDO legalBodyID
+
+    lido_baseid(
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyID,
+        or_record.department.db.DepartmentID,
+        -type: local,
+        -source: TMS
+    )
+
+    # Add department from TMS to LIDO repositoryName as LIDO legalBodyName
+
+    lido_basenameset(
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyName,
+        or_record.department.db.department
+    )
+
 # LIDO workID
 
     lido_baseid(
