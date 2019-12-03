@@ -1126,7 +1126,7 @@
 
         add_field(descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$append)
 
-        if all_match(r.descriptionNumbering, "paginanummer")
+        if all_match(r.descriptionNumbering, '.*\S.*')
 
             copy_field(r.numbering, descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.sortorder)
 
