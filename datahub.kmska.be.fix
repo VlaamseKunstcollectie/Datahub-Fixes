@@ -1008,11 +1008,9 @@
 
     do list(path:or_record.relationWrap.db.relations, var:r)
 
-        # Add a new, empty LIDO relationWorkSet field
+        # Add a new, empty LIDO relationWorkSet field along with page number of related object from TMS (if present) as LIDO sortorder
 
         add_field(descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$append)
-
-        # Add page number from TMS to LIDO relatedWorkSet as LIDO sortorder
 
         if all_match(r.descriptionNumbering, "paginanummer")
 
@@ -1020,7 +1018,7 @@
 
         end
 
-        # Add objectnumber from TMS as LIDO objectID
+        # Add object number of related object from TMS as LIDO objectID
 
         lido_baseid(
             descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectID,
@@ -1029,7 +1027,7 @@
             -source: TMS
         )
 
-        # Reconstruate datahub record ID
+        # Reconstruate datahub record ID for related object
 
         copy_field(r.relatedObjectNumber, r.relatedOaiPid)
         lookup_in_store(r.relatedOaiPid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.datapids.sqlite')
@@ -1045,36 +1043,26 @@
             -type: oai
         )
 
-        # Determine the relationships conform Dublin Core
+        # Determine the English relationship terms and corresponding URI conform Dublin Core (if present)
 
         if all_match(r.relationshipID1, '.*\S.*')
 
             copy_field(r.relationshipID1, r.relationshipID)
 
             if all_match(r.relationshipID1, '0')
-                set_field(r.relationshipDC, 'Has Part')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
-            elsif all_match(r.relationshipID1, '1')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
-            elsif all_match(r.relationshipID1, '2')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipEn, 'Has Part')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/hasPart')
             elsif all_match(r.relationshipID1, '3')
-                set_field(r.relationshipDC, 'References')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/references')
+                set_field(r.relationshipEn, 'References')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/references')
             elsif all_match(r.relationshipID1, '6')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
-            elsif all_match(r.relationshipID1, '7')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipEn, 'Back')
             elsif all_match(r.relationshipID1, '8')
-                set_field(r.relationshipDC, 'Is Part Of')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
+                set_field(r.relationshipEn, 'Is Part Of')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/isPartOf')
             else
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipEn, 'Relation')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/relation')
             end
 
         else
@@ -1082,29 +1070,19 @@
             copy_field(r.relationshipID2, r.relationshipID)
 
             if all_match(r.relationshipID2, '0')
-                set_field(r.relationshipDC, 'Is Part Of')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/isPartOf')
-            elsif all_match(r.relationshipID2, '1')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
-            elsif all_match(r.relationshipID2, '2')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipEn, 'Is Part Of')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/isPartOf')
             elsif all_match(r.relationshipID2, '3')
-                set_field(r.relationshipDC, 'Is Referenced By')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/isReferencedBy')
+                set_field(r.relationshipEn, 'Is Referenced By')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/isReferencedBy')
             elsif all_match(r.relationshipID2, '6')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
-            elsif all_match(r.relationshipID2, '7')
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipEn, 'Front')
             elsif all_match(r.relationshipID2, '8')
-                set_field(r.relationshipDC, 'Has Part')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/hasPart')
+                set_field(r.relationshipEn, 'Has Part')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/hasPart')
             else
-                set_field(r.relationshipDC, 'Relation')
-                set_field(r.relationshipDCURI, 'http://purl.org/dc/terms/relation')
+                set_field(r.relationshipEn, 'Relation')
+                set_field(r.relationshipURI, 'http://purl.org/dc/terms/relation')
             end
 
         end
@@ -1119,15 +1097,29 @@
             -type: local
         )
 
-        # Add relationship term from Dublin Core to LIDO relatedWorkRelType as LIDO term along with the URI from Dublin Core as LIDO conceptID
+        # Add English relationship term to LIDO relatedWorkRelType as LIDO term along with the URI from Dublin Core (if present) as LIDO conceptID
 
-        lido_term(
-            descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWorkRelType,
-            r.relationshipDC,
-            -conceptid: r.relationshipDCURI,
-            -lang: en,
-            -type: URI
-        )
+        if all_match(r.relationshipURI, '.*\S.*')
+
+            lido_term(
+                descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWorkRelType,
+                r.relationshipEn,
+                -conceptid: r.relationshipURI,
+                -type: URI,
+                -pref: preferred,
+                -lang: en
+            )
+
+        else
+
+            lido_term(
+                descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWorkRelType,
+                r.relationshipEn,
+                -pref: preferred,
+                -lang: en
+            )
+
+        end
 
     end
 
