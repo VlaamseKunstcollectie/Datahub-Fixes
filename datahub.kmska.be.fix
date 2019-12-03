@@ -594,7 +594,7 @@
 
 # LIDO eventActor
 
-    set_array(qualifiers, "atelier van", "kopie naar", "navolger van", "omgeving van", "school van", "toegeschreven aan", "x")
+    set_array(qualifiers, "atelier van", "kopie naar", "navolger van", "omgeving van", "school van", "toegeschreven aan", "vroegere toeschrijving", "x")
 
     do list(path:or_record.constituentWrap.db.constituents, var:c)
 
