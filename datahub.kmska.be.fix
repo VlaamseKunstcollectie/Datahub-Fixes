@@ -1143,7 +1143,7 @@
 
             copy_field(c, or_record.copyright)
 
-        elsif all_match(c, 'CC0')
+        else
 
             unless exists(or_record.copyright)
 
