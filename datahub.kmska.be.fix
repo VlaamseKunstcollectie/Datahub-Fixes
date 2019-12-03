@@ -1141,7 +1141,7 @@
             -source: TMS
         )
 
-        # Reconstruate datahub record ID for related object
+        # Reconstruate datahub record ID for related object (if exists)
 
         copy_field(r.relatedObjectNumber, r.relatedOaiPid)
         lookup_in_store(r.relatedOaiPid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.datapids.sqlite')
@@ -1151,11 +1151,15 @@
 
         # Add the reconstruated datahub record ID as LIDO objectID
 
-        lido_baseid(
-            descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectID,
-            r.relatedOaiPid.dataPid,
-            -type: oai
-        )
+        if all_match(r.relatedOaiPid.dataPid, '.*\S.*')
+
+            lido_baseid(
+                descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectID,
+                r.relatedOaiPid.dataPid,
+                -type: oai
+            )
+
+        end
 
         # Determine the English relationship terms and corresponding URI conform Dublin Core (if present)
 
