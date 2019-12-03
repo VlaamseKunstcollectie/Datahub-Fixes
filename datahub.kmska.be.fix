@@ -466,12 +466,6 @@
 
 # LIDO titleSet
 
-    unless is_array(or_record.titleWrap.db.objtitles)
-        move_field(or_record.titleWrap.db.objtitles, or_record.tmp)
-        set_array(or_record.titleWrap.db.objtitles)
-        move_field(or_record.tmp, or_record.titleWrap.db.objtitles.$append)
-    end
-
     do list(path:or_record.titleWrap.db.objtitles, var:t)
 
         trim(t.title)
