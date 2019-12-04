@@ -112,10 +112,9 @@
        add_field(or_record.eventMaterialsTech.display, 'n/a')
     end
 
-    if all_match(Institution, '.*\S.*')
-        copy_field(Institution, or_record.legalBodyName)
-    end
-    trim(or_record.legalBodyName)
+    # make sure all institution names are KMSKA, regardless of what is in the institution field. 
+    
+    add_field(or_record.legalBodyName, 'Koninklijk Museum voor Schone Kunsten Antwerpen')
 
 # Remove all TMS fields, retaining only the fields to create the lido structure
 
