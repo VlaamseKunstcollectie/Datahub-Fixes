@@ -366,6 +366,15 @@
 
 # LIDO repositoryName
 
+    if all_match(or_record.legalBodyName, '.*\S.*')
+
+        lido_basenameset(
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyName,
+            or_record.legalBodyName
+        )
+
+    end
+
 # LIDO workID
 
     lido_baseid(
@@ -451,8 +460,6 @@
                 c.DisplayName,
                 -id_source: TMS,
                 -id_type: local,
-                -birthdate: c.BeginDateISO,
-                -deathdate: c.EndDateISO,
                 -qualifier: c.Role,
                 -name_pref: preferred
             )
@@ -682,6 +689,10 @@ lido_baseid(
     )
 
 # LIDO recordSource
+
+    unless all_match(or_record.legalBodyName, '.*\S.*')
+        add_field(or_record.legalBodyName, 'Koninklijk Museum voor Schone Kunsten Antwerpen')
+    end
 
     lido_basenameset(
         administrativeMetadata.recordWrap.recordSource.legalBodyName,

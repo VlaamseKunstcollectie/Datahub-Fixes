@@ -83,8 +83,8 @@
 #                   lang: nl                        period
 #           lido:termMaterialsTech
 #               lido:term
-#                   pref: preferred                 material_display
 #                   pref: alternate                 material
+#           lido:displayMaterialsTech               material_display
 # lido:recordWrap          
 #   lido:recordSource
 #       lido:legalBodyName                          repository
@@ -540,7 +540,7 @@ do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
 
             do list(path:e.event.eventMaterialsTech, var:mat)
 
-                # Use the preferred term for the detail page
+                # Use the physical description for the detail page if exists, els use the preferred term
                 # Use the alternate term in the search results / facet if exists, else use the preferred term
                 # If no material exists, use n/a (not available)
 
@@ -574,6 +574,29 @@ do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
 
 end
 
+do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
+
+    do list(path:e.event.eventType.term, var:p)
+
+        if all_match(p._, 'production')
+
+            do list(path:e.event.eventMaterialsTech, var:mat)
+
+                do list(path: 'mat.displayMaterialsTech', var:displayMaterial)
+                    if all_match('displayMaterial._', '.*\S.*')
+                        remove_field(material_display)
+                        copy_field(displayMaterial._, material_display.$append)
+                    end
+                end
+
+            end
+
+        end
+
+    end
+
+end
+
 # If the fields for material are empty, use n/a (not available)
 
 unless all_match(material_display.$first, '.*\S.*')
@@ -589,7 +612,7 @@ end
 
 set_array(dimensions)
 
-# Use extent 'geheel'
+# Use extent 'geheel' (used in AdLib) or 'Volledig' (used in TMS)
 
 do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet, var:el2)
 
@@ -690,6 +713,24 @@ do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectMeas
                     append(dimensionsr, ' (diameter)')
                     move_field(dimensionsr, dimensions.$append)
                 end
+            end
+
+        end
+
+    else
+
+        if all_match(el2.objectMeasurements.extentMeasurements.0._, 'Volledig')
+
+            if all_match(el2.displayObjectMeasurements.0._, '.*\S.*')
+
+                if all_match(dimensions.$first, '.*\S.*')
+                    unless in(el2.displayObjectMeasurements.0._, dimensions.$last)
+                        copy_field(el2.displayObjectMeasurements.0._, dimensions.$append)
+                    end
+                else
+                    copy_field(el2.displayObjectMeasurements.0._, dimensions.$append)
+                end
+
             end
 
         end

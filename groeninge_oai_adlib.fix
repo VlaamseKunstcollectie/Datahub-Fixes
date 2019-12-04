@@ -73,8 +73,8 @@
 #   content\.motif\.general\.lref                                   pref: preferred
 #                                                                   pref: alternate                                                 identificatie hoofdmotief
 #                                                               lido:term
-#   content\.motif\.general                                       pref: preferred                           Onderwerp               term hoofdmotief
-#                                                                 pref: alternate                           Onderwerp
+#   content\.motif\.general                                         pref: preferred                         Onderwerp               term hoofdmotief
+#                                                                   pref: alternate                         Onderwerp
 #                                                       lido:titleSet
 #   Title                                                   pref: preferred                                                         titel
 #   Titel_translation                                       pref: alternate
@@ -84,7 +84,7 @@
 #   Description                                         lido:objectDescriptionSet                           Beschrijving            korte beschrijving
 #                                                       lido:objectMeasurementsSet
 #                                                           lido:measurementsSet
-#   Dimension.dimension\.type.value                                lido:measurementType                                                dimensie afmeting
+#   Dimension.dimension\.type.value                             lido:measurementType                        Dimensies               dimensie afmeting
 #   Dimension.dimension\.unit.value                             lido:measurementUnit                        Dimensies               eenheid afmeting
 #   Dimension.dimension\.value                                  lido:measurementValue                       Dimensies               waarde afmeting
 #   Dimension.dimension\.part                               lido:extentMeasurements                                                 onderdeel afmeting
@@ -136,9 +136,9 @@
 #   Material.material\.lref                                                 pref: preferred
 #                                                                           pref: alternate                                         identificatie materiaal
 #                                                                       lido:term
-#   Material.material.value                                                 pref: preferred                 Materiaal               term materiaal
+#   Material.material.value                                                 pref: preferred                                         term materiaal
 #                                                                           pref: alternate
-#   physical_description                                            lido:displayMaterialsTech
+#   physical_description                                            lido:displayMaterialsTech               Materiaal
 #                                                       lido:eventType
 #                                                           lido:term
 #                                                               check
@@ -178,12 +178,8 @@
 #                                                                   type:conceptID                                                  identificatie rechten status
 #                                                                   type:term                                                       term rechten status
 #                                                       lido:resourceWrap
-#   Digital_reference.digital_reference                         lido:resourceID
-#   Digital_reference.digital_reference                         lido:resourceRepresentation
-#                                                           lido:rightsResource
-#                                                               lido:rightsType
-#                                                                   type:conceptID                                                  identificatie rechten digitale representatie
-#                                                                   type:term                                                       term rechten digitale representatie
+#   Digital_reference.digital_reference                     lido:resourceID
+#   Digital_reference.digital_reference                     lido:resourceRepresentation
 
 
 
@@ -656,7 +652,7 @@
 
         if all_match(c.description, '.*\S.*')
 
-            copy_field(c.description, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+            copy_field(c.description, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.$append._)
 
         end
 
@@ -861,12 +857,16 @@
                 -name_pref: preferred
             )
 
-            if all_match('c.creator\.date_of_birth', '.*\S.*')
-                copy_field('c.creator\.date_of_birth', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.earliestDate._)
-            end
+            unless all_match('c.creator\.qualifier', '.*\S.*')
 
-            if all_match('c.creator\.date_of_death', '.*\S.*')
-                copy_field('c.creator\.date_of_death', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.latestDate._)
+                if all_match('c.creator\.date_of_birth', '.*\S.*')
+                    copy_field('c.creator\.date_of_birth', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.earliestDate._)
+                end
+
+                if all_match('c.creator\.date_of_death', '.*\S.*')
+                    copy_field('c.creator\.date_of_death', descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.vitalDatesActor.latestDate._)
+                end
+
             end
 
             if all_match('c.creator\.qualifier', '.*\S.*')
@@ -1021,11 +1021,11 @@
 
         if all_match('d.production\.date\.start', '.*\S.*')
 
-            prepend('d.production\.date\.start', 'date')
+            prepend('d.production\.date\.start', 'vkcdate')
 
             if all_match('d.production\.date\.start\.prec', '.*\S.*')
 
-                prepend('d.production\.date\.start\.prec', 'prec')
+                prepend('d.production\.date\.start\.prec', 'vkcprec')
                 paste('d.production\.date\.start','d.production\.date\.start','d.production\.date\.start\.prec',join_char:"")
 
             end
@@ -1036,11 +1036,11 @@
 
         if all_match('d.production\.date\.end', '.*\S.*')
 
-            prepend('d.production\.date\.end', 'date')
+            prepend('d.production\.date\.end', 'vkcdate')
 
             if all_match('d.production\.date\.end\.prec', '.*\S.*')
 
-                prepend('d.production\.date\.end\.prec', 'prec')
+                prepend('d.production\.date\.end\.prec', 'vkcprec')
                 paste('d.production\.date\.end','d.production\.date\.end','d.production\.date\.end\.prec',join_char:"")
 
             end
@@ -1054,11 +1054,11 @@
     if all_match(or_record.earliest_dates.0, '.*\S.*')
 
         sort_field(or_record.earliest_dates)
-        if any_match(or_record.earliest_dates.0, 'date(.*)prec(.*)')
-            parse_text(or_record.earliest_dates.0, 'date(.*)prec(.*)')
+        if any_match(or_record.earliest_dates.0, 'vkcdate(.*)vkcprec(.*)')
+            parse_text(or_record.earliest_dates.0, 'vkcdate(.*)vkcprec(.*)')
         else
-            if any_match(or_record.earliest_dates.0, 'date(.*)')
-                parse_text(or_record.earliest_dates.0, 'date(.*)')
+            if any_match(or_record.earliest_dates.0, 'vkcdate(.*)')
+                parse_text(or_record.earliest_dates.0, 'vkcdate(.*)')
             end
         end
 
@@ -1067,11 +1067,11 @@
     if all_match(or_record.latest_dates.0, '.*\S.*')
 
         sort_field(or_record.latest_dates, reverse:1)
-        if any_match(or_record.latest_dates.0, 'date(.*)prec(.*)')
-            parse_text(or_record.latest_dates.0, 'date(.*)prec(.*)')
+        if any_match(or_record.latest_dates.0, 'vkcdate(.*)vkcprec(.*)')
+            parse_text(or_record.latest_dates.0, 'vkcdate(.*)vkcprec(.*)')
         else
-            if any_match(or_record.latest_dates.0, 'date(.*)')
-                parse_text(or_record.latest_dates.0, 'date(.*)')
+            if any_match(or_record.latest_dates.0, 'vkcdate(.*)')
+                parse_text(or_record.latest_dates.0, 'vkcdate(.*)')
             end
         end
 
@@ -1212,7 +1212,7 @@
         move_field(or_record.tmp, or_record.materials.$append)
     end
 
-    # We'll have multiple classifications: the corresponding value in AAT (type:alternate) and the value from the Adlib field object_name itself (type:preferred)
+    # We'll have multiple termMaterialsTechs: the corresponding value in AAT (type:alternate) and the value from the Adlib field object_name itself (type:preferred)
 
     do list(path: or_record.materials, var: c)
 
@@ -1579,23 +1579,6 @@
                 copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
 
             end
-
-        end
-
-    end
-
-# LIDO rightsResource
-
-    do list(path: or_record.object_number, var: c)
-
-        lookup_in_store(c, DBI, data_source: 'dbi:SQLite:/tmp/import.RIGHTS.sqlite')
-
-        if all_match(c.rights, '.*\S.*')
-
-            lido_basenameset(
-                administrativeMetadata.resourceWrap.resourceSet.rightsResource.rightsHolder.legalBodyName,
-                c.rights
-            )
 
         end
 
