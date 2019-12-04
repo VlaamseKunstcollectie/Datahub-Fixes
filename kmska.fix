@@ -111,7 +111,7 @@
     if is_null(Medium)
        add_field(or_record.eventMaterialsTech.display, 'n/a')
     end
-
+    
     # make sure all institution names are KMSKA, regardless of what is in the institution field. 
     
     add_field(or_record.legalBodyName, 'Koninklijk Museum voor Schone Kunsten Antwerpen')
