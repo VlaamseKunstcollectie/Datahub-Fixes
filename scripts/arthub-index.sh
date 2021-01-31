@@ -26,7 +26,7 @@ fi
 
 if [ ! -f "${l}" -o ! -r "${l}" ]; then
 	if [[ "$l" =~ ^[a-z]{2,3}$ ]]; then
-		l="../fixes/datahub-oai-to-blacklight-solr-${l}.fix"
+		l="../datahub-oai-to-blacklight-solr-${l}.fix"
 		if [ ! -f "${l}" -o ! -r "${l}" ]; then
 			echo "The fix file ${l} does not exist or is not readable."
 			exit 1
