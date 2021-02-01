@@ -2,7 +2,7 @@
 #
 # Institution: Mu.ZEE Ostend
 # Description: Converts Adlib Structured XML exposed via ErfgoedInzicht OAI to LIDO 1.0
-# Created: 9/1/2019
+# Created: 9/4/2020
 
 
 
@@ -15,36 +15,58 @@
     copy_field(_metadata.Object_name, or_record.object_name)
     copy_field(_metadata.object_category, or_record.object_category)
     copy_field('_metadata.object_category\.lref', or_record.object_category_id)
-    copy_field('_metadata.content\.motif\.general', or_record.subject)
-    copy_field('_metadata.content\.motif\.general\.lref', or_record.subject_id)
     copy_field(_metadata.Title, or_record.title)
     copy_field(_metadata.Titel_translation, or_record.title_translation)
     copy_field('_metadata.institution\.name', or_record.institution)
     copy_field(_metadata.object_number, or_record.object_number)
+#    copy_field(_metadata.print_state, or_record.print_state)
+#    copy_field(_metadata.copy_number, or_record.copy_number)
+#    copy_field(_metadata.edition, or_record.edition)
     copy_field(_metadata.Description, or_record.description)
+#    copy_field(_metadata.part, or_record.part)
+#    copy_field(_metadata.number_of_parts, or_record.number_of_parts)
     copy_field(_metadata.Dimension, or_record.dimensions)
+    copy_field('_metadata.dimension\.free', or_record.displaydimension)
+#    copy_field(_metadata.Inscription, or_record.inscription)
+#    copy_field(_metadata.Current_location, or_record.current_location)
+#    copy_field(_metadata.Acquisition_source, or_record.acquisition_source)
+#    copy_field('_metadata.acquisition\.date', or_record.acquisition_date)
 #    copy_field('_metadata.acquisition\.method', or_record.acquisition_method)
 #    copy_field('_metadata.acquisition\.method\.lref', or_record.acquisition_method_id)
-#    copy_field('_metadata.Acquisition_source.acquisition\.source.value', or_record.acquisition_source)
-#    copy_field('_metadata.acquisition\.date', or_record.acquisition_date)
+#    copy_field(_metadata.credit_line, or_record.acquisition_creditline)
+#    copy_field(_metadata.Exhibition, or_record.exhibition)
     copy_field(_metadata.Production, or_record.production)
     copy_field(_metadata.Production_date, or_record.production_date)
     copy_field('_metadata.production\.period', or_record.production_period)
     copy_field('_metadata.production\.period\.lref', or_record.production_period_id)
     copy_field(_metadata.Material, or_record.materials)
-    copy_field(_metadata.physical_description, or_record.physical_description)
-    copy_field(_metadata.Content_person, or_record.depicted_person)
+    copy_field(_metadata.material_description, or_record.physical_description)
+#    copy_field(_metadata.Technique, or_record.technique)
+#    copy_field(_metadata.current_owner, or_record.current_owner)
+    copy_field('_metadata.content\.motif\.general', or_record.content_motif_general)
+    copy_field('_metadata.content\.motif\.general\.lref', or_record.content_motif_general_id)
+#    copy_field('_metadata.content\.motif\.specific', or_record.content_motif_specific)
+#    copy_field('_metadata.content\.motif\.specific\.lref', or_record.content_motif_specific_id)
     copy_field(_metadata.Content_subject, or_record.depicted_subject)
+#    copy_field(_metadata.Associated_subject, or_record.associated_subject)
+    copy_field(_metadata.Content_person, or_record.depicted_person)
+#    copy_field(_metadata.Associated_person, or_record.associated_person)
+#    copy_field('_metadata.content\.date\.period', or_record.depicted_period)
+#    copy_field(_metadata.Associated_period, or_record.associated_period)
     copy_field(_metadata.priref, or_record.priref)
-    copy_field('_metadata.dimension\.free', or_record.displaydimension)  
+#    copy_field(_metadata.Rights, or_record.rights)
 
+    
+ 
 # Remove all Adlib fields, retaining only the fields to create the lido structure
 
     retain(or_record)
 
- ### Mapping to lido structure
 
- # Mapping Facets
+
+### Mapping to lido structure
+
+# Mapping Facets
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Adlib                                             LIDO                                                VKC                     Invulboek veld
 #                                                       lido:lidoRecID
@@ -60,38 +82,49 @@
 #   Object_name.object_name                                     pref: preferred                             Subtype                 term objectnaam
 #                                                               pref: alternate                             Subtype
 #                                                       lido:classification
-#                                                           type: objectcategorie
+#                                                           type: object-category
 #                                                               lido:conceptID
 #   object_category.\lref                                           pref: preferred
 #                                                                   pref: alternate                                                 identificatie
 #                                                               lido:term
 #   object_category                                                 pref: preferred                         Type                    term
 #                                                                   pref: alternate                         Type
-#                                                           type: hoofdmotief
-#                                                               lido:conceptID
-#   content\.motif\.general\.lref                                   pref: preferred
-#                                                                   pref: alternate                                                 identificatie hoofdmotief
-#                                                               lido:term
-#   content\.motif\.general                                         pref: preferred                         Onderwerp               term hoofdmotief
-#                                                                   pref: alternate                         Onderwerp
 #                                                       lido:titleSet
 #   Title                                                   pref: preferred                                                         titel
 #   Titel_translation                                       pref: alternate
-#   institution\.name.value                             lido:repositoryName                                 Instelling              naam bewaarinstelling
-#                                                       lido:workID
-#   object_number                                           type: objectnummer                              Inventarisnummer        waarde objectnummer
-#   Description                                         lido:objectDescriptionSet                           Beschrijving            korte beschrijving
+#                                                       lido:inscriptions
+#   Inscription.inscription\.content                        lido:inscriptionTranscription
+#                                                           lido:inscriptionDescription
+#   Inscription.inscription\.type                               type: type
+#   Inscription.inscription\.position                           type: position
+#                                                       lido:repositorySet
+#   institution\.name                                       lido:repositoryName                             Instelling              naam bewaarinstelling
+#                                                           lido:workID
+#   object_number                                               type: object-number                         Inventarisnummer        waarde objectnummer
+#   Current_location.current_location                       lido:repositoryLocation
+#                                                       lido:displayStateEditionWrap
+#   print_state                                             lido:displayState
+#                                                           lido:displayEdition
+#   copy_number                                                 label: copy-number
+#   edition                                                     label: edition
+#                                                       lido:objectDescriptionSet
+#   Description                                             no type                                         Beschrijving            korte beschrijving
+#   part                                                    type: part
+#   number_of_parts                                         type: number-of-parts
 #                                                       lido:objectMeasurementsSet
-#   dimension\.free                                         lido:displayObjectMeasurements                  Dimensies               Mu.Zee zet dimensies in dimension.free als string
+#   dimension\.free                                         lido:displayObjectMeasurements                  Dimensies
 #                                                           lido:objectMeasurements
 #                                                               lido:measurementsSet
-#   Dimension.dimension\.type.value                                 lido:measurementType                                            dimensie afmeting
-#   Dimension.dimension\.unit.value                                 lido:measurementUnit                                            eenheid afmeting
+#   Dimension.dimension\.type                                       lido:measurementType                                            dimensie afmeting
+#   Dimension.dimension\.unit                                       lido:measurementUnit                                            eenheid afmeting
 #   Dimension.dimension\.value                                      lido:measurementValue                                           waarde afmeting
-#   Dimension.dimension\.part                               lido:extentMeasurements                                                 onderdeel afmeting
+#   Dimension.dimension\.part                                   lido:extentMeasurements                                             onderdeel afmeting
 #                                                       lido:eventType
 #                                                           lido:term
 #                                                               acquisition
+#   Acquisition_source.acquisition\.source                          lido:eventActor                                                 naam verwervingsbron
+#                                                                   lido:eventDate
+#   acquisition\.date                                                   lido:displayDate                                            waarde verwervingdatum
 #                                                                   lido:eventMethod
 #                                                                       lido:conceptID
 #   acquisition\.method\.lref                                               pref: preferred
@@ -99,10 +132,14 @@
 #                                                                       lido:term
 #   acquisition\.method                                                     pref: preferred                                         term verwervingsmethode
 #                                                                           pref: alternate
-#                                                                   lido:eventActor
-#   Acquisition_source                                                  lido:nameActorSet                                           naam verwervingsbron
+#   credit_line                                                     lido:eventDescriptionSet
+#                                                       lido:eventType
+#                                                           lido:term
+#                                                               exhibition
+#   Exhibition.exhibition                                           lido:eventName
 #                                                                   lido:eventDate
-#   acquisition\.date                                                   lido:displayDate                                            waarde verwervingdatum
+#   Exhibition.exhibition\.date\.start                                  lido:earliestDate
+#   Exhibition.exhibition\.date\.end                                    lido:latestDate
 #                                                       lido:eventType
 #                                                           lido:term
 #                                                               production
@@ -110,13 +147,13 @@
 #                                                                       lido:actorID
 #   Production.creator\.lref                                                type: local
 #                                                                           type: purl                                              identificatie vervaardiger
-#   Production.creator.value                                            lido:nameActorSet
+#   Production.creator                                                  lido:nameActorSet
 #                                                                           pref: preferred                 Vervaardiger            naam vervaardiger
 #                                                                           pref: alternate
 #                                                                       lido:vitalDatesActor
 #   Production.creator\.date_of_birth                                       lido:earliestDate
 #   Production.creator\.date_of_death                                       lido:latestDate
-#   Production.creator\.role.value                                      lido:roleActor                      Vervaardiger            rol vervaardiger
+#   Production.creator\.role                                            lido:roleActor                      Vervaardiger            rol vervaardiger
 #   Production.creator\.qualifier                                       lido:attributionQualifierActor      Vervaardiger            kwalificatie vervaardiger
 #                                                                   lido:eventDate
 #                                                                       lido:displayDate                    Datering
@@ -131,16 +168,25 @@
 #                                                                       lido:placeID
 #   Production.production\.place\.lref                                      type: local
 #                                                                       lido:namePlaceSet
-#   Production.production\.place.value                                      type: preferred
+#   Production.production\.place                                            type: preferred
 #                                                                   lido:termMaterialsTech
-#                                                                       lido:conceptID
-#    Material.material\.notes                                              pref: preferred                                          Mu.Zee zet volzinnen met materiaaltechnische beschrijving in material.notes, dit zou beter gebruikt worden dan de lref.
-#    Material.material\.lref                                               pref: alternate                                         identificatie materiaal.  
-#    Material.material\.notes                                       lido: sourceMaterialsTech                                       Binnen de materials notes zet Mu.Zee de bron van de beschrijving tussen haakjes. Dit zou geëxtraheerd kunnen worden en in dit veld gestoken worden. Geen idee hoe consistent dit tussen haakjes wordt gezet.                                     
-#                                                                       lido:term
-#   Material.material.value                                                 pref: preferred                                         term materiaal
-#                                                                           pref: alternate
-#   material_description                                            lido:displayMaterialsTech               Materiaal
+#                                                                       type: material
+#                                                                           lido:conceptID
+#   Material.material\.lref                                                     pref: preferred
+#                                                                               pref: alternate                                     identificatie materiaal
+#                                                                           lido:term
+#   Material.material                                                           pref: preferred             Materiaal               term materiaal
+#                                                                               pref: alternate
+#                                                                       type: technique
+#                                                                           lido:conceptID
+#   Technique.technique\.lref                                                   pref: preferred
+#                                                                           lido:term
+#   Technique.technique                                                         pref: preferred
+#   material_description                                            lido:displayMaterialsTech
+#                                                       lido:eventType
+#                                                           lido:term
+#                                                               provenance
+#   current_owner                                                   lido:eventActor
 #                                                       lido:eventType
 #                                                           lido:term
 #                                                               check
@@ -149,21 +195,49 @@
 #                                                                       lido:nameActorSet                                           assessor conditie
 #                                                                   lido:eventDate
 #                                                                       lido:displayDate                                            datum conditie
-#                                                       lido:subject
-#                                                           lido:type
-#                                                               lido:subjectConcept
-#   Content_subject.content\.subject\.lref                          lido:conceptID                                                  identificatie afgebeeld concept
-#   Content_subject.content\.subject.value                          lido:term                                                       term afgebeeld concept
-#                                                               lido:subjectPlace
-#   Content_subject.content\.subject\.lref                          lido:placeID                                                    identificatie afgebeelde locatie
-#   Content_subject.content\.subject.value                          lido:namePlaceSet                                               naam afgebeelde locatie
-#                                                               lido:subjectActor
-#   Content_person.content\.person\.name\.lref                      lido:actorID                                                    identificatie afgebeelde persoon of instelling
-#   Content_person.content\.person\.name.value                      lido:nameActorSet                                               naam afgebeelde persoon of instelling
+#                                                       lido:objectRelationWrap
+#                                                           lido:subject
+#                                                               type: content-motif-general
+#                                                                   lido:subjectConcept
+#                                                                       lido:conceptID
+#   content\.motif\.general\.lref                                           pref: preferred
+#                                                                           pref: alternate                                         identificatie hoofdmotief
+#                                                                       lido:term
+#   content\.motif\.general                                                 pref: preferred                 Onderwerp               term hoofdmotief
+#                                                                           pref: alternate                 Onderwerp
+#                                                               type: content-motif-specific
+#                                                                   lido:subjectConcept
+#                                                                       lido:conceptID
+#   content\.motif\.specific\.lref                                          pref: preferred
+#                                                                       lido:term
+#   content\.motif\.specific                                                pref: preferred
+#                                                               no type
+#                                                                   lido:subjectConcept
+#   Content_subject.content\.subject\.lref                              lido:conceptID                                              identificatie afgebeeld concept
+#   Content_subject.content\.subject                                    lido:term                                                   term afgebeeld concept
+#                                                                   lido:subjectActor
+#   Content_person.content\.person\.name\.lref                          lido:actorID                                                identificatie afgebeelde persoon of instelling
+#   Content_person.content\.person\.name                                lido:nameActorSet                                           naam afgebeelde persoon of instelling
+#                                                                   lido:subjectDate
+#   content\.date\.period                                               lido:displayDate
+#                                                                   lido:subjectEvent
+#   Content_subject.content\.subject\.lref                              lido:eventID                                                identificatie afgebeelde gebeurtenis
+#   Content_subject.content\.subject                                    lido:eventName                                              naam afgebeelde gebeurtenis
+#                                                                   lido:subjectPlace
+#   Content_subject.content\.subject\.lref                              lido:placeID                                                identificatie afgebeelde locatie
+#   Content_subject.content\.subject                                    lido:namePlaceSet                                           naam afgebeelde locatie
+#                                                               type: associated
+#                                                                   lido:subjectConcept
+#   Associated_subject.association\.subject                             lido:term
+#                                                                   lido:subjectActor
+#   Associated_person.association\.person                               lido:nameActorSet
+#                                                                   lido:subjectDate
+#   Associated_period.association\.period                               lido:displayDate
 #                                                       lido:rightsWorkWrap
 #                                                           lido:rightsType
 #                                                               lido:conceptID                                                      identificatie rechten werk
 #                                                               lido:term                                                           term rechten werk
+#   Rights.rights\.notes                                    lido:creditLine
 #                                                       lido:recordWrap
 #                                                           lido:recordID
 #   Digital_reference.digital_reference                         type: global                                Data PURL               waarde databanknummer
@@ -173,7 +247,7 @@
 #                                                               lido:term
 #                                                           lido:recordSource
 #                                                               lido:legalBodyID                                                    identificatie data provider
-#   institution\.name.value                                     lido:legalBodyName                                                  naam data provider
+#   institution\.name                                           lido:legalBodyName                                                  naam data provider
 #                                                               lido:legalBodyWeblink
 #                                                           lido:recordRights
 #                                                               lido:rightsType
@@ -185,7 +259,7 @@
 
 
 
- ### LIDO lidoRecID
+### LIDO lidoRecID
 
     # ID
     #
@@ -194,7 +268,7 @@
     # the ID field looks like this:
     #
     #   oai:datahub.vlaamsekunstcollectie.be:<domain>:<identifier>
-    #   ex. oai:datahub.vlaamsekunstcollectie.be:kmska.be:254
+    #   ex. oai:datahub.vlaamsekunstcollectie.be:muzee.be:254
     #   ex. oai:datahub.vlaamsekunstcollectie.be:collectievlaamsegemeenschap.be:837
     #
     # Note: the .tld is stripped from the domainname because the . (dot) breaks the
@@ -208,7 +282,7 @@
 
     do list(path:or_record.pids, var: c)
 
-        if all_match('c.digital_reference\.description.value', 'datapid')
+        if all_match('c.digital_reference\.description', 'datapid')
 
             if all_match(c.digital_reference, '.*\S.*')
 
@@ -240,7 +314,6 @@
         end
 
     end
-
 
  
 
@@ -303,19 +376,19 @@
         move_field(or_record.tmp, or_record.object_name.$append)
     end
 
-    # We'll have multiple objectWorkTypes: the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
+    # We'll have multiple terms: the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
 
     do list(path: or_record.object_name, var: c)
 
         # Value in Adlib
 
-        if all_match(c.object_name.value, '.*\S.*')
+        if all_match(c.object_name, '.*\S.*')
 
             if all_match('c.object_name\.lref', '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
-                    c.object_name.value,
+                    c.object_name,
                     -conceptid: 'c.object_name\.lref',
                     -type: local,
                     -source: Adlib,
@@ -327,7 +400,7 @@
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
-                    c.object_name.value,
+                    c.object_name,
                     -pref: preferred,
                     -lang: nl
                 )
@@ -338,18 +411,18 @@
 
         # Corresponding value in AAT, not (yet) retrievable via API
 
-        copy_field(c.object_name.value, c.aat)
+        copy_field(c.object_name, c.object_name_aat)
 
-        lookup_in_store(c.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        lookup_in_store(c.object_name_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-        if all_match(c.aat.aatterm, '.*\S.*')
+        if all_match(c.object_name_aat.aatterm, '.*\S.*')
 
-            if all_match(c.aat.aaturi, '.*\S.*')
+            if all_match(c.object_name_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
-                    c.aat.aatterm,
-                    -conceptid: c.aat.aaturi,
+                    c.object_name_aat.aatterm,
+                    -conceptid: c.object_name_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -360,7 +433,7 @@
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
-                    c.aat.aatterm,
+                    c.object_name_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )
@@ -371,7 +444,7 @@
 
     end
 
-# LIDO classification [type="objectcategorie"]
+# LIDO classification [type="object-category"]
 
     unless is_array(or_record.object_category) 
         move_field(or_record.object_category, or_record.tmp)
@@ -389,9 +462,9 @@
         copy_field(c, or_record.object_category.$append.id)
     end
 
-    assoc(or_record.object_cat, or_record.object_category.*.id, or_record.object_category.*.value)
+    assoc(or_record.object_cat, or_record.object_category.*.id, or_record.object_category.*)
 
-    # We'll have multiple classifications with type "objectcategorie": the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
+    # We'll have multiple terms for the type "object-category": the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
 
     do each (path: or_record.object_cat, var: c)
 
@@ -422,24 +495,24 @@
 
             end
 
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "objectcategorie")
+            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
         end
     
         # Corresponding value in AAT, not (yet) retrievable via API
 
-        copy_field(c.value, c.aat)
+        copy_field(c.value, c.object_category_aat)
 
-        lookup_in_store(c.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        lookup_in_store(c.object_category_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-        if all_match(c.aat.aatterm, '.*\S.*')
+        if all_match(c.object_category_aat.aatterm, '.*\S.*')
 
-            if all_match(c.aat.aaturi, '.*\S.*')
+            if all_match(c.object_category_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.aat.aatterm,
-                    -conceptid: c.aat.aaturi,
+                    c.object_category_aat.aatterm,
+                    -conceptid: c.object_category_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -450,106 +523,14 @@
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.aat.aatterm,
+                    c.object_category_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )
 
             end
 
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "objectcategorie")
-
-        end
-
-    end
-
-# LIDO classification [type="hoofdmotief"]
-
-    unless is_array(or_record.subject) 
-        move_field(or_record.subject, or_record.tmp)
-        set_array(or_record.subject)
-        move_field(or_record.tmp, or_record.subject.$append)
-    end
-
-    unless is_array(or_record.subject_id)
-        move_field(or_record.subject_id, or_record.tmp)
-        set_array(or_record.subject_id)
-        move_field(or_record.tmp, or_record.subject_id.$append)
-    end
-
-    do list (path: or_record.subject_id, var: c)
-        copy_field(c, or_record.subject.$append.id)
-    end
-
-    assoc(or_record.general_motif, or_record.subject.*.id, or_record.subject.*.value)
-
-    # We'll have multiple classifications with type "hoofdmotief": the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
-
-    do each(path: or_record.general_motif, var: c)
-
-        # Value in Adlib
-
-        if all_match(c.value, '.*\S.*')
-
-            if all_match(c.key, '.*\S.*')
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-                    c.value,
-                    -conceptid: c.key,
-                    -type: local,
-                    -source: Adlib,
-                    -pref: preferred,
-                    -lang: nl
-                )
-
-            else
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-                    c.value,
-                    -pref: preferred,
-                    -lang: nl
-                )
-
-            end
-
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "hoofdmotief")
-
-        end
-    
-        # Corresponding value in AAT, not (yet) retrievable via API
-
-        copy_field(c.value, c.aat)
-
-        lookup_in_store(c.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
-
-        if all_match(c.aat.aatterm, '.*\S.*')
-
-            if all_match(c.aat.aaturi, '.*\S.*')
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.aat.aatterm,
-                    -conceptid: c.aat.aaturi,
-                    -type: purl,
-                    -source: AAT,
-                    -pref: alternate,
-                    -lang: nl
-                )
-
-            else
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.aat.aatterm,
-                    -pref: alternate,
-                    -lang: nl
-                )
-
-            end
-
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "hoofdmotief")
+            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
         end
 
@@ -568,11 +549,11 @@
 
     do list(path: or_record.title, var: c)
 
-        if all_match(c.title.value, '.*\S.*')
+        if all_match(c.title, '.*\S.*')
 
             lido_basenameset(
                 descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.$append,
-                c.title.value,
+                c.title,
                 -value_pref: preferred
             )
 
@@ -610,11 +591,11 @@
 
     do list(path: or_record.institution, var: c)
 
-        if all_match(c.value, '.*\S.*')
+        if all_match(c, '.*\S.*')
 
             lido_basenameset(
-                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyName.$append,
-                c.value
+                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append.repositoryName.legalBodyName,
+                c
             )
 
         end
@@ -634,16 +615,106 @@
         if all_match(c, '.*\S.*')
 
             lido_baseid(
-                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.workID,
+                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.workID,
                 c,
-                -type: objectnummer
+                -type: object-number
             )
 
         end
 
     end
 
+# LIDO repositoryLocation
+
+#    unless is_array(or_record.current_location) 
+#        move_field(or_record.current_location, or_record.tmp)
+#        set_array(or_record.current_location)
+#        move_field(or_record.tmp, or_record.current_location.$append)
+#    end
+
+#    do list(path: or_record.current_location, var: c)
+
+#        copy_field(c.current_location, c.current_location_lookup)
+
+#        lookup_in_store(c.current_location_lookup, DBI, data_source: "dbi:SQLite:/tmp/import.CURRENT_LOCATIONS_UTF8.sqlite")
+
+#        if all_match(c.current_location_lookup.display_name, '.*\S.*')
+
+#            lido_basenameset(
+#                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append.repositoryLocation.namePlaceSet,
+#                c.current_location_lookup.display_name
+#            )
+
+#        end
+
+#    end
+
+# LIDO displayState
+
+#    unless is_array(or_record.print_state)
+#        move_field(or_record.print_state, or_record.tmp)
+#        set_array(or_record.print_state)
+#        move_field(or_record.tmp, or_record.print_state.$append)
+#    end
+
+#    do list(path:or_record.print_state, var: c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_basevalue(
+#                descriptiveMetadata.objectIdentificationWrap.displayStateEditionWrap.displayState,
+#                c
+#            )
+
+#        end
+
+#    end
+
+# LIDO displayEdition
+
+#    unless is_array(or_record.copy_number)
+#        move_field(or_record.copy_number, or_record.tmp)
+#        set_array(or_record.copy_number)
+#        move_field(or_record.tmp, or_record.copy_number.$append)
+#    end
+
+#    do list(path:or_record.copy_number, var: c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_basevalue(
+#                descriptiveMetadata.objectIdentificationWrap.displayStateEditionWrap.displayEdition,
+#                c,
+#                -label: copy-number
+#            )
+
+#        end
+
+#    end
+
+#    unless is_array(or_record.edition)
+#        move_field(or_record.edition, or_record.tmp)
+#        set_array(or_record.edition)
+#        move_field(or_record.tmp, or_record.edition.$append)
+#    end
+
+#    do list(path:or_record.edition, var: c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_basevalue(
+#                descriptiveMetadata.objectIdentificationWrap.displayStateEditionWrap.displayEdition,
+#                c,
+#                -label: edition
+#            )
+
+#        end
+
+#    end
+
 # LIDO objectDescriptionSet
+
+    # Description
 
     unless is_array(or_record.description) 
         move_field(or_record.description, or_record.tmp)
@@ -655,15 +726,64 @@
 
         if all_match(c.description, '.*\S.*')
 
-            copy_field(c.description, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+            lido_descriptivenote(
+                descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+                c.description
+            )
 
         end
 
     end
 
+    # Part
+
+#    unless is_array(or_record.part)
+#        move_field(or_record.part, or_record.tmp)
+#        set_array(or_record.part)
+#        move_field(or_record.tmp, or_record.part.$append)
+#    end
+
+#    do list(path:or_record.part, var: c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_descriptivenote(
+#                descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+#                c
+#            )
+
+#            add_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, "part")
+
+#        end
+
+#    end
+
+    # Number of parts
+
+#    unless is_array(or_record.number_of_parts)
+#        move_field(or_record.number_of_parts, or_record.tmp)
+#        set_array(or_record.number_of_parts)
+#        move_field(or_record.tmp, or_record.number_of_parts.$append)
+#    end
+
+#    do list(path:or_record.number_of_parts, var: c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_descriptivenote(
+#                descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
+#                c
+#            )
+
+#            add_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, "number-of-parts")
+
+#        end
+
+#    end
+
 # LIDO objectMeasurementsWrap
 
-#Take the string out of displaydimension and put it in displayObjectMeasurements in LIDO. 
+    # Take the string out of displaydimension and put it in displayObjectMeasurements in LIDO
     
     unless is_array(or_record.displaydimension) 
         move_field(or_record.displaydimension, or_record.tmp)
@@ -673,34 +793,37 @@
 
     do list(path:or_record.displaydimension, var:c)
 
-        add_field(descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$append)
-
         if all_match('c', '.*\S.*')
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$append)
+
             copy_field('c', descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$last.displayObjectMeasurements._)
+
         end
+
     end
 
-# Generate height, width, depth using the dimensions type, unit, and part params
+    # Generate height, width, depth using the dimensions type, unit, and part params
 
-  unless is_array(or_record.dimensions) 
+    unless is_array(or_record.dimensions)
         move_field(or_record.dimensions, or_record.tmp)
         set_array(or_record.dimensions)
-       move_field(or_record.tmp, or_record.dimensions.$append)
+        move_field(or_record.tmp, or_record.dimensions.$append)
     end
 
     do list(path:or_record.dimensions, var:c)
         
         add_field(descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$append)
 
-        if all_match('c.dimension\.type.value', '.*\S.*')
+        if all_match('c.dimension\.type', '.*\S.*')
 
-            copy_field('c.dimension\.type.value', descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$last.objectMeasurements.measurementsSet.measurementType._)
+            copy_field('c.dimension\.type', descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$last.objectMeasurements.measurementsSet.measurementType._)
 
         end
 
-        if all_match('c.dimension\.unit.value', '.*\S.*')
+        if all_match('c.dimension\.unit', '.*\S.*')
 
-            copy_field('c.dimension\.unit.value', descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$last.objectMeasurements.measurementsSet.measurementUnit._)
+            copy_field('c.dimension\.unit', descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet.$last.objectMeasurements.measurementsSet.measurementUnit._)
 
         end
 
@@ -718,97 +841,78 @@
 
     end
 
+# LIDO inscriptions
+
+#    unless is_array(or_record.inscription) 
+#        move_field(or_record.inscription, or_record.tmp)
+#        set_array(or_record.inscription)
+#        move_field(or_record.tmp, or_record.inscription.$append)
+#    end
+
+#    do list(path:or_record.inscription, var:c)
+
+#        if all_match('c.inscription\.content', '.*\S.*')
+        
+#            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+#        else
+
+#            if all_match('c.inscription\.type', '.*\S.*')
+
+#                add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+#            else
+
+#                if all_match('c.inscription\.position', '.*\S.*')
+
+#                    add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+#                end
+
+#            end
+
+#        end
+
+
+#        if all_match('c.inscription\.content', '.*\S.*')
+
+#            copy_field('c.inscription\.content', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionTranscription._)
+
+#        end
+
+#        if all_match('c.inscription\.type', '.*\S.*')
+
+#            copy_field('c.inscription\.type', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+
+#            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "type")
+
+#        end
+
+#        if all_match('c.inscription\.position', '.*\S.*')
+
+#            copy_field('c.inscription\.position', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+
+#            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "position")
+
+#        end
+
+#    end
+
 
 ## LIDO eventWrap
 
 # LIDO eventType [eventType/term="acquisition"]
 
-#    add_field(or_record.event_type, acquisition)
+#    add_field(or_record.event_type, "acquisition")
 
 #    lido_term(
 #        descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
 #        or_record.event_type
 #    )
 
-# LIDO eventMethod [eventType/term="acquisition"]
-
-#    unless is_array(or_record.acquisition_method)
-#        move_field(or_record.acquisition_method, or_record.tmp)
-#        set_array(or_record.acquisition_method)
-#        move_field(or_record.tmp, or_record.acquisition_method.$append)
-#    end
-
-    # We'll have multiple eventMethods: the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
-
-#    do list(path:or_record.acquisition_method, var:c)
-
-        # Value in Adlib
-
-#        if all_match(c.value, '.*\S.*')
-
-#            if all_match(or_record.acquisition_method_id, '.*\S.*')
-
-#                lido_term(
-#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$append,
-#                    c.value,
-#                    -conceptid: or_record.acquisition_method_id,
-#                    -type: local,
-#                    -source: Adlib,
-#                    -pref: preferred,
-#                    -lang: nl
-#                )
-
-#            else
-
-#                lido_term(
-#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$append,
-#                    c.value,
-#                    -pref: preferred,
-#                    -lang: nl
-#                )
-
-#            end
-
-#        end
-
-        # Corresponding value in AAT, not (yet) retrievable via API
-
-#        copy_field(c.value, c.aat)
-
-#        lookup_in_store(c.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
-
-#        if all_match(c.aat.aatterm, '.*\S.*')
-
-#            if all_match(c.aat.aaturi, '.*\S.*')
-
-#                lido_term(
-#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
-#                    c.aat.aatterm,
-#                    -conceptid: c.aat.aaturi,
-#                    -type: purl,
-#                    -source: AAT,
-#                    -pref: alternate,
-#                    -lang: nl
-#                )
-
-#            else
-
-#                lido_term(
-#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
-#                    c.aat.aatterm,
-#                    -pref: alternate,
-#                    -lang: nl
-#                )
-
-#            end
-
-#        end
-
-#    end
-
 # LIDO eventActor [eventType/term="acquisition"]
 
-#    unless is_array(or_record.acquisition_source)
+#    unless is_array(or_record.acquisition_source) 
 #        move_field(or_record.acquisition_source, or_record.tmp)
 #        set_array(or_record.acquisition_source)
 #        move_field(or_record.tmp, or_record.acquisition_source.$append)
@@ -816,11 +920,12 @@
 
 #    do list (path:or_record.acquisition_source, var:c)
 
-#        if all_match(c, '.*\S.*')
+#        if all_match('c.acquisition\.source', '.*\S.*')
 
-#            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append)
-
-#            copy_field(c, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.appellationValue._)
+#            lido_basenameset(
+#                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append.actorInRole.actor.nameActorSet,
+#                'c.acquisition\.source'
+#            )
 
 #        end
 
@@ -847,9 +952,178 @@
 
 #    end
 
+# LIDO eventMethod [eventType/term="acquisition"]
+
+#    unless is_array(or_record.acquisition_method)
+#        move_field(or_record.acquisition_method, or_record.tmp)
+#        set_array(or_record.acquisition_method)
+#        move_field(or_record.tmp, or_record.acquisition_method.$append)
+#    end
+
+#    unless is_array(or_record.acquisition_method_id)
+#        move_field(or_record.acquisition_method_id, or_record.tmp)
+#        set_array(or_record.acquisition_method_id)
+#        move_field(or_record.tmp, or_record.acquisition_method_id.$append)
+#    end
+
+#    do list (path: or_record.acquisition_method_id, var: c)
+#        copy_field(c, or_record.acquisition_method.$append.id)
+#    end
+
+#    assoc(or_record.acquisition_m, or_record.acquisition_method.*.id, or_record.acquisition_method.*)
+
+    # We'll have multiple terms: the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
+
+#    do each (path:or_record.acquisition_m, var:c)
+
+        # Value in Adlib
+
+#        if all_match(c.value, '.*\S.*')
+
+#            if all_match(c.key, '.*\S.*')
+
+#                lido_term(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$append,
+#                    c.value,
+#                    -conceptid: c.key,
+#                    -type: local,
+#                    -source: Adlib,
+#                    -pref: preferred,
+#                    -lang: nl
+#                )
+
+#            else
+
+#                lido_term(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$append,
+#                    c.value,
+#                    -pref: preferred,
+#                    -lang: nl
+#                )
+
+#            end
+
+#        end
+
+        # Corresponding value in AAT, not (yet) retrievable via API
+
+#        copy_field(c.value, c.acquisition_aat)
+
+#        lookup_in_store(c.acquisition_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+#        if all_match(c.acquisition_aat.aatterm, '.*\S.*')
+
+#            if all_match(c.acquisition_aat.aaturi, '.*\S.*')
+
+#                lido_term(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
+#                    c.acquisition_aat.aatterm,
+#                    -conceptid: c.acquisition_aat.aaturi,
+#                    -type: purl,
+#                    -source: AAT,
+#                    -pref: alternate,
+#                    -lang: nl
+#                )
+
+#            else
+
+#                lido_term(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
+#                    c.acquisition_aat.aatterm,
+#                    -pref: alternate,
+#                    -lang: nl
+#                )
+
+#            end
+
+#        end
+
+#    end
+
+# LIDO eventDescriptionSet [eventType/term="acquisition"]
+
+#    unless is_array(or_record.acquisition_creditline)
+#        move_field(or_record.acquisition_creditline, or_record.tmp)
+#        set_array(or_record.acquisition_creditline)
+#        move_field(or_record.tmp, or_record.acquisition_creditline.$append)
+#    end
+
+#    do list (path:or_record.acquisition_creditline, var:c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_descriptivenote(
+#                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet,
+#                c
+#            )
+
+#        end
+
+#    end
+
+# LIDO eventName / date [eventType/term="exhibition"]
+
+#    add_field(or_record.event_type, "exhibition")
+
+#    unless is_array(or_record.exhibition)
+#        move_field(or_record.exhibition, or_record.tmp)
+#        set_array(or_record.exhibition)
+#        move_field(or_record.tmp, or_record.exhibition.$append)
+#    end
+
+#    do list (path:or_record.exhibition, var:c)
+
+#        lido_term(
+#            descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+#            or_record.event_type
+#        )
+
+#        if all_match(c.exhibition, '.*\S.*')
+
+#            lido_basenameset(
+#                descriptiveMetadata.eventWrap.eventSet.$last.event.eventName,
+#                c.exhibition
+#            )
+
+#        end
+
+#        if all_match('c.exhibition\.date\.start', '.*\S.*')
+
+#            if all_match('c.exhibition\.date\.end', '.*\S.*')
+
+#                lido_date(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+#                    -earliest_date: 'c.exhibition\.date\.start',
+#                    -latest_date: 'c.exhibition\.date\.end'
+#                )
+            
+#            else
+
+#                lido_date(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+#                    -earliest_date: 'c.exhibition\.date\.start'
+#                )
+
+#            end
+
+#        else
+
+#            if all_match('c.exhibition\.date\.end', '.*\S.*')
+
+#                lido_date(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+#                    -latest_date: 'c.exhibition\.date\.end'
+#                )
+
+#            end
+
+#        end
+
+#    end
+
 # LIDO eventType [eventType/term="production"]
 
-    add_field(or_record.event_type, production)
+    add_field(or_record.event_type, "production")
     
     lido_term(
         descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
@@ -868,12 +1142,12 @@
 
         trim('c.creator\.qualifier')
 
-        if all_match(c.creator.value, '.*\S.*')
+        if all_match(c.creator, '.*\S.*')
 
             lido_actor(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
                 'c.creator\.lref',
-                c.creator.value,
+                c.creator,
                 -id_source: Adlib,
                 -id_type: local,
                 -name_pref: preferred
@@ -895,30 +1169,30 @@
 
         # Role. Work around. -role switch in lido_actor does not work correctly.
 
-        if all_match('c.creator\.role.value', '.*\S.*')
+        if all_match('c.creator\.role', '.*\S.*')
 
             lido_term(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor,
-                'c.creator\.role.value',
+                'c.creator\.role',
             )
 
         end
 
         # Add Persistent URI data to actor
 
-        copy_field(c.creator.value, c.creator.pid)
+        copy_field(c.creator, c.creator_pid)
 
-        downcase(c.creator.pid)
+        downcase(c.creator_pid)
 
-        lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+        lookup_in_store(c.creator_pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
         # Preferred label from Flemish Art Collection concordance database
 
-        if all_match(c.creator.pid._id, '.*\S.*')
+        if all_match(c.creator_pid._id, '.*\S.*')
 
             lido_basenameset(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.nameActorSet.$last,
-                c.creator.pid.display_name,
+                c.creator_pid.display_name,
                 -value_pref: alternate
             )
 
@@ -926,33 +1200,33 @@
 
         # Creator Persistent URI's
 
-        if all_match(c.creator.pid.viaf_uri, '.*\S.*')
+        if all_match(c.creator_pid.viaf_uri, '.*\S.*')
 
             lido_baseid(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                c.creator.pid.viaf_uri,
+                c.creator_pid.viaf_uri,
                 -source: VIAF,
                 -type: purl
             )
 
         end
 
-        if all_match(c.creator.pid.rkd_uri, '.*\S.*')
+        if all_match(c.creator_pid.rkd_uri, '.*\S.*')
 
             lido_baseid(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                c.creator.pid.rkd_uri,
+                c.creator_pid.rkd_uri,
                 -source: RKD,
                 -type: purl
             )
 
         end
 
-        if all_match(c.creator.pid.wikidata_uri, '.*\S.*')
+        if all_match(c.creator_pid.wikidata_uri, '.*\S.*')
 
             lido_baseid(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                c.creator.pid.wikidata_uri,
+                c.creator_pid.wikidata_uri,
                 -source: Wikidata,
                 -type: purl
             )
@@ -1019,14 +1293,22 @@
 
                 end
 
+            else
+
+                add_field(or_record.displayDate, "incorrect date format")
+
             end
 
         end
 
-        lido_basevalue(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
-            or_record.displayDate
-        )
+        unless all_match(or_record.displayDate, "incorrect date format")
+
+            lido_basevalue(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+                or_record.displayDate
+            )
+
+        end
 
     end
 
@@ -1039,11 +1321,11 @@
 
         if all_match('d.production\.date\.start', '.*\S.*')
 
-            prepend('d.production\.date\.start', 'date')
+            prepend('d.production\.date\.start', '#date#')
 
             if all_match('d.production\.date\.start\.prec', '.*\S.*')
 
-                prepend('d.production\.date\.start\.prec', 'prec')
+                prepend('d.production\.date\.start\.prec', '#prec#')
                 paste('d.production\.date\.start','d.production\.date\.start','d.production\.date\.start\.prec',join_char:"")
 
             end
@@ -1054,11 +1336,11 @@
 
         if all_match('d.production\.date\.end', '.*\S.*')
 
-            prepend('d.production\.date\.end', 'date')
+            prepend('d.production\.date\.end', '#date#')
 
             if all_match('d.production\.date\.end\.prec', '.*\S.*')
 
-                prepend('d.production\.date\.end\.prec', 'prec')
+                prepend('d.production\.date\.end\.prec', '#prec#')
                 paste('d.production\.date\.end','d.production\.date\.end','d.production\.date\.end\.prec',join_char:"")
 
             end
@@ -1072,11 +1354,11 @@
     if all_match(or_record.earliest_dates.0, '.*\S.*')
 
         sort_field(or_record.earliest_dates)
-        if any_match(or_record.earliest_dates.0, 'date(.*)prec(.*)')
-            parse_text(or_record.earliest_dates.0, 'date(.*)prec(.*)')
+        if any_match(or_record.earliest_dates.0, '#date#(.*)#prec#(.*)')
+            parse_text(or_record.earliest_dates.0, '#date#(.*)#prec#(.*)')
         else
-            if any_match(or_record.earliest_dates.0, 'date(.*)')
-                parse_text(or_record.earliest_dates.0, 'date(.*)')
+            if any_match(or_record.earliest_dates.0, '#date#(.*)')
+                parse_text(or_record.earliest_dates.0, '#date#(.*)')
             end
         end
 
@@ -1085,11 +1367,11 @@
     if all_match(or_record.latest_dates.0, '.*\S.*')
 
         sort_field(or_record.latest_dates, reverse:1)
-        if any_match(or_record.latest_dates.0, 'date(.*)prec(.*)')
-            parse_text(or_record.latest_dates.0, 'date(.*)prec(.*)')
+        if any_match(or_record.latest_dates.0, '#date#(.*)#prec#(.*)')
+            parse_text(or_record.latest_dates.0, '#date#(.*)#prec#(.*)')
         else
-            if any_match(or_record.latest_dates.0, 'date(.*)')
-                parse_text(or_record.latest_dates.0, 'date(.*)')
+            if any_match(or_record.latest_dates.0, '#date#(.*)')
+                parse_text(or_record.latest_dates.0, '#date#(.*)')
             end
         end
 
@@ -1097,23 +1379,72 @@
 
     if all_match(or_record.earliest_dates.0.0, '.*\S.*')
 
-        if all_match(or_record.latest_dates.0.0, '.*\S.*')
+        if all_match(or_record.earliest_dates.0.1, '.*\S.*')
 
-            lido_date(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -earliest_date: or_record.earliest_dates.0.0,
-                -earliest_date_type: or_record.earliest_dates.0.1,
-                -latest_date: or_record.latest_dates.0.0,
-                -latest_date_type: or_record.latest_dates.0.1
-            )
+            if all_match(or_record.latest_dates.0.0, '.*\S.*')
+
+                if all_match(or_record.latest_dates.0.1, '.*\S.*')
+
+                    lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -earliest_date: or_record.earliest_dates.0.0,
+                        -earliest_date_type: or_record.earliest_dates.0.1,
+                        -latest_date: or_record.latest_dates.0.0,
+                        -latest_date_type: or_record.latest_dates.0.1
+                    )
+
+                else
+
+                    lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -earliest_date: or_record.earliest_dates.0.0,
+                        -earliest_date_type: or_record.earliest_dates.0.1,
+                        -latest_date: or_record.latest_dates.0.0
+                    )
+
+                end
+
+            else
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -earliest_date: or_record.earliest_dates.0.0,
+                    -earliest_date_type: or_record.earliest_dates.0.1
+                )
+
+            end
 
         else
 
-            lido_date(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -earliest_date: or_record.earliest_dates.0.0,
-                -earliest_date_type: or_record.earliest_dates.0.1
-            )
+            if all_match(or_record.latest_dates.0.0, '.*\S.*')
+
+                if all_match(or_record.latest_dates.0.1, '.*\S.*')
+
+                    lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -earliest_date: or_record.earliest_dates.0.0,
+                        -latest_date: or_record.latest_dates.0.0,
+                        -latest_date_type: or_record.latest_dates.0.1
+                    )
+
+                else
+
+                    lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -earliest_date: or_record.earliest_dates.0.0,
+                        -latest_date: or_record.latest_dates.0.0
+                    )
+
+                end
+
+            else
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -earliest_date: or_record.earliest_dates.0.0,
+                )
+
+            end
 
         end
 
@@ -1121,11 +1452,22 @@
 
         if all_match(or_record.latest_dates.0.0, '.*\S.*')
 
-            lido_date(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -latest_date: or_record.latest_dates.0.0,
-                -latest_date_type: or_record.latest_dates.0.1
-            )
+            if all_match(or_record.latest_dates.0.1, '.*\S.*')
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -latest_date: or_record.latest_dates.0.0,
+                    -latest_date_type: or_record.latest_dates.0.1
+                )
+
+            else
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -latest_date: or_record.latest_dates.0.0
+                )
+
+            end
 
         else
 
@@ -1163,18 +1505,18 @@
         copy_field(c, or_record.production_period.$append.id)
     end
 
-    assoc(or_record.period, or_record.production_period.*.value, or_record.production_period.*.id)
+    assoc(or_record.period, or_record.production_period.*.id, or_record.production_period.*)
 
     do each (path: or_record.period, var: c)
 
-        if all_match(c.key, '.*\S.*')
+        if all_match(c.value, '.*\S.*')
 
-            if all_match(c.value, '.*\S.*')
+            if all_match(c.key, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
-                    c.key,
-                    -conceptid: c.value,
+                    c.value,
+                    -conceptid: c.key,
                     -lang: nl,
                     -source: Adlib,
                     -type: local
@@ -1184,7 +1526,7 @@
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
-                    c.key,
+                    c.value,
                     -lang: nl
                 )
 
@@ -1196,13 +1538,19 @@
 
 # LIDO namePlaceSet [eventType/term="production"]
 
+    unless is_array(or_record.production)
+        move_field(or_record.production, or_record.tmp)
+        set_array(or_record.production)
+        move_field(or_record.tmp, or_record.production.$append)
+    end
+
     do list (path: or_record.production, var: c)
 
-        if all_match('c.production\.place.value', '.*\S.*')
+        if all_match('c.production\.place', '.*\S.*')
 
             lido_basenameset(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventPlace.$append.place.namePlaceSet,
-                'c.production\.place.value',
+                'c.production\.place',
                 -value_pref: preferred,
                 -value_lang: nl
             )
@@ -1224,33 +1572,29 @@
 
 # LIDO termMaterialsTech [eventType/term="production"]
 
+    # Materials
+
     unless is_array(or_record.materials) 
         move_field(or_record.materials, or_record.tmp)
         set_array(or_record.materials)
         move_field(or_record.tmp, or_record.materials.$append)
     end
 
-    # We'll have multiple classifications: the corresponding value in AAT (type:alternate) and the value from the Adlib field object_name itself (type:preferred)
+    # We'll have multiple terms: the corresponding value in AAT (type:alternate) and the value from the Adlib field object_name itself (type:preferred)
 
     do list(path: or_record.materials, var: c)
 
         # Value in Adlib
 
-        if all_match(c.material.value, '.*\S.*')
+        if all_match(c.material, '.*\S.*')
 
-            # get full material string stored in the notes 
-
-            if all_match('c.material\.notes', '.*\S.*')
-
-                copy_field('c.material\.notes',descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.displayMaterialsTech.$append)
-
-            end 
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
 
             if all_match('c.material\.lref', '.*\S.*')
 
                 lido_term(
-                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append,
-                    c.material.value,
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                    c.material,
                     -conceptid: 'c.material\.lref',
                     -type: local,
                     -source: Adlib,
@@ -1261,8 +1605,8 @@
             else
 
                 lido_term(
-                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append,
-                    c.material.value,
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                    c.material,
                     -pref: preferred,
                     -lang: nl
                 )
@@ -1273,18 +1617,18 @@
 
         # Corresponding value in AAT, not (yet) retrievable via API
 
-        copy_field(c.material.value, c.aat)
+        copy_field(c.material, c.material_aat)
 
-        lookup_in_store(c.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        lookup_in_store(c.material_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-        if all_match(c.aat._id, '.*\S.*')
+        if all_match(c.material_aat._id, '.*\S.*')
 
-            if all_match(c.aat.aaturi, '.*\S.*')
+            if all_match(c.material_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    c.aat.aatterm,
-                    -conceptid: c.aat.aaturi,
+                    c.material_aat.aatterm,
+                    -conceptid: c.material_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -1295,7 +1639,7 @@
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    c.aat.aatterm,
+                    c.material_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )
@@ -1305,6 +1649,47 @@
         end
 
     end
+
+    # Techniques
+
+#    unless is_array(or_record.technique)
+#        move_field(or_record.technique, or_record.tmp)
+#        set_array(or_record.technique)
+#        move_field(or_record.tmp, or_record.technique.$append)
+#    end
+
+#    do list(path:or_record.technique, var: c)
+
+#        if all_match(c.technique, '.*\S.*')
+
+#            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "technique")
+
+#            if all_match('c.technique\.lref', '.*\S.*')
+
+#                lido_term(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+#                    c.technique,
+#                    -conceptid: 'c.technique\.lref',
+#                    -type: local,
+#                    -source: Adlib,
+#                    -pref: preferred,
+#                    -lang: nl
+#                )
+
+#            else
+
+#                lido_term(
+#                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+#                    c.technique,
+#                    -pref: preferred,
+#                    -lang: nl
+#                )
+
+#            end
+
+#        end
+
+#    end
 
 # LIDO displayMaterialsTech [eventType/term="production"]
 
@@ -1327,10 +1712,185 @@
 
     end
 
+# LIDO eventType [eventType/term="provenance"]
+
+#    add_field(or_record.event_type, provenance)
+
+#    lido_term(
+#        descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+#        or_record.event_type
+#    )
+
+# LIDO eventActor [eventType/term="provenance"]
+
+#    unless is_array(or_record.current_owner) 
+#        move_field(or_record.current_owner, or_record.tmp)
+#        set_array(or_record.current_owner)
+#        move_field(or_record.tmp, or_record.current_owner.$append)
+#    end
+
+#    do list (path: or_record.current_owner, var: c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_basenameset(
+#                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append.actorInRole.actor.nameActorSet,
+#                c
+#            )
+
+#        end
+
+#    end
+
 
 ## LIDO objectRelationWrap
 
 # LIDO subjectConcept / subjectEvent / subjectPlace
+
+    # Content motif general
+
+    unless is_array(or_record.content_motif_general)
+        move_field(or_record.content_motif_general, or_record.tmp)
+        set_array(or_record.content_motif_general)
+        move_field(or_record.tmp, or_record.content_motif_general.$append)
+    end
+
+    unless is_array(or_record.content_motif_general_id)
+        move_field(or_record.content_motif_general_id, or_record.tmp)
+        set_array(or_record.content_motif_general_id)
+        move_field(or_record.tmp, or_record.content_motif_general_id.$append)
+    end
+
+    do list(path:or_record.content_motif_general_id, var:c)
+        copy_field(c, or_record.content_motif_general.$append.id)
+    end
+
+    assoc(or_record.general_motif, or_record.content_motif_general.*.id, or_record.content_motif_general.*)
+
+    # We'll have multiple terms for the type "content-motif-general": the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
+
+    do each(path:or_record.general_motif, var:c)
+
+        # Value in Adlib
+
+        if all_match(c.value, '.*\S.*')
+
+            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "content-motif-general")
+
+            if all_match(c.key, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+                    c.value,
+                    -conceptid: c.key,
+                    -type: local,
+                    -source: Adlib,
+                    -pref: preferred,
+                    -lang: nl
+                )
+
+            else
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+                    c.value,
+                    -pref: preferred,
+                    -lang: nl
+                )
+
+            end
+
+        end
+
+        # Corresponding value in AAT, not (yet) retrievable via API
+
+        copy_field(c.value, c.general_motif_aat)
+
+        lookup_in_store(c.general_motif_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+        if all_match(c.general_motif_aat.aatterm, '.*\S.*')
+
+            if all_match(c.general_motif_aat.aaturi, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    c.general_motif_aat.aatterm,
+                    -conceptid: c.general_motif_aat.aaturi,
+                    -type: purl,
+                    -source: AAT,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            else
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    c.general_motif_aat.aatterm,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            end
+
+        end
+
+    end
+
+    # Content motif specific
+
+#    unless is_array(or_record.content_motif_specific)
+#        move_field(or_record.content_motif_specific, or_record.tmp)
+#        set_array(or_record.content_motif_specific)
+#        move_field(or_record.tmp, or_record.content_motif_specific.$append)
+#    end
+
+#    unless is_array(or_record.content_motif_specific_id)
+#        move_field(or_record.content_motif_specific_id, or_record.tmp)
+#        set_array(or_record.content_motif_specific_id)
+#        move_field(or_record.tmp, or_record.content_motif_specific_id.$append)
+#    end
+
+#    do list(path:or_record.content_motif_specific_id, var:c)
+#        copy_field(c, or_record.content_motif_specific.$append.id)
+#    end
+
+#    assoc(or_record.specific_motif, or_record.content_motif_specific.*.id, or_record.content_motif_specific.*)
+
+#    do each(path:or_record.specific_motif, var:c)
+
+#        if all_match(c.value, '.*\S.*')
+
+#            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "content-motif-specific")
+
+#            if all_match(c.key, '.*\S.*')
+
+#                lido_term(
+#                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+#                    c.value,
+#                    -conceptid: c.key,
+#                    -type: local,
+#                    -source: Adlib,
+#                    -pref: preferred,
+#                    -lang: nl
+#                )
+
+#            else
+
+#                lido_term(
+#                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+#                    c.value,
+#                    -pref: preferred,
+#                    -lang: nl
+#                )
+
+#            end
+
+#        end
+
+#    end
+
+    # Depicted subject
 
     unless is_array(or_record.depicted_subject) 
         move_field(or_record.depicted_subject, or_record.tmp)
@@ -1340,15 +1900,13 @@
 
     do list(path:or_record.depicted_subject, var:c)
 
-        if all_match('c.content\.subject.value', '.*\S.*')
+        if all_match('c.content\.subject', '.*\S.*')
 
             if all_match('c.content\.subject\.type.value.2.content', 'geografie')
 
-                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectPlace.$append)
-
                 lido_basenameset(
-                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectPlace.$last.place.namePlaceSet,
-                    'c.content\.subject.value'
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectPlace.$append.place.namePlaceSet,
+                    'c.content\.subject'
                 )
 
                 if all_match('c.content\.subject\.lref', '.*\S.*')
@@ -1366,13 +1924,11 @@
 
                 if all_match('c.content\.subject\.type.value.2.content', 'gebeurtenis')
 
-                    add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectEvent.$append)
-
                     set_field(or_record.event_type, event)
                     set_field(or_record.event_type_URI, 'http://www.cidoc-crm.org/Entity/e5-event/version-6.2')
 
                     lido_term(
-                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectEvent.$last.event.eventType,
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectEvent.$append.event.eventType,
                         or_record.event_type,
                         -conceptid: or_record.event_type_URI,
                         -type: purl,
@@ -1381,7 +1937,7 @@
 
                     lido_basenameset(
                         descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectEvent.$last.event.eventName,
-                        'c.content\.subject.value'
+                        'c.content\.subject'
                     )
 
                     if all_match('c.content\.subject\.lref', '.*\S.*')
@@ -1399,13 +1955,11 @@
 
                     if all_match('c.content\.subject\.type.value.2.content', 'activiteit')
 
-                        add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectEvent.$append)
-
                         set_field(or_record.event_type, activity)
                         set_field(or_record.event_type_URI, 'http://www.cidoc-crm.org/Entity/e7-activity/version-6.2')
 
                         lido_term(
-                            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectEvent.$last.event.eventType,
+                            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectEvent.$append.event.eventType,
                             or_record.event_type,
                             -conceptid: or_record.event_type_URI,
                             -type: purl,
@@ -1414,7 +1968,7 @@
 
                         lido_basenameset(
                             descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectEvent.$last.event.eventName,
-                            'c.content\.subject.value'
+                            'c.content\.subject'
                         )
 
                         if all_match('c.content\.subject\.lref', '.*\S.*')
@@ -1433,8 +1987,8 @@
                         if all_match('c.content\.subject\.lref', '.*\S.*')
 
                             lido_term(
-                                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
-                                'c.content\.subject.value',
+                                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept.$append,
+                                'c.content\.subject',
                                 -conceptid: 'c.content\.subject\.lref',
                                 -type: local,
                                 -source: Adlib
@@ -1443,8 +1997,8 @@
                         else
 
                             lido_term(
-                                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
-                                'c.content\.subject.value'
+                                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept.$append,
+                                'c.content\.subject'
                             )
 
                         end
@@ -1459,7 +2013,32 @@
 
     end
 
+    # Associated subject
+
+#    unless is_array(or_record.associated_subject)
+#        move_field(or_record.associated_subject, or_record.tmp)
+#        set_array(or_record.associated_subject)
+#        move_field(or_record.tmp, or_record.associated_subject.$append)
+#    end
+
+#    do list(path:or_record.associated_subject, var:c)
+
+#        if all_match('c.association\.subject', '.*\S.*')
+
+#            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "associated")
+
+#            lido_term(
+#                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+#                'c.association\.subject'
+#            )
+
+#        end
+
+#    end
+
 # LIDO subjectActor
+
+    # Depicted person
 
     unless is_array(or_record.depicted_person) 
         move_field(or_record.depicted_person, or_record.tmp)
@@ -1469,19 +2048,21 @@
 
     do list(path:or_record.depicted_person, var:c)
 
-        if all_match('c.content\.person\.name.value', '.*\S.*')
+        if all_match('c.content\.person\.name', '.*\S.*')
 
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectActor.$append)
-
-            copy_field('c.content\.person\.name.value', descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectActor.$last.actor.nameActorSet.appellationValue._)
+            lido_basenameset(
+                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectActor.$append.actor.nameActorSet,
+                'c.content\.person\.name'
+            )
 
             if all_match('c.content\.person\.name\.lref', '.*\S.*')
 
-                copy_field('c.content\.person\.name\.lref', descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectActor.$last.actor.actorID._)
-
-                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectActor.$last.actor.actorID.type, "local")
-
-                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectActor.$last.actor.actorID.source, "Adlib")
+                lido_baseid(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectActor.$last.actor.actorID,
+                    'c.content\.person\.name\.lref',
+                    -type: local,
+                    -source: Adlib
+                )
 
             end
 
@@ -1489,9 +2070,111 @@
 
     end
 
+    # Associated person
+
+#    unless is_array(or_record.associated_person)
+#        move_field(or_record.associated_person, or_record.tmp)
+#        set_array(or_record.associated_person)
+#        move_field(or_record.tmp, or_record.associated_person.$append)
+#    end
+
+#    do list(path:or_record.associated_person, var:c)
+
+#        if all_match('c.association\.person', '.*\S.*')
+
+#            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "associated")
+
+#            lido_basenameset(
+#                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectActor.actor.nameActorSet,
+#                'c.association\.person'
+#            )
+
+#        end
+
+#    end
+
+# LIDO subjectDate
+
+    # Depicted period
+
+#    unless is_array(or_record.depicted_period)
+#        move_field(or_record.depicted_period, or_record.tmp)
+#        set_array(or_record.depicted_period)
+#        move_field(or_record.tmp, or_record.depicted_period.$append)
+#    end
+
+#    do list(path:or_record.depicted_period, var:c)
+
+#        if all_match(c, '.*\S.*')
+
+#            lido_basevalue(
+#                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectDate.displayDate,
+#                c
+#            )
+
+#        end
+
+#    end
+
+    # Associated period
+
+#    unless is_array(or_record.associated_period)
+#        move_field(or_record.associated_period, or_record.tmp)
+#        set_array(or_record.associated_period)
+#        move_field(or_record.tmp, or_record.associated_period.$append)
+#    end
+
+#    do list(path:or_record.associated_period, var:c)
+
+#        if all_match('c.association\.period', '.*\S.*')
+
+#            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "associated")
+
+#            lido_basevalue(
+#                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectDate.displayDate,
+#                'c.association\.period'
+#            )
+
+#        end
+
+#    end
+
 
 
 ### LIDO administrativeMetadata
+
+## LIDO rightsWorkWrap
+
+# LIDO creditLine
+
+#    do list(path: or_record.rights, var: c)
+
+#        if all_match('c.rights\.notes', '.*\S.*')
+
+#            lido_basevalue(
+#                administrativeMetadata.rightsWorkWrap.rightsWorkSet.$append.creditLine,
+#                'c.rights\.notes'
+#            )
+
+#        end
+
+#    end
+
+    do list(path: or_record.object_number, var: c)
+
+        lookup_in_store(c, DBI, data_source: 'dbi:SQLite:/tmp/import.RIGHTS.sqlite')
+
+        if all_match(c.rights, '.*\S.*')
+
+            lido_basevalue(
+                administrativeMetadata.rightsWorkWrap.rightsWorkSet.creditLine,
+                c.rights
+            )
+
+        end
+
+    end
+
 
 ## LIDO recordWrap
 
@@ -1499,7 +2182,7 @@
 
     do list(path:or_record.pids, var: c)
 
-        if all_match('c.digital_reference\.description.value', 'datapid')
+        if all_match('c.digital_reference\.description', 'datapid')
 
             if all_match(c.digital_reference, '.*\S.*')
 
@@ -1570,11 +2253,11 @@
 
     do list(path: or_record.institution, var: c)
 
-        if all_match(c.value, '.*\S.*')
+        if all_match(c, '.*\S.*')
 
             lido_basenameset(
-                administrativeMetadata.recordWrap.recordSource.legalBodyName.$append,
-                c.value
+                administrativeMetadata.recordWrap.recordSource.legalBodyName,
+                c
             )
 
         end
@@ -1595,33 +2278,17 @@
 
     do list(path:or_record.pids, var: c)
 
-        if all_match('c.digital_reference\.description.value', 'representationpid')
+        if all_match('c.digital_reference\.description', 'representationpid')
 
             if all_match(c.digital_reference, '.*\S.*')
 
                 copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
                 add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
+                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
 
                 copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
 
             end
-
-        end
-
-    end
-
-# LIDO rightsResource
-
-    do list(path: or_record.object_number, var: c)
-
-        lookup_in_store(c, DBI, data_source: 'dbi:SQLite:/tmp/import.RIGHTS.sqlite')
-
-        if all_match(c.rights, '.*\S.*')
-
-            lido_basenameset(
-                administrativeMetadata.resourceWrap.resourceSet.rightsResource.rightsHolder.legalBodyName,
-                c.rights
-            )
 
         end
 

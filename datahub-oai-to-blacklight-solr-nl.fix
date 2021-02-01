@@ -49,23 +49,20 @@
 #       pref: preferred                             artwork_subtype_display
 #       pref: alternate                             artwork_subtype
 # lido:classification
-#   type: objectcategorie
+#   type: object-category
 #       lido:term
 #           pref: preferred                         artwork_type_display
 #           pref: alternate                         artwork_type  
-#   type: hoofdmotief
-#       lido:term
-#           pref: preferred                         artwork_category_display
-#           pref: alternate                         artwork_category  
 # lido:titleSet                                     
 #   pref: preferred                                 title_display
 # lido:workID
-#   type: objectnummer                              object_number
+#   type: object-number                             object_number
 # lido:objectDescriptionSet                         description
 # lido:objectMeasurementsSet
 #   lido:measurementsSet
 #       lido:extentMeasurements
 #           geheel                                  dimensions
+#
 #                                                   creator
 # lido:eventType
 #   lido:term
@@ -82,22 +79,65 @@
 #               lido:term
 #                   lang: nl                        period
 #           lido:termMaterialsTech
+#               type: material
+#                   lido:term
+#                       pref: preferred             material_display
+#                       pref: alternate             material
+# lido:objectRelationWrap
+#   lido:subject
+#       type: content-motif-general
+#           lido:subjectConcept
 #               lido:term
-#                   pref: alternate                 material
-#           lido:displayMaterialsTech               material_display
+#                   pref: preferred                 artwork_category_display
+#                   pref: alternate                 artwork_category
 # lido:recordWrap          
 #   lido:recordSource
 #       lido:legalBodyName                          repository
 # lido:resourceWrap
-#   lido:resourceID                                 representation_pid
+#   lido:resourceSet
+#       lido:resourceID                             representation_pid
+#       lido:resourceRepresentation
+#   lido:resourceSet
+#       lido:resourceID                             manifest_url
+#       lido:resourceType
+#           lido:term
+#               IIIF Manifest
+#   lido:resourceSet
+#       lido:resourceID                             thumbnail_url
+#       lido:resourceType
+#           lido:term
+#               thumbnail
+#
 #                                                   publish_image          
+
+
+## DescriptiveMetadata
+
+# Copy field to filter on language
+
+do list(path:_metadata.descriptiveMetadata, var:dm)
+    if all_match('dm.lang', 'nl')
+        copy_field('dm', 'filteredDescriptiveMetadata')
+    end
+end
+
+
+## AdministrativeMetadata
+
+# Copy field to filter on language
+
+do list(path:_metadata.administrativeMetadata, var:am)
+    if all_match('am.lang', 'nl')
+        copy_field('am', 'filteredAdministrativeMetadata')
+    end
+end
 
 
 ## Title
 
 # Get preferred title from LIDO if exists
 
-do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
+do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
     if all_match('el.pref', 'preferred')
         if all_match('el._', '.*\S.*')
             copy_field('el._', "title_display")
@@ -108,7 +148,7 @@ end
 # If no preferred title exists, try to get any title from LIDO
 
 unless all_match(title_display, '.*\S.*')
-    do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
+    do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
         if all_match('el._', '.*\S.*')
             copy_field('el._', "title_display")
         end
@@ -132,13 +172,13 @@ set_array(creator_index)
 
 # Use the event 'production'
 
-unless is_array('_metadata.descriptiveMetadata.0.eventWrap.eventSet')
-    move_field('_metadata.descriptiveMetadata.0.eventWrap.eventSet', tmp)
-    set_array('_metadata.descriptiveMetadata.0.eventWrap.eventSet')
-    move_field(tmp,'_metadata.descriptiveMetadata.0.eventWrap.eventSet.$append')
+unless is_array('filteredDescriptiveMetadata.eventWrap.eventSet')
+    move_field('filteredDescriptiveMetadata.eventWrap.eventSet', tmp)
+    set_array('filteredDescriptiveMetadata.eventWrap.eventSet')
+    move_field(tmp,'filteredDescriptiveMetadata.eventWrap.eventSet.$append')
 end
 
-do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
+do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
 
     do list(path:e.event.eventType.term, var:p)
     
@@ -295,7 +335,7 @@ set_array(production_date)
 
 # Use the event 'production'
 
-do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
+do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
 
     do list(path:e.event.eventType.term, var:p)
 
@@ -370,7 +410,7 @@ add_field(determined, "false")
 set_field(production_date_copyright)
 set_array(pretty_dod)
 
-copy_field(_metadata.descriptiveMetadata.0.eventWrap.eventSet.0.event.eventDate, dates)
+copy_field(filteredDescriptiveMetadata.eventWrap.eventSet.0.event.eventDate, dates)
 
 if all_match(check_production_date, 'true')
 
@@ -472,7 +512,7 @@ set_array(period)
 
 # Use the event 'production'
 
-do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var: e)
+do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var: e)
     
     do list(path:e.event.eventType.term, var:p)
 
@@ -516,8 +556,8 @@ sort_field(period)
 # Get repository from LIDO if exists (repository = data provider / source of record)
 # If no repository exists, use n/a (not available)
 
-if all_match('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', '.*\S.*')
-    copy_field('_metadata.administrativeMetadata.0.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', 'repository')
+if all_match('filteredAdministrativeMetadata.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', '.*\S.*')
+    copy_field('filteredAdministrativeMetadata.recordWrap.recordSource.0.legalBodyName.0.appellationValue.0._', 'repository')
 else
     add_field('repository', 'n/a')
 end
@@ -530,7 +570,7 @@ set_array(material)
 
 # Use the event 'production'
 
-do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
+do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
     
     do list(path:e.event.eventType.term, var:p)
 
@@ -540,53 +580,34 @@ do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
 
             do list(path:e.event.eventMaterialsTech, var:mat)
 
-                # Use the physical description for the detail page if exists, els use the preferred term
+                # Use the preferred term for the detail page
                 # Use the alternate term in the search results / facet if exists, else use the preferred term
                 # If no material exists, use n/a (not available)
 
-                do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var:prefMaterial)
-                    if all_match('prefMaterial.pref', 'preferred')
-                        if all_match(prefMaterial._, '.*\S.*')
-                            copy_field(prefMaterial._, material_display.$append)
-                            copy_field(prefMaterial._, material.$append)
-                        else
-                            add_field(tmp_material, 'n/a')
-                            copy_field(tmp_material, material_display.$append)
-                            copy_field(tmp_material, material.$append)
-                            remove_field(tmp_material)
+                if all_match(mat.materialsTech.termMaterialsTech.0.type, 'material')
+
+                    do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var:prefMaterial)
+                        if all_match('prefMaterial.pref', 'preferred')
+                            if all_match(prefMaterial._, '.*\S.*')
+                                copy_field(prefMaterial._, material_display.$append)
+                                copy_field(prefMaterial._, material.$append)
+                            else
+                                add_field(tmp_material, 'n/a')
+                                copy_field(tmp_material, material_display.$append)
+                                copy_field(tmp_material, material.$append)
+                                remove_field(tmp_material)
+                            end
                         end
                     end
-                end
 
-                do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var:prefMaterial)
-                    if all_match('prefMaterial.pref', 'alternate')
-                        if all_match(prefMaterial._, '.*\S.*')
-                            copy_field(prefMaterial._, material.$last)
+                    do list(path: 'mat.materialsTech.termMaterialsTech.0.term', var:prefMaterial)
+                        if all_match('prefMaterial.pref', 'alternate')
+                            if all_match(prefMaterial._, '.*\S.*')
+                                copy_field(prefMaterial._, material.$last)
+                            end
                         end
                     end
-                end
 
-            end
-
-        end
-
-    end
-
-end
-
-do list(path:'_metadata.descriptiveMetadata.0.eventWrap.eventSet', var:e)
-
-    do list(path:e.event.eventType.term, var:p)
-
-        if all_match(p._, 'production')
-
-            do list(path:e.event.eventMaterialsTech, var:mat)
-
-                do list(path: 'mat.displayMaterialsTech', var:displayMaterial)
-                    if all_match('displayMaterial._', '.*\S.*')
-                        remove_field(material_display)
-                        copy_field(displayMaterial._, material_display.$append)
-                    end
                 end
 
             end
@@ -612,9 +633,9 @@ end
 
 set_array(dimensions)
 
-# Use extent 'geheel' (used in AdLib) or 'Volledig' (used in TMS)
+# Use extent 'geheel'
 
-do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet, var:el2)
+do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet, var:el2)
 
     if all_match(el2.objectMeasurements.extentMeasurements.0._, 'geheel')
 
@@ -717,24 +738,6 @@ do list(path:_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectMeas
 
         end
 
-    else
-
-        if all_match(el2.objectMeasurements.extentMeasurements.0._, 'Volledig')
-
-            if all_match(el2.displayObjectMeasurements.0._, '.*\S.*')
-
-                if all_match(dimensions.$first, '.*\S.*')
-                    unless in(el2.displayObjectMeasurements.0._, dimensions.$last)
-                        copy_field(el2.displayObjectMeasurements.0._, dimensions.$append)
-                    end
-                else
-                    copy_field(el2.displayObjectMeasurements.0._, dimensions.$append)
-                end
-
-            end
-
-        end
-
     end
 
 end
@@ -751,22 +754,22 @@ end
 set_array(artwork_category_display)
 set_array(artwork_category)
 
-# Use type 'hoofdmotief'
+# Use type 'content-motif-general'
 
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c)
+do list(path: 'filteredDescriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet', var:c)
     
-    if all_match(c.type, 'hoofdmotief')
+    if all_match(c.subject.type, 'content-motif-general')
 
-        # Get artwork category from LIDO
+        # Get content motif general from LIDO
         # Use the preferred term for the detail page
         # Use the alternate term in the search results / facet if exists, else use the preferred term
-        # If no artwork category exists, use n/a (not available)
+        # If no content motif general exists, use n/a (not available)
 
-        do list(path: 'c.term', var:classification)
-            if all_match('classification.pref', 'preferred')
-                if all_match(classification._, '.*\S.*')
-                    copy_field(classification._, artwork_category_display.$append)
-                    copy_field(classification._, artwork_category.$append)
+        do list(path: 'c.subject.subjectConcept.term', var:subject)
+            if all_match('subject.pref', 'preferred')
+                if all_match(subject._, '.*\S.*')
+                    copy_field(subject._, artwork_category_display.$append)
+                    copy_field(subject._, artwork_category.$append)
                 else
                     add_field(tmp_artwork_category_display, 'n/a')
                     copy_field(tmp_artwork_category_display, artwork_category_display.$append)
@@ -776,10 +779,10 @@ do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classifi
             end
         end
 
-        do list(path: 'c.term', var:classification)
-            if all_match('classification.pref', 'alternate')
-                if all_match(classification._, '.*\S.*')
-                    copy_field(classification._, artwork_category.$last)
+        do list(path: 'c.subject.subjectConcept.term', var:subject)
+            if all_match('subject.pref', 'alternate')
+                if all_match(subject._, '.*\S.*')
+                    copy_field(subject._, artwork_category.$last)
                 end
             end
         end
@@ -804,11 +807,11 @@ end
 set_array(artwork_type_display)
 set_array(artwork_type)
 
-# Use type 'objectcategorie'
+# Use type 'object-category'
 
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.classificationWrap.classification', var:c)
+do list(path: 'filteredDescriptiveMetadata.objectClassificationWrap.classificationWrap.classification', var:c)
     
-    if all_match(c.type, 'objectcategorie')
+    if all_match(c.type, 'object-category')
         
         # Get artwork type from LIDO
         # Use the preferred term for the detail page
@@ -862,7 +865,7 @@ set_array(artwork_subtype)
 # Use the alternate term in the search results / facet if exists, else use the preferred term
 # If no artwork subtype exists, use n/a (not available)
 
-do list(path: '_metadata.descriptiveMetadata.0.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
+do list(path: 'filteredDescriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
     
     do list(path: 't.term', var:type)
         if all_match('type.pref', 'preferred')
@@ -901,9 +904,9 @@ end
 
 ## Object_number
 
-if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0.type', 'objectnummer')
-    if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0._', '.*\S.*')
-        copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0._', 'object_number')
+if all_match('filteredDescriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0.type', 'object-number')
+    if all_match('filteredDescriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0._', '.*\S.*')
+        copy_field('filteredDescriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.0.workID.0._', 'object_number')
     else
         add_field('object_number', 'n/a')
     end
@@ -916,10 +919,12 @@ end
 
 ## Description
 
-if all_match('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', '.*\S.*')
-    copy_field('_metadata.descriptiveMetadata.0.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
-else
-    add_field('description', 'n/a')
+if all_match('filteredDescriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', '.*\S.*')
+    if all_match('filteredDescriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', '.*\S.*')
+        copy_field('filteredDescriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.0.descriptiveNoteValue.0._', 'description')
+    else
+        add_field('description', 'n/a')
+    end
 end
 
 unless exists(description)
@@ -964,18 +969,71 @@ unless exists(data_pid)
 end
 
 
+## Resource sets
+
+unless is_array('filteredAdministrativeMetadata.resourceWrap.resourceSet')
+    move_field('filteredAdministrativeMetadata.resourceWrap.resourceSet', tmp)
+    set_array('filteredAdministrativeMetadata.resourceWrap.resourceSet')
+    move_field(tmp,'filteredAdministrativeMetadata.resourceWrap.resourceSet.$append')
+end
+
+
 ## Representation_pid
 
-if all_match('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resourceID', '.*\S.*')
-    copy_field('_metadata.administrativeMetadata.0.resourceWrap.resourceSet.resourceID', 'representation_pid')
-else
-    add_field('representation_pid', 'n/a')
+do list(path:'filteredAdministrativeMetadata.resourceWrap.resourceSet', var:r)
+    if all_match('r.resourceID.label', 'representationPID')
+        if all_match('r.resourceID._', '.*\S.*')
+            copy_field('r.resourceID._', 'representation_pid')
+        end
+    end
 end
 
 unless exists(representation_pid)
     add_field(representation_pid, 'n/a')
 end
 
+
+## Manifest_url
+
+#do list(path:'filteredAdministrativeMetadata.resourceWrap.resourceSet', var:r)
+    
+#    do list(path:'r.resourceType.term', var:m)
+#        if all_match(m._, 'IIIF Manifest')
+#            if all_match('r.resourceID._', '.*\S.*')
+#                copy_field('r.resourceID._', 'manifest_url')
+#            end
+#        end
+#    end
+
+#end
+
+#unless exists(manifest_url)
+#    add_field(manifest_url, 'n/a')
+#end
+
+
+## Thumbnail_url
+
+#do list(path:'filteredAdministrativeMetadata.resourceWrap.resourceSet', var:r)
+    
+#    do list(path:'r.resourceType.term', var:t)
+#        if all_match(t._, 'thumbnail')
+#            if all_match('r.resourceID._', '.*\S.*')
+#                copy_field('r.resourceID._', 'thumbnail_url')
+#            end
+#        end
+#    end
+
+#end
+
+#unless exists(thumbnail_url)
+#    add_field(thumbnail_url, 'n/a')
+#end
+
+
+## Language
+
+add_field('language', 'Dutch')
 
 ## ID
 
@@ -995,6 +1053,7 @@ unless all_match(data_pid, 'n/a')
     parse_text('id', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
     replace_all('id.0', '([^.]*)\.[^.]{2,3}(?:\.[^.]{2,3})?$', '$1')
     join_field(id, ':')
+    prepend('id', 'nl:')
 end
 
 unless exists(id)
@@ -1017,3 +1076,7 @@ remove_field('_datestamp')
 remove_field('_metadata')
 remove_field('_resumption')
 remove_field('_resumptionToken')
+
+# Remove the fields that filter on language
+remove_field('filteredDescriptiveMetadata')
+remove_field('filteredAdministrativeMetadata')
