@@ -1416,10 +1416,35 @@
 
         else
 
-            lido_date(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
-                -earliest_date: or_record.earliest_dates.0.0
-            )
+            if all_match(or_record.latest_dates.0.0, '.*\S.*')
+
+                if all_match(or_record.latest_dates.0.1, '.*\S.*')
+
+                    lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -earliest_date: or_record.earliest_dates.0.0,
+                        -latest_date: or_record.latest_dates.0.0,
+                        -latest_date_type: or_record.latest_dates.0.1
+                    )
+
+                else
+
+                    lido_date(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                        -earliest_date: or_record.earliest_dates.0.0,
+                        -latest_date: or_record.latest_dates.0.0
+                    )
+
+                end
+
+            else
+
+                lido_date(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.date,
+                    -earliest_date: or_record.earliest_dates.0.0,
+                )
+
+            end
 
         end
 
