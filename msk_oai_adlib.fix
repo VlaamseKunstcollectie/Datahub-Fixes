@@ -101,8 +101,8 @@
 #                                                                   lido:eventActor
 #                                                                       lido:actorID
 #   Production.creator\.lref                                                type: local
-#                                                                           type: purl                                              identificatie vervaardiger
-#   Production.creator                                                  lido:nameActorSet
+#   Production.creator.Source                                               type: purl                                              identificatie vervaardiger
+#   Production.creator.name                                             lido:nameActorSet
 #                                                                           pref: preferred                 Vervaardiger            naam vervaardiger
 #                                                                           pref: alternate
 #                                                                       lido:vitalDatesActor
@@ -820,12 +820,12 @@
 
         trim('c.creator\.qualifier')
 
-        if all_match(c.creator, '.*\S.*')
+        if all_match(c.creator.name, '.*\S.*')
 
             lido_actor(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
                 'c.creator\.lref',
-                c.creator,
+                c.creator.name,
                 -id_source: Adlib,
                 -id_type: local,
                 -name_pref: preferred
@@ -856,9 +856,9 @@
 
         end
 
-        # Add Persistent URI data to actor
+        # Add Persistent URI data to actor, if not available from API, use Persistent URI's from Flemish Art Collection concordance database
 
-        copy_field(c.creator, c.creator_pid)
+        copy_field(c.creator.name, c.creator_pid)
 
         downcase(c.creator_pid)
 
@@ -878,36 +878,129 @@
 
         # Creator Persistent URI's
 
-        if all_match(c.creator_pid.viaf_uri, '.*\S.*')
+        copy_field(c.creator.Source, c.creator_source)
 
-            lido_baseid(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                c.creator_pid.viaf_uri,
-                -source: VIAF,
-                -type: purl
-            )
+        unless is_array(c.creator_source)
+            move_field(c.creator_source, or_record.tmp)
+            set_array(c.creator_source)
+            move_field(or_record.tmp, c.creator_source.$append)
+        end
+
+        do list (path: c.creator_source, var: s)
+
+            if all_match(s.source, 'VIAF')
+
+                if all_match('s.source\.number', '.*\S.*')
+
+                    set_field(c.creator_source_viaf, 'https://viaf.org/viaf/')
+
+                    paste(c.creator_viaf, c.creator_source_viaf, 's.source\.number', join_char:'')
+
+                    lido_baseid(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                        c.creator_viaf,
+                        -source: VIAF,
+                        -type: purl
+                    )
+
+                    set_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID.$last.pref, 'preferred')
+
+                end
+
+            end
+
+            if all_match(s.source, 'RKDartists&')
+
+                if all_match('s.source\.number', '.*\S.*')
+
+                    set_field(c.creator_source_rkd, 'https://rkd.nl/explore/artists/')
+
+                    paste(c.creator_rkd, c.creator_source_rkd, 's.source\.number', join_char:'')
+
+                    lido_baseid(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                        c.creator_rkd,
+                        -source: RKD,
+                        -type: purl
+                    )
+
+                    set_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID.$last.pref, 'preferred')
+
+                end
+
+            end
+
+            if all_match(s.source, 'Wikidata')
+
+                if all_match('s.source\.number', '.*\S.*')
+
+                    set_field(c.creator_source_wikidata, 'https://www.wikidata.org/wiki/')
+
+                    paste(c.creator_wikidata, c.creator_source_wikidata, 's.source\.number', join_char:'')
+
+                    lido_baseid(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                        c.creator_wikidata,
+                        -source: Wikidata,
+                        -type: purl
+                    )
+
+                    set_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID.$last.pref, 'preferred')
+
+                end
+
+            end
 
         end
 
-        if all_match(c.creator_pid.rkd_uri, '.*\S.*')
+        unless in(c.creator_viaf, c.creator_pid.viaf_uri)
 
-            lido_baseid(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                c.creator_pid.rkd_uri,
-                -source: RKD,
-                -type: purl
-            )
+            if all_match(c.creator_pid.viaf_uri, '.*\S.*')
+
+                lido_baseid(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                    c.creator_pid.viaf_uri,
+                    -source: VIAF,
+                    -type: purl
+                )
+
+                set_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID.$last.pref, 'alternate')
+
+            end
 
         end
 
-        if all_match(c.creator_pid.wikidata_uri, '.*\S.*')
+        unless in(c.creator_rkd, c.creator_pid.rkd_uri)
 
-            lido_baseid(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
-                c.creator_pid.wikidata_uri,
-                -source: Wikidata,
-                -type: purl
-            )
+            if all_match(c.creator_pid.rkd_uri, '.*\S.*')
+
+                lido_baseid(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                    c.creator_pid.rkd_uri,
+                    -source: RKD,
+                    -type: purl
+                )
+
+                set_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID.$last.pref, 'alternate')
+
+            end
+
+        end
+
+        unless in(c.creator_wikidata, c.creator_pid.wikidata_uri)
+
+            if all_match(c.creator_pid.wikidata_uri, '.*\S.*')
+
+                lido_baseid(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID,
+                    c.creator_pid.wikidata_uri,
+                    -source: Wikidata,
+                    -type: purl
+                )
+
+                set_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.actor.actorID.$last.pref, 'alternate')
+
+            end
 
         end
 

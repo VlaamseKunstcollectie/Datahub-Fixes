@@ -146,20 +146,13 @@
 #   vobjects.object                                  pref: preferred                              Subtype                 term objectnaam
 #                                                    pref: alternate                              Subtype
 #                                             lido:classification
-#                                                 type: objectcategorie
+#                                                 type: object-category
 #                                                    lido:conceptID
 #   vclassifications.ClassificationID                     pref: preferred
 #                                                         pref: alternate                                                 identificatie
 #                                                    lido:term
 #   vclassifications.Classification                       pref: preferred                         Type                    term
 #                                                         pref: alternate                         Type
-#                                                 type: hoofdmotief
-#                                                    lido:conceptID
-#   vsubjects.TermID                                      pref: preferred
-#                                                         pref: alternate                                                 identificatie hoofdmotief
-#                                                    lido:term
-#   vsubjects.subject                                     pref: preferred                         Onderwerp               term hoofdmotief
-#                                                         pref: alternate                         Onderwerp
 #                                             lido:titleSet
 #                                                 lido:appellationValue
 #   vobjtitles.title                                  lang: en                                                            titel
@@ -167,10 +160,12 @@
 #                                                 lido:sourceAppellation
 #   vobjtitles.titleid                                lang: en
 #   vobjtitles.titleid                                lang: nl
-#                                             lido:repositoryName                                 Instelling              naam bewaarinstelling
-#   vdepartments.DepartmentID                     lido:legalBodyID
-#   vdepartments.department                       lido:legalBodyName                              Inventarisnummer        waarde objectnummer
-#   CITvgsrpObjTombstoneD_RO.ObjectNumber     lido:workID
+#                                             lido:repositorySet
+#                                                 lido:repositoryName
+#   vdepartments.DepartmentID                         lido:legalBodyID
+#   vdepartments.department                           lido:legalBodyName                          Instelling              naam bewaarinstelling
+#                                                 lido:workID
+#   CITvgsrpObjTombstoneD_RO.ObjectNumber             type: object-number                         Inventarisnummer        waarde objectnummer
 #   vdescriptions.description                 lido:objectDescriptionSet                           Beschrijving            korte beschrijving
 #                                             lido:objectMeasurementsSet
 #   vdimensions.display                           lido:displayObjectMeasurements
@@ -204,15 +199,27 @@
 #   vperiods.term                                             lido:term
 #                                                         lido:eventMaterialsTech
 #                                                             lido:termMaterialsTech
-#                                                                 lido:conceptID
-#   vmaterials.TermID                                                 pref: preferred
-#                                                                     pref: alternate                                     identificatie materiaal
-#                                                                 lido:term
-#   vmaterials.material                                               pref: preferred             Materiaal               term materiaal
-#                                                                     pref: alternate
-#                                             lido:subjectConcept
-#   viconclass                                    lido:conceptID                                                          identificatie afgebeeld concept
-#   viconclass                                    lido:term                                                               term afgebeeld concept
+#                                                                 type: material
+#                                                                     lido:conceptID
+#   vmaterials.TermID                                                     pref: preferred
+#                                                                         pref: alternate                                 identificatie materiaal
+#                                                                     lido:term
+#   vmaterials.material                                                   pref: preferred         Materiaal               term materiaal
+#                                                                         pref: alternate
+#                                             lido:objectRelationWrap
+#                                                 lido:subject
+#                                                     type: content-motif-general
+#                                                         lido:subjectConcept
+#                                                             lido:conceptID
+#   vsubjects.TermID                                              pref: preferred
+#                                                                 pref: alternate                                         identificatie hoofdmotief
+#                                                             lido:term
+#   vsubjects.subject                                             pref: preferred                 Onderwerp               term hoofdmotief
+#                                                                 pref: alternate                 Onderwerp
+#                                                     no type
+#                                                         lido:subjectConcept
+#   viconclass                                                lido:conceptID                                              identificatie afgebeeld concept
+#   viconclass                                                lido:term                                                   term afgebeeld concept
 #                                             lido:relatedWorksWrap
 #                                                 lido:relatedWorkSet
 #   vrelations.numbering                              sortorder
@@ -291,6 +298,8 @@
         -pref: preferred
     )
 
+
+
 ### LIDO objectPublishedID
 
     # Add workpid from TMS as LIDO objectPublishedID
@@ -302,6 +311,7 @@
         -type: purl,
         -label: workPID
     )
+
 
 
 ### LIDO category
@@ -321,13 +331,15 @@
         -source: cidoc-crm
     )
 
+
+
 ### LIDO descriptiveMetadata
 
 ## LIDO objectClassificationWrap
 
 # LIDO objectWorkType
 
-    # We'll have multiple objectWorkTypes: the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+    # We'll have multiple terms: the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
 
     # Loop over the different object terms from TMS
 
@@ -347,19 +359,19 @@
 
         # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
 
-        copy_field(o.object, o.aat)
-        lookup_in_store(o.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        copy_field(o.object, o.object_aat)
+        lookup_in_store(o.object_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
         # Add the corresponding term from the AAT vocabulary (if present) to LIDO objectWorkType as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
 
-        if all_match(o.aat.aatterm, '.*\S.*')
+        if all_match(o.object_aat.aatterm, '.*\S.*')
 
-            if all_match(o.aat.aaturi, '.*\S.*')
+            if all_match(o.object_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
-                    o.aat.aatterm,
-                    -conceptid: o.aat.aaturi,
+                    o.object_aat.aatterm,
+                    -conceptid: o.object_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -370,7 +382,7 @@
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
-                    o.aat.aatterm,
+                    o.object_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )                
@@ -381,9 +393,9 @@
 
     end
 
-# LIDO classification [type="objectcategorie"]
+# LIDO classification [type="object-category"]
 
-    # We'll have multiple classifications with type "objectcategorie": the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+    # We'll have multiple terms for the type "object-category": the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
 
     # Loop over the different classification terms from TMS
 
@@ -403,23 +415,23 @@
 
         # Add type of LIDO classification
 
-        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "objectcategorie")
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
         # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
 
-        copy_field(c.Classification, c.classification.aat)
-        lookup_in_store(c.classification.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        copy_field(c.Classification, c.classification_aat)
+        lookup_in_store(c.classification_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
         # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
 
-        if all_match(c.classification.aat.aatterm, '.*\S.*')
+        if all_match(c.classification_aat.aatterm, '.*\S.*')
 
-            if all_match(c.classification.aat.aaturi, '.*\S.*')
+            if all_match(c.classification_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.classification.aat.aatterm,
-                    -conceptid: c.classification.aat.aaturi,
+                    c.classification_aat.aatterm,
+                    -conceptid: c.classification_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -430,7 +442,7 @@
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.classification.aat.aatterm,
+                    c.classification_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )                
@@ -439,76 +451,12 @@
 
             # Add type of LIDO classification
 
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "objectcategorie")
+            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
         end
 
     end
 
-# LIDO classification [type="hoofdmotief"]
-
-    # We'll have multiple classifications with type "hoofdmotief": the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
-
-    # Loop over the different subject terms from TMS
-
-    do list(path:or_record.subjectWrap.db.subjects, var:s)
-
-        # Add each subject term from TMS to LIDO classification as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
-        
-        lido_term(
-            descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-            s.subject,
-            -conceptid: s.TermID,
-            -type: local,
-            -source: TMS,
-            -pref: preferred,
-            -lang: nl
-        )
-
-        # Add type of LIDO classification
-
-        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "hoofdmotief")
-
-        # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
-
-        copy_field(s.subject, s.aat)
-        downcase(s.aat)
-        lookup_in_store(s.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
-
-        # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
-
-        if all_match(s.aat.aatterm, '.*\S.*')
-
-            if all_match(s.aat.aaturi, '.*\S.*')
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    s.aat.aatterm,
-                    -conceptid: s.aat.aaturi,
-                    -type: purl,
-                    -source: AAT,
-                    -pref: alternate,
-                    -lang: nl
-                )
-
-            else
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    s.aat.aatterm,
-                    -pref: alternate,
-                    -lang: nl
-                )
-
-            end
-
-            # Add type of LIDO classification
-
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "hoofdmotief")
-
-        end
-
-    end
 
 ## LIDO objectIdentificationWrap
 
@@ -562,7 +510,7 @@
     # Add department ID from TMS to LIDO repositoryName as LIDO legalBodyID
 
     lido_baseid(
-        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyID,
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append.repositoryName.legalBodyID,
         or_record.department.db.DepartmentID,
         -type: local,
         -source: TMS
@@ -571,7 +519,7 @@
     # Add department from TMS to LIDO repositoryName as LIDO legalBodyName
 
     lido_basenameset(
-        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyName,
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryName.legalBodyName,
         or_record.department.db.department
     )
 
@@ -580,9 +528,9 @@
     # Add object number from TMS as LIDO workID
 
     lido_baseid(
-        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.workID,
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.workID,
         or_record.object_number.local,
-        -type: objectnummer
+        -type: object-number
     )
 
 # LIDO objectDescriptionSet
@@ -653,13 +601,14 @@
 
     end
 
+
 ## LIDO eventWrap
 
 # LIDO eventType
 
     # Create event_type
 
-    add_field(or_record.event_type, production)
+    add_field(or_record.event_type, "production")
 
     # Add the created event type to LIDO eventType
     
@@ -840,18 +789,24 @@
         -lang: nl
     )
 
+# LIDO namePlaceSet
+
+    # Not yet added
+
 # LIDO termMaterialsTech
 
-    # We'll have multiple eventMaterialsTechs: the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+    # We'll have multiple terms: the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
 
     # Loop over the different material terms from TMS
 
     do list(path:or_record.materialWrap.db.materials, var:m)
 
+        add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
+
         # Add each material term from TMS to LIDO eventMaterialsTechs as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
         
         lido_term(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append,
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
             m.material,
             -conceptid: m.TermID,
             -type: local,
@@ -862,20 +817,20 @@
 
         # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
 
-        copy_field(m.subject, m.aat)
-        downcase(m.aat)
-        lookup_in_store(m.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        copy_field(m.subject, m.material_aat)
+        downcase(m.material_aat)
+        lookup_in_store(m.material_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
         # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
 
-        if all_match(m.aat.aatterm, '.*\S.*')
+        if all_match(m.material_aat.aatterm, '.*\S.*')
 
-            if all_match(m.aat.aaturi, '.*\S.*')
+            if all_match(m.material_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    m.aat.aatterm,
-                    -conceptid: m.aat.aaturi,
+                    m.material_aat.aatterm,
+                    -conceptid: m.material_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -886,7 +841,7 @@
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    m.aat.aatterm,
+                    m.material_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )
@@ -910,13 +865,73 @@
 
     end
 
-# LIDO namePlaceSet
-
-    # Not yet added
 
 ## LIDO objectRelationWrap
 
 # LIDO subjectConcept
+
+    # Content motif general
+
+    # We'll have multiple terms for the type "content-motif-general": the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+
+    # Loop over the different subject terms from TMS
+
+    do list(path:or_record.subjectWrap.db.subjects, var:s)
+
+        # Add type of LIDO subject
+
+        add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "content-motif-general")
+
+        # Add each subject term from TMS to LIDO subjectConcept as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
+
+        lido_term(
+            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+            s.subject,
+            -conceptid: s.TermID,
+            -type: local,
+            -source: TMS,
+            -pref: preferred,
+            -lang: nl
+        )
+
+        # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
+
+        copy_field(s.subject, s.aat)
+        downcase(s.aat)
+        lookup_in_store(s.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+        # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
+
+        if all_match(s.aat.aatterm, '.*\S.*')
+
+            if all_match(s.aat.aaturi, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    s.aat.aatterm,
+                    -conceptid: s.aat.aaturi,
+                    -type: purl,
+                    -source: AAT,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            else
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    s.aat.aatterm,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            end
+
+        end
+
+    end
+
+    # Iconclass
 
     # Split separate iconclass concepts from notes
 
@@ -1126,9 +1141,13 @@
 
         add_field(descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$append)
 
-        if all_match(r.descriptionNumbering, '.*\S.*')
+        if all_match(r.descriptionNumbering, 'paginanummer')
 
-            copy_field(r.numbering, descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.sortorder)
+            if all_match(r.numbering, '[0-9]+')
+
+                copy_field(r.numbering, descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.sortorder)
+
+            end
 
         end
 
@@ -1385,6 +1404,7 @@
 
         copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
         add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
 
         copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
 
