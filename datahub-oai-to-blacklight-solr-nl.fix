@@ -633,7 +633,7 @@ end
 
 set_array(dimensions)
 
-# Use extent 'geheel'
+# Use extent 'geheel' (used in AdLib) or 'Volledig' (used in TMS)
 
 do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet, var:el2)
 
@@ -734,6 +734,24 @@ do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.objectMeasurem
                     append(dimensionsr, ' (diameter)')
                     move_field(dimensionsr, dimensions.$append)
                 end
+            end
+
+        end
+
+    else
+
+        if all_match(el2.objectMeasurements.extentMeasurements.0._, 'Volledig')
+
+            if all_match(el2.displayObjectMeasurements.0._, '.*\S.*')
+
+                if all_match(dimensions.$first, '.*\S.*')
+                    unless in(el2.displayObjectMeasurements.0._, dimensions.$last)
+                        copy_field(el2.displayObjectMeasurements.0._, dimensions.$append)
+                    end
+                else
+                    copy_field(el2.displayObjectMeasurements.0._, dimensions.$append)
+                end
+
             end
 
         end
