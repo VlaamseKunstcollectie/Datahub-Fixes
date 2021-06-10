@@ -5,6 +5,11 @@
 # Created: 7/12/2016
 #
 
+# Only retain the records from the Groeningemuseum
+
+    select all_match('_metadata.Alternative_number.alternative_number\.institution', 'Musea Brugge - Groeningemuseum')
+
+
 ## Prepare an intermediate structure:
 ##   Copy relevant Adlib fields to a dedicated lido structure.
 ##   Remove all Adlib fields afterwards, retaining only the lido structure.
