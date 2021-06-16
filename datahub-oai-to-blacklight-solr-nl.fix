@@ -775,7 +775,7 @@ set_array(artwork_category)
 # Use type 'content-motif-general'
 
 do list(path: 'filteredDescriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet', var:c)
-    
+
     if all_match(c.subject.type, 'content-motif-general')
 
         # Get content motif general from LIDO
@@ -783,26 +783,30 @@ do list(path: 'filteredDescriptiveMetadata.objectRelationWrap.subjectWrap.subjec
         # Use the alternate term in the search results / facet if exists, else use the preferred term
         # If no content motif general exists, use n/a (not available)
 
-        do list(path: 'c.subject.subjectConcept.term', var:subject)
-            if all_match('subject.pref', 'preferred')
-                if all_match(subject._, '.*\S.*')
-                    copy_field(subject._, artwork_category_display.$append)
-                    copy_field(subject._, artwork_category.$append)
-                else
-                    add_field(tmp_artwork_category_display, 'n/a')
-                    copy_field(tmp_artwork_category_display, artwork_category_display.$append)
-                    copy_field(tmp_artwork_category_display, artwork_category.$append)
-                    remove_field(tmp_artwork_category_display)
-                end
-            end
-        end
+        do list(path: 'c.subject.subjectConcept', var:subjectconcept)
 
-        do list(path: 'c.subject.subjectConcept.term', var:subject)
-            if all_match('subject.pref', 'alternate')
-                if all_match(subject._, '.*\S.*')
-                    copy_field(subject._, artwork_category.$last)
+            do list(path: 'subjectconcept.term', var:subject)
+                if all_match('subject.pref', 'preferred')
+                    if all_match(subject._, '.*\S.*')
+                        copy_field(subject._, artwork_category_display.$append)
+                        copy_field(subject._, artwork_category.$append)
+                    else
+                        add_field(tmp_artwork_category_display, 'n/a')
+                        copy_field(tmp_artwork_category_display, artwork_category_display.$append)
+                        copy_field(tmp_artwork_category_display, artwork_category.$append)
+                        remove_field(tmp_artwork_category_display)
+                    end
                 end
             end
+
+            do list(path: 'subjectconcept.term', var:subject)
+                if all_match('subject.pref', 'alternate')
+                    if all_match(subject._, '.*\S.*')
+                        copy_field(subject._, artwork_category.$last)
+                    end
+                end
+            end
+
         end
 
     end
