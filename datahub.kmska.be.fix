@@ -57,6 +57,11 @@
     copy_field(ObjectID, or_record.materialWrap.db)
     lookup_in_store(or_record.materialWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.materials.sqlite')
 
+    # techniqueWrap
+
+    copy_field(ObjectID, or_record.techniqueWrap.db)
+    lookup_in_store(or_record.techniqueWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.techniques.sqlite')
+
     # title
 
     copy_field(ObjectNumber, or_record.titleWrap.db)
@@ -206,6 +211,12 @@
 #                                                                     lido:term
 #   vmaterials.material                                                   pref: preferred         Materiaal               term materiaal
 #                                                                         pref: alternate
+#                                                                 type: technique
+#                                                                     lido:conceptID
+#   vtechniques.TermID                                                    pref: preferred
+#                                                                     lido:term
+#   vtechniques.technique                                                 pref: preferred
+#   CITvgsrpObjTombstoneD_RO.Medium                           lido:displayMaterialsTech
 #                                             lido:objectRelationWrap
 #                                                 lido:subject
 #                                                     type: content-motif-general
@@ -803,7 +814,7 @@
 
         add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
 
-        # Add each material term from TMS to LIDO eventMaterialsTechs as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
+        # Add each material term from TMS to LIDO termMaterialsTech as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
         
         lido_term(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
@@ -842,6 +853,61 @@
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
                     m.material_aat.aatterm,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            end
+
+        end
+
+    end
+
+    # Loop over the different technique terms from TMS
+
+    do list(path:or_record.techniqueWrap.db.techniques, var:t)
+
+        add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "technique")
+
+        # Add each technique term from TMS to LIDO termMaterialsTech as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
+
+        lido_term(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+            t.technique,
+            -conceptid: t.TermID,
+            -type: local,
+            -source: TMS,
+            -pref: preferred,
+            -lang: nl
+        )
+
+        # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
+
+        copy_field(t.subject, t.technique_aat)
+        downcase(t.technique_aat)
+        lookup_in_store(t.technique_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+        # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
+
+        if all_match(t.technique_aat.aatterm, '.*\S.*')
+
+            if all_match(t.technique_aat.aaturi, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                    t.technique_aat.aatterm,
+                    -conceptid: t.technique_aat.aaturi,
+                    -type: purl,
+                    -source: AAT,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            else
+
+                lido_term(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                    t.technique_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )
@@ -1318,7 +1384,7 @@
 
     end
 
-    # If the copyright notice contains "SABAM", add this to LIDO rightsType as LIDO term along with the URI from creativecommons.org as LIDO conceptID
+    # Add the copyright notice to LIDO creditLine
 
     if all_match(or_record.copyright, '.*\S.*')
 
