@@ -907,7 +907,7 @@
     if all_match('or_record.pageNumber.db.pageNumber', '.*\S.*')
 
         lido_descriptivenote(
-            descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$append,
+            descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
             or_record.pageNumber.db.pageNumber
         )
 
