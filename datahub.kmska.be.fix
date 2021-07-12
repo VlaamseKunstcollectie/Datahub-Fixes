@@ -1389,10 +1389,71 @@
     # Add period from TMS as LIDO periodName
 
     lido_term(
-        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
         or_record.periodName.term,
         -lang: nl
     )
+
+    # Loop over the different styles and periods from AAT
+
+    do list(path:or_record.aat.db.aat, var:a)
+
+        # Use path starting with 'TGO.AAE'
+
+        if all_match(a.path, '^TGO\.AAE.*$')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                a.term,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(a.term, a.period_aat)
+            lookup_in_store(a.period_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO periodName as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(a.period_aat.aatterm, '.*\S.*')
+
+                if all_match(a.period_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                        a.period_aat.aatterm,
+                        -conceptid: a.period_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                        a.period_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+            unless all_match(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID.source, '.*\S.*')
+
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID._, '')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID.type, 'purl')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID.source, 'AAT')
+
+            end
+
+        end
+
+    end
 
 # LIDO namePlaceSet [eventType/term="production"]
 
@@ -1400,56 +1461,129 @@
 
 # LIDO termMaterialsTech [eventType/term="production"]
 
-    # We'll have multiple terms: the corresponding value from the AAT vocabulary (pref:alternate) and the value from TMS (pref:preferred)
+    set_field(or_record.material_aat_exists, '')
 
-    # Loop over the different material terms from TMS
+    # Loop over the different materials from AAT
 
-    do list(path:or_record.materialWrap.db.materials, var:m)
+    do list(path:or_record.aat.db.aat, var:a)
 
-        add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
+        # Use path starting with 'TGO.AAH'
 
-        # Add each material term from TMS to LIDO termMaterialsTech as LIDO term (pref:preferred) along with the termID from TMS as LIDO conceptID (pref:preferred)
-        
-        lido_term(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-            m.material,
-            -conceptid: m.TermID,
-            -type: local,
-            -source: TMS,
-            -pref: preferred,
-            -lang: nl
-        )
+        if all_match(a.path, '^TGO\.AAH.*$')
 
-        # Retrieve the corresponding term and URI from the AAT vocabulary
+            set_field(or_record.material_aat_exists, 'true')
 
-        copy_field(m.subject, m.material_aat)
-        downcase(m.material_aat)
-        lookup_in_store(m.material_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
 
-        # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                a.term,
+                -pref: preferred,
+                -lang: nl
+            )
 
-        if all_match(m.material_aat.aatterm, '.*\S.*')
+            # Retrieve the corresponding term and URI from the AAT vocabulary
 
-            if all_match(m.material_aat.aaturi, '.*\S.*')
+            copy_field(a.term, a.material_aat)
+            lookup_in_store(a.material_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-                lido_term(
-                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    m.material_aat.aatterm,
-                    -conceptid: m.material_aat.aaturi,
-                    -type: purl,
-                    -source: AAT,
-                    -pref: alternate,
-                    -lang: nl
-                )
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
 
-            else
+            if all_match(a.material_aat.aatterm, '.*\S.*')
 
-                lido_term(
-                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    m.material_aat.aatterm,
-                    -pref: alternate,
-                    -lang: nl
-                )
+                if all_match(a.material_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        a.material_aat.aatterm,
+                        -conceptid: a.material_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        a.material_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+            unless all_match(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID.source, '.*\S.*')
+
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID._, '')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID.type, 'purl')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID.source, 'AAT')
+
+            end
+
+        end
+
+    end
+
+    # If there is no material from AAT, try using material terms
+
+    unless all_match(or_record.material_aat_exists, 'true')
+
+        # We'll have multiple terms: the corresponding value from the AAT vocabulary (pref:alternate) and the value from TMS (pref:preferred)
+
+        # Loop over the different material terms from TMS
+
+        do list(path:or_record.materialWrap.db.materials, var:m)
+
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
+
+            # Add each material term from TMS to LIDO termMaterialsTech as LIDO term (pref:preferred) along with the termID from TMS as LIDO conceptID (pref:preferred)
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                m.material,
+                -conceptid: m.TermID,
+                -type: local,
+                -source: TMS,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(m.material, m.material_aat)
+            downcase(m.material_aat)
+            lookup_in_store(m.material_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(m.material_aat.aatterm, '.*\S.*')
+
+                if all_match(m.material_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        m.material_aat.aatterm,
+                        -conceptid: m.material_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        m.material_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
 
             end
 
@@ -1477,7 +1611,7 @@
 
         # Retrieve the corresponding term and URI from the AAT vocabulary
 
-        copy_field(t.subject, t.technique_aat)
+        copy_field(t.technique, t.technique_aat)
         downcase(t.technique_aat)
         lookup_in_store(t.technique_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
@@ -1598,6 +1732,87 @@
 
 # LIDO subjectConcept
 
+    # AAT
+
+    # Loop over the different associated concepts, agents and activities from AAT
+
+    do list(path:or_record.aat.db.aat, var:a)
+
+        # Use path starting with 'TGO.AAC', 'TGO.AAF' or 'TGO.AAG'
+
+        if all_match(a.path, '^TGO\.AAC|TGO\.AAF|TGO\.AAG.*$')
+
+            lido_term(
+                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept.$append,
+                a.term,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(a.term, a.subject_aat)
+            lookup_in_store(a.subject_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO subjectConcept as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(a.subject_aat.aatterm, '.*\S.*')
+
+                if all_match(a.subject_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        a.subject_aat.aatterm,
+                        -conceptid: a.subject_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        a.subject_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+            unless all_match(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, '.*\S.*')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._, '')
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.type, 'purl')
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, 'AAT')
+
+            end
+
+            if all_match(a.path, '^TGO\.AAC.*$')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.type, 'associated-concept')
+
+            end
+
+            if all_match(a.path, '^TGO\.AAF.*$')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.type, 'agent')
+
+            end
+
+            if all_match(a.path, '^TGO\.AAG.*$')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.type, 'activity')
+
+            end
+
+        end
+
+    end
+
     # Content motif general
 
     # We'll have multiple terms for the type "content-motif-general": the corresponding value from the AAT vocabulary (pref:alternate) and the value from TMS (pref:preferred)
@@ -1628,7 +1843,7 @@
         downcase(s.aat)
         lookup_in_store(s.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-        # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+        # Add the corresponding term from the AAT vocabulary (if present) to LIDO subjectConcept as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
 
         if all_match(s.aat.aatterm, '.*\S.*')
 
