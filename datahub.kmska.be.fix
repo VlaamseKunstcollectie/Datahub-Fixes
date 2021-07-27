@@ -106,6 +106,11 @@
     copy_field(ObjectID, or_record.pageNumber.db)
     lookup_in_store(or_record.pageNumber.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.pagenumbers.sqlite')
 
+    # handling
+
+    copy_field(ObjectID, or_record.handling.db)
+    lookup_in_store(or_record.handling.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.handling.sqlite')
+
     # objectMeasurements
 
     copy_field(ObjectID, or_record.objectMeasurements.db)
@@ -231,6 +236,8 @@
 #   vtextentries.textEntry                            lido:descriptiveNoteValue                   Beschrijving            korte beschrijving
 #                                                 type: page-number
 #   vpagenumbers.pageNumber                           lido:descriptiveNoteValue
+#                                                 type: handling
+#   vhandling.handling                                lido:descriptiveNoteValue
 #                                             lido:objectMeasurementsSet
 #   vdimensions.display                           lido:displayObjectMeasurements
 #                                                 lido:objectMeasurements
@@ -988,6 +995,36 @@
         # Add type 'page-number' for LIDO objectDescriptionSet
 
         set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'page-number')
+
+    end
+
+    # Loop over the different handling advices from TMS
+
+    do list(path:or_record.handling.db.handling, var:h)
+
+        # Add each handling advice from TMS (if present) to LIDO objectDescriptionSet as LIDO descriptiveNoteValue
+
+        if all_match(h.textEntry, '.*\S.*')
+
+            # Add a new, empty LIDO objectDescriptionSet field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$append)
+
+            # Remove unnecessary whitespaces
+
+            trim(h.textEntry)
+
+            # Add the handling advice and language of it to last created LIDO objectDescriptionSet
+
+            copy_field(h.textEntry, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+
+            copy_field(h.language, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.lang)
+
+            # Add type 'handling' for LIDO objectDescriptionSet
+
+            set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'handling')
+
+        end
 
     end
 
