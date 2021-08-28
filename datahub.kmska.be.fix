@@ -778,6 +778,7 @@
 
                             copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
                             add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "position")
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "nl")
 
                             copy_field('in', or_record.inscriptionDescription)
 
@@ -792,6 +793,7 @@
                 if all_match('or_record.inscriptionDescription', '.*\S.*')
 
                     copy_field('or_record.inscriptionDescription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                    add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "nl")
 
                 end
 
@@ -811,6 +813,7 @@
                 # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
 
                 copy_field('or_record.inscription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "nl")
 
             end
 
@@ -864,7 +867,8 @@
 
         lido_basenameset(
             descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet,
-            or_record.location.db.room
+            or_record.location.db.room,
+            -value_lang: nl
         )
 
     end
@@ -1144,6 +1148,7 @@
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
                 a.constituentID,
                 a.name,
+                -name_lang: nl,
                 -id_source: TMS,
                 -id_type: local
             )
@@ -1160,7 +1165,8 @@
 
             lido_basevalue(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
-                a.date
+                a.date,
+                -lang: nl
             )
 
         end
@@ -1175,7 +1181,8 @@
 
             lido_term(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$append,
-                a.role
+                a.role,
+                -lang: nl
             )
 
         end
@@ -1224,7 +1231,8 @@
 
             lido_descriptivenote(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet,
-                or_record.acquisition_description
+                or_record.acquisition_description,
+                -lang: nl
             )
 
         end
@@ -1282,6 +1290,8 @@
                     -qualifier: c.Role,
                     -name_pref: preferred
                 )
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.lang, "nl")
+
             else
                 lido_actor(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
@@ -1294,6 +1304,7 @@
                     -role: c.Role,
                     -name_pref: preferred
                 )
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.lang, "nl")
             end
 
         end
@@ -1725,7 +1736,8 @@
 
         lido_descriptivenote(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet,
-            or_record.provenance
+            or_record.provenance,
+            -lang: nl
         )
 
     end
@@ -1759,7 +1771,8 @@
 
         lido_descriptivenote(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet,
-            or_record.restoration
+            or_record.restoration,
+            -lang: nl
         )
 
     end
