@@ -1290,7 +1290,7 @@
                     -qualifier: c.Role,
                     -name_pref: preferred
                 )
-                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.lang, "nl")
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$last.lang, "nl")
 
             else
                 lido_actor(
@@ -1304,7 +1304,7 @@
                     -role: c.Role,
                     -name_pref: preferred
                 )
-                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.lang, "nl")
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.$last.term.$last.lang, "nl")
             end
 
         end
