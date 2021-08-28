@@ -1701,7 +1701,8 @@
 
         lido_basevalue(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.displayMaterialsTech,
-            or_record.eventMaterialsTech.display
+            or_record.eventMaterialsTech.display,
+            -lang: nl
         )
 
     end
