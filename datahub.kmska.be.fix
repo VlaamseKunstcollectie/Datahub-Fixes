@@ -57,6 +57,16 @@
     copy_field(ObjectID, or_record.classificationWrap.db)
     lookup_in_store(or_record.classificationWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.classifications.sqlite')
 
+    # highlights
+
+    copy_field(ObjectID, or_record.highlights.db)
+    lookup_in_store(or_record.highlights.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.highlights.sqlite')
+
+    # collectionPresentation
+
+    copy_field(ObjectID, or_record.collectionPresentation.db)
+    lookup_in_store(or_record.collectionPresentation.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.collectionpresentation.sqlite')
+
     # subjectWrap
 
     copy_field(ObjectID, or_record.subjectWrap.db)
@@ -216,6 +226,8 @@
 #                                                    lido:term
 #   vclassifications.Classification                       pref: preferred                         Type                    term
 #                                                         pref: alternate                         Type
+#   vhighlights                                      lido:term
+#   vcollectionpresentation                          lido:term
 #                                             lido:titleSet
 #                                                 lido:appellationValue
 #   vobjtitles.title                                  lang: en                                                            titel
@@ -658,6 +670,38 @@
             add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
         end
+
+    end
+
+# LIDO classification
+
+    # Highlights
+
+    # Add term "highlights" from TMS (if present) to LIDO classification as LIDO term
+
+    if all_match('or_record.highlights.db._id', '.*\S.*')
+
+        set_field(or_record.highlights_term, "highlights")
+
+        lido_term(
+            descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+            or_record.highlights_term
+        )
+
+    end
+
+    # Collection presentation
+
+    # Add term "collection presentation" from TMS (if present) to LIDO classification as LIDO term
+
+    if all_match('or_record.collectionPresentation.db._id', '.*\S.*')
+
+        set_field(or_record.collectionPresentation_term, "collection presentation")
+
+        lido_term(
+            descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+            or_record.collectionPresentation_term
+        )
 
     end
 
