@@ -56,4 +56,4 @@ echo "]" >> "/tmp/bulk_raw_${lang}.json"
 
 cp "/tmp/bulk_raw_${lang}.json" "/tmp/bulk_unfiltered_${lang}.json"
 catmandu convert JSON to JSON --fix "select all_match(id, '.*\S.*')" < "/tmp/bulk_unfiltered_${lang}.json" > "/tmp/bulk_raw_${lang}.json"
-rm "tmp/bulk_unfiltered_${lang}.json"
+rm "/tmp/bulk_unfiltered_${lang}.json"
