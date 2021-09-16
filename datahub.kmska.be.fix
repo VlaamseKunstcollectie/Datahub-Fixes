@@ -195,6 +195,11 @@
     copy_field(ObjectID, or_record.department.db)
     lookup_in_store(or_record.department.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.departments.sqlite')
 
+    # resourceWrap
+
+    copy_field(ObjectNumber, or_record.iiif_manifest)
+    lookup_in_store(or_record.iiif_manifest, DBI, data_source: 'dbi:SQLite:/tmp/import.iiif_manifests.sqlite')
+
 # Remove all fields from Objects, retaining only the ones necessary to create the LIDO structure
 
     retain(or_record)
@@ -2489,14 +2494,37 @@
 
     if all_match(or_record.object_number.pid.representationPid, '.*\S.*')
 
-        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
-        add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
-        add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
+        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.label, "representationPID")
 
-        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.$last.resourceRepresentation.linkResource._)
 
     end
 
+    # Add IIIF manifest from the ImageHub to LIDO resourceSet as LIDO resourceID
+
+    if all_match(or_record.iiif_manifest.manifest, '.*\S.*')
+
+        copy_field(or_record.iiif_manifest.manifest, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.source, "ImagehubKMSKA")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$append._, "IIIF Manifest")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$last.pref, "preferred")
+
+    end
+
+    # Add IIIF thumbnail from the ImageHub to LIDO resourceSet as LIDO resourceID
+
+    if all_match(or_record.iiif_manifest.thumbnail, '.*\S.*')
+
+        copy_field(or_record.iiif_manifest.thumbnail, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.source, "ImagehubKMSKA")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$append._, "thumbnail")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$last.pref, "preferred")
+
+    end
 
 
 ### Add lang attributes to descriptiveMetadata and administrativeMetadata
