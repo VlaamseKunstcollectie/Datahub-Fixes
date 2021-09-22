@@ -200,6 +200,11 @@
     copy_field(ObjectNumber, or_record.iiif_manifest)
     lookup_in_store(or_record.iiif_manifest, DBI, data_source: 'dbi:SQLite:/tmp/import.iiif_manifests.sqlite')
 
+    # translations
+
+    copy_field(ObjectID, or_record.translations.db)
+    lookup_in_store(or_record.translations.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.translations.sqlite')
+
 # Remove all fields from Objects, retaining only the ones necessary to create the LIDO structure
 
     retain(or_record)
@@ -229,8 +234,10 @@
 #   vclassifications.ClassificationID                     pref: preferred
 #                                                         pref: alternate                                                 identificatie
 #                                                    lido:term
-#   vclassifications.Classification                       pref: preferred                         Type                    term
-#                                                         pref: alternate                         Type
+#   vclassifications.classification_nl                    pref: preferred / lang: nl              Type                    term
+#                                                         pref: alternate / lang: nl              Type
+#   vclassifications.classification_en                    lang: en
+#   vclassifications.classification_fr                    lang: fr
 #   vhighlights                                      lido:term
 #   vcollectionpresentation                          lido:term
 #                                             lido:titleSet
@@ -241,14 +248,20 @@
 #   vobjtitles.titleid                                lang: en
 #   vobjtitles.titleid                                lang: nl
 #                                             lido:inscriptions
-#   Objects.Inscribed                             lido:inscriptionDescription
+#                                                 lido:inscriptionDescription
+#   Objects.Inscribed                                 lang: nl
+#   vtranslations.textEntry                           lang: en
+#   vtranslations.textEntry                           lang: fr
 #                                             lido:repositorySet
 #                                                 lido:repositoryName
 #   vdepartments.DepartmentID                         lido:legalBodyID
 #   vdepartments.department                           lido:legalBodyName                          Instelling              naam bewaarinstelling
 #                                                 lido:workID
 #   Objects.ObjectNumber                              type: object-number                         Inventarisnummer        waarde objectnummer
-#   vlocations.room                               lido:repositoryLocation
+#                                                 lido:repositoryLocation
+#   vlocations.room_nl                                lang: nl
+#   vlocations.room_en                                lang: en
+#   vlocations.room_fr                                lang: fr
 #                                             lido:objectDescriptionSet
 #   vtextentries.textEntry                            lido:descriptiveNoteValue                   Beschrijving            korte beschrijving
 #                                                 type: page-number
@@ -273,7 +286,10 @@
 #                                                         lido:eventDate
 #   vacquisition.date                                         lido:displayDate                                            waarde verwervingdatum
 #                                                         lido:eventMethod
-#   vacquisition.role                                         lido:term                                                   term verwervingsmethode
+#                                                             lido:term
+#   vacquisition.role_nl                                          lang: nl                                                term verwervingsmethode
+#   vacquisition.role_en                                          lang: en
+#   vacquisition.role_fr                                          lang: fr
 #                                                         lido:eventDescriptionSet
 #                                             lido:eventType
 #                                                 lido:term
@@ -288,15 +304,24 @@
 #                                                             lido:vitalDatesActor
 #   vconstituents.BeginDateISO                                    lido:earliestDate
 #   vconstituents.EndDateISO                                      lido:latestDate
-#   vconstituents.Role                                        lido:roleActor                      Vervaardiger            rol vervaardiger
-#   vconstituents.Role                                        lido:attributionQualifierActor      Vervaardiger            kwalificatie vervaardiger
+#                                                             lido:roleActor
+#   vconstituents.role_nl                                         lang: nl                        Vervaardiger            rol vervaardiger
+#   vconstituents.role_en                                         lang: en
+#   vconstituents.role_fr                                         lang: fr
+#                                                             lido:attributionQualifierActor
+#   vconstituents.role_nl                                         lang: nl                        Vervaardiger            kwalificatie vervaardiger
+#   vconstituents.role_en                                         lang: en
+#   vconstituents.role_fr                                         lang: fr
 #                                                         lido:eventDate
 #   Objects.Dated                                             lido:displayDate                    Datering
 #                                                             lido:date
 #   Objects.DateBegin                                             lido:earliestDate                                       begindatum
 #   Objects.DateEnd                                               lido:latestDate                                         einddatum
 #                                                         lido:periodName
-#   vperiods.term                                             lido:term
+#                                                             lido:term
+#   vperiods.term                                                 lang: nl
+#   vtranslations.textEntry                                       lang: en
+#   vtranslations.textEntry                                       lang: fr
 #                                                         lido:eventMaterialsTech
 #                                                             lido:termMaterialsTech
 #                                                                 type: material
@@ -311,7 +336,10 @@
 #   vtechniques.TermID                                                    pref: preferred
 #                                                                     lido:term
 #   vtechniques.technique                                                 pref: preferred
-#   Objects.Medium                                            lido:displayMaterialsTech
+#                                                             lido:displayMaterialsTech
+#   Objects.Medium                                                lang: nl
+#   vtranslations.textEntry                                       lang: en
+#   vtranslations.textEntry                                       lang: fr
 #                                             lido:eventType
 #                                                 lido:term
 #                                                     provenance
@@ -319,7 +347,10 @@
 #                                             lido:eventType
 #                                                 lido:term
 #                                                     restoration
-#   Objects.CreditLine                                    lido:eventDescriptionSet
+#                                                         lido:eventDescriptionSet
+#   Objects.CreditLine                                        lang: nl
+#   vtranslations.textEntry                                   lang: en
+#   vtranslations.textEntry                                   lang: fr
 #                                             lido:objectRelationWrap
 #                                                 lido:subjectWrap
 #                                                     lido:subject
@@ -626,7 +657,7 @@
 
         lido_term(
             descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-            c.Classification,
+            c.classification_nl,
             -conceptid: c.ClassificationID,
             -type: local,
             -source: TMS,
@@ -634,13 +665,21 @@
             -lang: nl
         )
 
+        copy_field(c.classification_en, descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$append._)
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.pref, "preferred")
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.lang, "en")
+
+        copy_field(c.classification_fr, descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$append._)
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.pref, "preferred")
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.lang, "fr")
+
         # Add type of LIDO classification
 
         add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
         # Retrieve the corresponding term and URI from the AAT vocabulary
 
-        copy_field(c.Classification, c.classification_aat)
+        copy_field(c.classification_nl, c.classification_aat)
         lookup_in_store(c.classification_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
         # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
@@ -776,6 +815,24 @@
 
     split_field(or_record.inscriptions, '(\r\n|\r|\n)')
 
+    do list(path:or_record.translations.db.translations, var:t)
+
+        if all_match(t.textTypeID, '121')
+
+            copy_field(t.textEntry, or_record.inscriptions_en)
+            split_field(or_record.inscriptions_en, '(\r\n|\r|\n)')
+
+        end
+
+        if all_match(t.textTypeID, '129')
+
+            copy_field(t.textEntry, or_record.inscriptions_fr)
+            split_field(or_record.inscriptions_fr, '(\r\n|\r|\n)')
+
+        end
+
+    end
+
     # Loop over the separate inscriptions
 
     do list(path:or_record.inscriptions, var:i)
@@ -870,6 +927,194 @@
 
     end
 
+    # Loop over the separate inscriptions
+
+    do list(path:or_record.inscriptions_en, var:i)
+
+        if all_match('i', '.*\S.*')
+
+            # Add a new, empty LIDO inscriptions field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+            copy_field(i, or_record.inscription)
+
+            if all_match(or_record.inscription, '.*:.*')
+
+                # Split the inscriptions on the colon
+
+                split_field(or_record.inscription, ':')
+
+                set_field(or_record.inscriptionDescription)
+
+                # Loop over the different parts of the inscriptions
+
+                do list(path:or_record.inscription, var:in)
+
+                    # Remove unnecessary whitespaces and parentheses
+
+                    if all_match(in, '.*\S.*')
+
+                        trim(in)
+
+                        if all_match(in, '^\(.*\)$')
+
+                            replace_all(in,'^\((.*)',$1)
+                            replace_all(in,'(.*)\)$',$1)
+
+                        end
+
+                        if all_match (descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, 'position')
+
+                            # Add each inscription content from TMS (if present) to LIDO inscriptions as LIDO inscriptionTranscription
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionTranscription._)
+
+                            paste(or_record.inscriptionDescription, or_record.inscriptionDescription, in, join_char:': ')
+
+                        else
+
+                            # Add each inscription position from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription (type:position)
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "position")
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "en")
+
+                            copy_field('in', or_record.inscriptionDescription)
+
+                        end
+
+                    end
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                if all_match('or_record.inscriptionDescription', '.*\S.*')
+
+                    copy_field('or_record.inscriptionDescription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                    add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "en")
+
+                end
+
+            else
+
+                # Remove unnecessary whitespaces and parentheses
+
+                trim(or_record.inscription)
+
+                if all_match(or_record.inscription, '^\(.*\)$')
+
+                    replace_all(or_record.inscription,'^\((.*)',$1)
+                    replace_all(or_record.inscription,'(.*)\)$',$1)
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                copy_field('or_record.inscription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "en")
+
+            end
+
+        end
+
+    end
+
+    # Loop over the separate inscriptions
+
+    do list(path:or_record.inscriptions_fr, var:i)
+
+        if all_match('i', '.*\S.*')
+
+            # Add a new, empty LIDO inscriptions field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+            copy_field(i, or_record.inscription)
+
+            if all_match(or_record.inscription, '.*:.*')
+
+                # Split the inscriptions on the colon
+
+                split_field(or_record.inscription, ':')
+
+                set_field(or_record.inscriptionDescription)
+
+                # Loop over the different parts of the inscriptions
+
+                do list(path:or_record.inscription, var:in)
+
+                    # Remove unnecessary whitespaces and parentheses
+
+                    if all_match(in, '.*\S.*')
+
+                        trim(in)
+
+                        if all_match(in, '^\(.*\)$')
+
+                            replace_all(in,'^\((.*)',$1)
+                            replace_all(in,'(.*)\)$',$1)
+
+                        end
+
+                        if all_match (descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, 'position')
+
+                            # Add each inscription content from TMS (if present) to LIDO inscriptions as LIDO inscriptionTranscription
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionTranscription._)
+
+                            paste(or_record.inscriptionDescription, or_record.inscriptionDescription, in, join_char:': ')
+
+                        else
+
+                            # Add each inscription position from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription (type:position)
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "position")
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "fr")
+
+                            copy_field('in', or_record.inscriptionDescription)
+
+                        end
+
+                    end
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                if all_match('or_record.inscriptionDescription', '.*\S.*')
+
+                    copy_field('or_record.inscriptionDescription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                    add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "fr")
+
+                end
+
+            else
+
+                # Remove unnecessary whitespaces and parentheses
+
+                trim(or_record.inscription)
+
+                if all_match(or_record.inscription, '^\(.*\)$')
+
+                    replace_all(or_record.inscription,'^\((.*)',$1)
+                    replace_all(or_record.inscription,'(.*)\)$',$1)
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                copy_field('or_record.inscription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "fr")
+
+            end
+
+        end
+
+    end
+
 # LIDO repositoryName
 
     # Add department ID from TMS to LIDO repositoryName as LIDO legalBodyID
@@ -902,7 +1147,7 @@
 
     # Add location from TMS (if present) to LIDO repositoryLocation as LIDO namePlaceSet
 
-    if all_match(or_record.location.db.room, '.*\S.*')
+    if all_match(or_record.location.db.room_nl, '.*\S.*')
 
         # Add new LIDO repositorySet with type "room"
 
@@ -916,8 +1161,48 @@
 
         lido_basenameset(
             descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet,
-            or_record.location.db.room,
+            or_record.location.db.room_nl,
             -value_lang: nl
+        )
+
+    end
+
+    if all_match(or_record.location.db.room_en, '.*\S.*')
+
+        # Add a new, empty LIDO repositorySet field unless this already exists
+
+        unless exists(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet)
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append)
+
+        end
+
+        # Add location to last created LIDO repositorySet
+
+        lido_basenameset(
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet.$last,
+            or_record.location.db.room_en,
+            -value_lang: en
+        )
+
+    end
+
+    if all_match(or_record.location.db.room_fr, '.*\S.*')
+
+        # Add a new, empty LIDO repositorySet field unless this already exists
+
+        unless exists(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet)
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append)
+
+        end
+
+        # Add location to last created LIDO repositorySet
+
+        lido_basenameset(
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet.$last,
+            or_record.location.db.room_fr,
+            -value_lang: fr
         )
 
     end
@@ -1148,9 +1433,15 @@
 
     do list(path:or_record.acquisition.db.acquisition, var:a)
 
+        trim(a.role_nl)
+        trim(a.role_en)
+        trim(a.role_fr)
+
         set_field(or_record.acquisition_actor, '')
         set_field(or_record.acquisition_date, '')
         set_field(or_record.acquisition_method, '')
+        set_field(or_record.acquisition_method_en, '')
+        set_field(or_record.acquisition_method_fr, '')
 
         # Add a new, empty LIDO eventSet field (if acquisition is present) and add the created event type to LIDO eventType
 
@@ -1172,12 +1463,34 @@
 
             else
 
-                if all_match(a.role, '.*\S.*')
+                if all_match(a.role_nl, '.*\S.*')
 
                     lido_term(
                         descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
                         or_record.event_type
                     )
+
+                else
+
+                    if all_match(a.role_en, '.*\S.*')
+
+                        lido_term(
+                            descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                            or_record.event_type
+                        )
+
+                    else
+
+                        if all_match(a.role_fr, '.*\S.*')
+
+                            lido_term(
+                                descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                                or_record.event_type
+                            )
+
+                        end
+
+                    end
 
                 end
 
@@ -1224,14 +1537,38 @@
 
         # Add each role from TMS (if present) to LIDO eventMethod as LIDO term
 
-        if all_match(a.role, '.*\S.*')
+        if all_match(a.role_nl, '.*\S.*')
 
-            copy_field(a.role, or_record.acquisition_method)
+            copy_field(a.role_nl, or_record.acquisition_method)
 
             lido_term(
                 descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$append,
-                a.role,
+                a.role_nl,
                 -lang: nl
+            )
+
+        end
+
+        if all_match(a.role_en, '.*\S.*')
+
+            copy_field(a.role_en, or_record.acquisition_method_en)
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
+                a.role_en,
+                -lang: en
+            )
+
+        end
+
+        if all_match(a.role_fr, '.*\S.*')
+
+            copy_field(a.role_fr, or_record.acquisition_method_fr)
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
+                a.role_fr,
+                -lang: fr
             )
 
         end
@@ -1241,6 +1578,8 @@
         # Create the entire acquisition description from the role, name and date from TMS
 
         set_field(or_record.acquisition_description, '')
+        set_field(or_record.acquisition_description_en, '')
+        set_field(or_record.acquisition_description_fr, '')
 
         if all_match(or_record.acquisition_method, '.*\S.*')
 
@@ -1274,6 +1613,70 @@
 
         end
 
+        if all_match(or_record.acquisition_method_en, '.*\S.*')
+
+            copy_field(or_record.acquisition_method_en, or_record.acquisition_description_en)
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                paste(or_record.acquisition_description_en, or_record.acquisition_description_en, or_record.acquisition_actor, join_char:': ')
+
+            end
+
+            if all_match(or_record.acquisition_date, '.*\S.*')
+
+                paste(or_record.acquisition_description_en, or_record.acquisition_description_en, or_record.acquisition_date, join_char:', ')
+
+            end
+
+        else
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                copy_field(or_record.acquisition_actor, or_record.acquisition_description_en)
+
+                if all_match(or_record.acquisition_date, '.*\S.*')
+
+                    paste(or_record.acquisition_description_en, or_record.acquisition_description_en, or_record.acquisition_date, join_char:', ')
+
+                end
+
+            end
+
+        end
+
+        if all_match(or_record.acquisition_method_fr, '.*\S.*')
+
+            copy_field(or_record.acquisition_method_fr, or_record.acquisition_description_fr)
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                paste(or_record.acquisition_description_fr, or_record.acquisition_description_fr, or_record.acquisition_actor, join_char:': ')
+
+            end
+
+            if all_match(or_record.acquisition_date, '.*\S.*')
+
+                paste(or_record.acquisition_description_fr, or_record.acquisition_description_fr, or_record.acquisition_date, join_char:', ')
+
+            end
+
+        else
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                copy_field(or_record.acquisition_actor, or_record.acquisition_description_fr)
+
+                if all_match(or_record.acquisition_date, '.*\S.*')
+
+                    paste(or_record.acquisition_description_fr, or_record.acquisition_description_fr, or_record.acquisition_date, join_char:', ')
+
+                end
+
+            end
+
+        end
+
         # Add the created entire acquisition description (if present) to LIDO eventDescriptionSet as LIDO descriptiveNoteValue
 
         if all_match(or_record.acquisition_description, '.*\S.*')
@@ -1283,6 +1686,20 @@
                 or_record.acquisition_description,
                 -lang: nl
             )
+
+        end
+
+        if all_match(or_record.acquisition_description_en, '.*\S.*')
+
+            copy_field(or_record.acquisition_description_en, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "en")
+
+        end
+
+        if all_match(or_record.acquisition_description_fr, '.*\S.*')
+
+            copy_field(or_record.acquisition_description_fr, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "fr")
 
         end
 
@@ -1308,6 +1725,8 @@
     # Determine which roles from TMS should be added as qualifier
 
     set_array(qualifiers, "atelier van", "kopie naar", "navolger van", "omgeving van", "school van", "toegeschreven aan", "x")
+    set_array(qualifiers_en, "workshop of", "copy after", "follower of", "circle of", "school of", "attributed to")
+    set_array(qualifiers_fr, "atelier de", "copie d'après", "disciple de", "cercle de", "école de", "attribué à")
 
     # Loop over the different constituents from TMS
 
@@ -1317,17 +1736,20 @@
 
         trim(c.BeginDateISO)
         trim(c.EndDateISO)
+        trim(c.role_nl)
+        trim(c.role_en)
+        trim(c.role_fr)
 
         # Add the display name of each constituent from TMS to LIDO eventActor as LIDO appellationValue (pref:preferred)
         # along with the constituentID from TMS as LIDO actorID (source:TMS),
         # the BeginDateISO from TMS as LIDO earliestDate,
         # the EndDateISO from TMS as LIDO latestDate and,
-        # if determined before as qualifier, add the Role from TMS as LIDO attributionQualifierActor
-        # else, add the Role from TMS as LIDO roleActor
+        # if determined before as qualifier, add the role from TMS as LIDO attributionQualifierActor
+        # else, add the role from TMS as LIDO roleActor
 
-        unless all_match(c.Role, 'vroegere toeschrijving')
+        unless all_match(c.role_nl, 'vroegere toeschrijving')
 
-            if in(c.Role, qualifiers)
+            if in(c.role_nl, qualifiers)
                 lido_actor(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
                     c.ConstituentID,
@@ -1336,7 +1758,7 @@
                     -id_type: local,
                     -birthdate: c.BeginDateISO,
                     -deathdate: c.EndDateISO,
-                    -qualifier: c.Role,
+                    -qualifier: c.role_nl,
                     -name_pref: preferred
                 )
                 add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$last.lang, "nl")
@@ -1349,7 +1771,7 @@
                     -id_type: local,
                     -birthdate: c.BeginDateISO,
                     -deathdate: c.EndDateISO,
-                    -role: c.Role,
+                    -role: c.role_nl,
                     -name_pref: preferred
                 )
                 add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$last.lang, "nl")
@@ -1357,9 +1779,33 @@
 
         end
 
+        unless all_match(c.role_en, "formerly attributed to")
+
+            if in(c.role_en, qualifiers_en)
+                copy_field(c.role_en, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$last.lang, "en")
+            else
+                copy_field(c.role_en, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$last.lang, "en")
+            end
+
+        end
+
+        unless all_match(c.role_fr, "Ancienne attribution à")
+
+            if in(c.role_fr, qualifiers_fr)
+                copy_field(c.role_fr, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$last.lang, "fr")
+            else
+                copy_field(c.role_fr, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$last.lang, "fr")
+            end
+
+        end
+
         # Retrieve the corresponding values from the creators vocabulary
 
-        unless all_match(c.Role, 'vroegere toeschrijving')
+        unless all_match(c.role_nl, 'vroegere toeschrijving')
             copy_field(c.DisplayName, c.creator.pid)
             downcase(c.creator.pid)
             lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
@@ -1421,6 +1867,8 @@
     # Remove the created field qualifiers
 
     remove_field(qualifiers)
+    remove_field(qualifiers_en)
+    remove_field(qualifiers_fr)
 
 # LIDO displayDate [eventType/term="production"]
 
@@ -1489,6 +1937,30 @@
         or_record.periodName.term,
         -lang: nl
     )
+
+    do list(path:or_record.translations.db.translations, var:t)
+
+        if all_match(t.textTypeID, '124')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                t.textEntry,
+                -lang: en
+            )
+
+        end
+
+        if all_match(t.textTypeID, '118')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                t.textEntry,
+                -lang: fr
+            )
+
+        end
+
+    end
 
     # Loop over the different styles and periods from AAT
 
@@ -1756,6 +2228,30 @@
 
     end
 
+    do list(path:or_record.translations.db.translations, var:t)
+
+        if all_match(t.textTypeID, '127')
+
+            lido_basevalue(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.displayMaterialsTech,
+                t.textEntry,
+                -lang: en
+            )
+
+        end
+
+        if all_match(t.textTypeID, '128')
+
+            lido_basevalue(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.displayMaterialsTech,
+                t.textEntry,
+                -lang: fr
+            )
+
+        end
+
+    end
+
 # LIDO eventType [eventType/term="provenance"]
 
     # Create event_type
@@ -1823,6 +2319,32 @@
             or_record.restoration,
             -lang: nl
         )
+
+    end
+
+    do list(path:or_record.translations.db.translations, var:t)
+
+        if all_match(t.textTypeID, '123')
+
+            # Remove unnecessary whitespaces
+
+            trim(t.textEntry)
+
+            copy_field(t.textEntry, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "en")
+
+        end
+
+        if all_match(t.textTypeID, '122')
+
+            # Remove unnecessary whitespaces
+
+            trim(t.textEntry)
+
+            copy_field(t.textEntry, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "fr")
+
+        end
 
     end
 
