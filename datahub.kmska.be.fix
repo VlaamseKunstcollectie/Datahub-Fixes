@@ -1064,7 +1064,7 @@
 
                             copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionTranscription._)
 
-                            paste(or_record.inscriptionDescription, or_record.inscriptionDescription, in, join_char:': ')
+                            paste(or_record.inscriptionDescription, or_record.inscriptionDescription, in, join_char:' : ')
 
                         else
 
