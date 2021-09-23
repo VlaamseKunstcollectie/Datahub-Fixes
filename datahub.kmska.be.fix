@@ -1160,7 +1160,7 @@
         # Add location to last created LIDO repositorySet
 
         lido_basenameset(
-            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet,
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet.$append,
             or_record.location.db.room_nl,
             -value_lang: nl
         )
