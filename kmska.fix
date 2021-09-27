@@ -477,40 +477,22 @@
 
     do list(path:or_record.titleWrap.db.objtitles, var:t)
 
-        # Remove unnecessary whitespaces
+        # Use TitleTypeID 1 (titles)
 
-        trim(t.title)
-        trim(t.titleid)
+        if all_match(t.titletypeid, '1')
 
-        # Add each Dutch title from TMS to LIDO titleSet as LIDO appellationValue along with the titleID from TMS as LIDO sourceAppellation
+            # Remove unnecessary whitespaces
 
-        if all_match(t.languageid, 2)
+            trim(t.title)
+            trim(t.titleid)
 
-            copy_field(t.title, t.dutch_title)
+            # Add each title from TMS to LIDO titleSet as LIDO appellationValue along with the titleID from TMS as LIDO sourceAppellation
 
-            lido_basenameset(
-                descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
-                t.dutch_title,
-                -value_pref: preferred,
-                -value_lang: nl,
-                -source: t.titleid
-            )
-
-        end
-
-        # Add the corresponding English title from TMS to LIDO titleSet as LIDO appellationValue along with the titleID from TMS as LIDO sourceAppellation
-
-        if all_match(t.languageid, 1)
-
-            copy_field(t.title, t.english_title)
-
-            lido_basenameset(
-                descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
-                t.title,
-                -value_pref: preferred,
-                -value_lang: en,
-                -source: t.titleid
-            )
+            copy_field(t.title, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$append._)
+            set_field(descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$last.pref, 'preferred')
+            copy_field(t.language, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$last.lang)
+            copy_field(t.titleid, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.sourceAppellation.$append._)
+            copy_field(t.language, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.sourceAppellation.$last.lang)
 
         end
 

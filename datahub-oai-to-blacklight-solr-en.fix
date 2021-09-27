@@ -135,15 +135,30 @@ end
 
 ## Title
 
-# Get preferred title from LIDO if exists
+# Get preferred en title from LIDO if exists
 
 do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
     if all_match('el.pref', 'preferred')
-        if all_match('el._', '.*\S.*')
-            copy_field('el._', "title_display")
+        if all_match('el.lang', 'en')
+            if all_match('el._', '.*\S.*')
+                copy_field('el._', "title_display")
+            end
         end
     end
 end
+
+# If no preferred nl title exists, try to get any title from LIDO
+
+unless all_match(title_display, '.*\S.*')
+    do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
+        if all_match('el.pref', 'preferred')
+            if all_match('el._', '.*\S.*')
+                copy_field('el._', "title_display")
+            end
+        end
+    end
+end
+
 
 # If no preferred title exists, try to get any title from LIDO
 

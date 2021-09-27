@@ -27,6 +27,10 @@
     move_field(or_record.object_number.datapid.dataPid, or_record.object_number.pid.dataPid)
     remove_field(or_record.object_number.datapid)
 
+    # Reject those records that have "(not assigned)" as data PID
+
+    reject all_match(or_record.object_number.pid.dataPid, '.*not assigned.*')
+
     copy_field(ObjectNumber, or_record.object_number.workpid)
     lookup_in_store(or_record.object_number.workpid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.workpids.sqlite')
     move_field(or_record.object_number.workpid.workPid, or_record.object_number.pid.workPid)
