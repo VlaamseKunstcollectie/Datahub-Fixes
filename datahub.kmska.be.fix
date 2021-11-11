@@ -204,6 +204,15 @@
     copy_field(ObjectNumber, or_record.iiif_manifest)
     lookup_in_store(or_record.iiif_manifest, DBI, data_source: 'dbi:SQLite:/tmp/import.iiif_manifests.sqlite')
 
+    # Set placeholder if no manifest exists (look up 'placeholder_manifest' in sqlite)
+
+    unless all_match(or_record.iiif_manifest.manifest, '.*\S.*')
+
+        set_field(or_record.iiif_manifest, 'placeholder_manifest')
+        lookup_in_store(or_record.iiif_manifest, DBI, data_source: 'dbi:SQLite:/tmp/import.iiif_manifests.sqlite')
+
+    end
+
     # translations
 
     copy_field(ObjectID, or_record.translations.db)
