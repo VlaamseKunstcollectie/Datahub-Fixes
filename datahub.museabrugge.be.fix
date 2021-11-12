@@ -40,6 +40,11 @@
     copy_field(_metadata.Content_person, or_record.depicted_person)
     copy_field(_metadata.priref, or_record.priref)
 
+    # resourceWrap
+
+    copy_field(or_record.object_number, or_record.iiif_manifest)
+    lookup_in_store(or_record.iiif_manifest, DBI, data_source: 'dbi:SQLite:/tmp/import.iiif_manifests_musea_brugge.sqlite')
+
 # Remove all Adlib fields, retaining only the fields to create the lido structure
 
     retain(or_record)
@@ -1833,6 +1838,29 @@
 
     end
 
+    # Add IIIF manifest from the ImageHub to LIDO resourceSet as LIDO resourceID
+
+    if all_match(or_record.iiif_manifest.manifest, '.*\S.*')
+
+        copy_field(or_record.iiif_manifest.manifest, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.source, "ImagehubMuseaBrugge")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$append._, "IIIF Manifest")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$last.pref, "preferred")
+
+    end
+
+    # Add IIIF thumbnail from the ImageHub to LIDO resourceSet as LIDO resourceID
+
+    if all_match(or_record.iiif_manifest.thumbnail, '.*\S.*')
+
+        copy_field(or_record.iiif_manifest.thumbnail, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.source, "ImagehubMuseaBrugge")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$append._, "thumbnail")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$last.pref, "preferred")
+
+    end
 
 
 ### Add lang attributes to descriptiveMetadata and administrativeMetadata (required LIDO attributes)
