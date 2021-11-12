@@ -77,7 +77,7 @@
 #               lido:displayDate                    production_date
 #           lido:periodName
 #               lido:term
-#                   lang: en                        period
+#                   lang: nl                        period
 #           lido:termMaterialsTech
 #               type: material
 #                   lido:term
@@ -537,9 +537,9 @@ do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var: e)
 
             do list(path:e.event.periodName, var:per)
 
-                # Use EN field
+                # Use NL field
 
-                if all_match('per.term.*.lang', 'en')
+                if all_match('per.term.*.lang', 'nl')
                     if all_match('per.term.*._', '.*\S.*')
                         copy_field('per.term.*._', period.$append)
                     else
