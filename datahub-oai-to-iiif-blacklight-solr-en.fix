@@ -1098,7 +1098,7 @@ end
 
 
 # Retain only those records that have a workPid
-unless all_match('work_pid', 'http://*')
+unless all_match('work_pid', 'https?://*')
     reject()
 end
 
