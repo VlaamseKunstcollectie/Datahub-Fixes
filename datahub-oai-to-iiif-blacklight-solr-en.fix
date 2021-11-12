@@ -116,7 +116,7 @@
 # Copy field to filter on language
 
 do list(path:_metadata.descriptiveMetadata, var:dm)
-    if all_match('dm.lang', 'en')
+    if all_match('dm.lang', 'nl')
         copy_field('dm', 'filteredDescriptiveMetadata')
     end
 end
@@ -127,7 +127,7 @@ end
 # Copy field to filter on language
 
 do list(path:_metadata.administrativeMetadata, var:am)
-    if all_match('am.lang', 'en')
+    if all_match('am.lang', 'nl')
         copy_field('am', 'filteredAdministrativeMetadata')
     end
 end
