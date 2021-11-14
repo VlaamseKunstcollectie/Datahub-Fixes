@@ -1820,24 +1820,6 @@
 
 # LIDO resourceID & linkResource
 
-    do list(path:or_record.pids, var: c)
-
-        if all_match('c.digital_reference\.description', 'representationpid')
-
-            if all_match(c.digital_reference, '.*\S.*')
-
-                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
-                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
-                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
-
-                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
-
-            end
-
-        end
-
-    end
-
     # Add IIIF manifest from the ImageHub to LIDO resourceSet as LIDO resourceID
 
     if all_match(or_record.iiif_manifest.manifest, '.*\S.*')
@@ -1859,6 +1841,24 @@
         add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.source, "ImagehubMuseaBrugge")
         add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$append._, "thumbnail")
         add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$last.pref, "preferred")
+
+    end
+
+    do list(path:or_record.pids, var: c)
+
+        if all_match('c.digital_reference\.description', 'representationpid')
+
+            if all_match(c.digital_reference, '.*\S.*')
+
+                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
+                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
+                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
+
+                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+
+            end
+
+        end
 
     end
 
