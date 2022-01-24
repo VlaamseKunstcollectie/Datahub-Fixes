@@ -1873,6 +1873,10 @@
 
 ### Add empty values for required LIDO elements/attributes if not already exist
 
+    unless exists(descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType)
+        add_field(descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.0.term._, "n/a")
+    end
+
     if exists(descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet)
         do list(path:descriptiveMetadata.objectIdentificationWrap.objectMeasurementsWrap.objectMeasurementsSet, var:c)
             if exists(c.objectMeasurements.measurementsSet)
