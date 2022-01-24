@@ -1,12 +1,12 @@
 # Catmandu Fix
 #
-# Institution: Museums Bruges - Groeninge Museum
+# Institution: Museums Bruges
 # Description: Converts Adlib Structured XML exposed via ErfgoedInzicht OAI to LIDO 1.0
 # Created: 15/9/2017
 
-# Only retain the records from the Groeningemuseum
+# Only retain the records from the Museums Bruges
 
-    select all_match('_metadata.Alternative_number.alternative_number\.institution', 'Musea Brugge - Groeningemuseum')
+    select all_match('_metadata.institution\.name', 'Musea Brugge')
 
 ### Prepare an intermediate structure
 
@@ -20,6 +20,7 @@
     copy_field(_metadata.Title, or_record.title)
     copy_field(_metadata.Titel_translation, or_record.title_translation)
     copy_field('_metadata.institution\.name', or_record.institution)
+    copy_field(_metadata.administration_name, or_record.administration_name)
     copy_field(_metadata.object_number, or_record.object_number)
     copy_field(_metadata.Description, or_record.description)
     copy_field(_metadata.Dimension, or_record.dimensions)
@@ -74,7 +75,7 @@
 #   Title                                                   pref: preferred                                                         titel
 #   Titel_translation                                       pref: alternate
 #                                                       lido:repositorySet
-#   institution\.name                                       lido:repositoryName                             Instelling              naam bewaarinstelling
+#   administration_name                                     lido:repositoryName                             Instelling              naam bewaarinstelling
 #                                                           lido:workID
 #   object_number                                               type: object-number                         Inventarisnummer        waarde objectnummer
 #   Description                                         lido:objectDescriptionSet                           Beschrijving            korte beschrijving
@@ -180,7 +181,7 @@
 #                                                               lido:term
 #                                                           lido:recordSource
 #                                                               lido:legalBodyID                                                    identificatie data provider
-#   institution\.name                                           lido:legalBodyName                                                  naam data provider
+#   administration_name                                         lido:legalBodyName                                                  naam data provider
 #                                                               lido:legalBodyWeblink
 #                                                           lido:recordRights
 #                                                               lido:rightsType
@@ -201,50 +202,91 @@
     # the ID field looks like this:
     #
     #   oai:datahub.vlaamsekunstcollectie.be:<domain>:<identifier>
-    #   ex. oai:datahub.vlaamsekunstcollectie.be:groeningemuseum.be:254
+    #   ex. oai:datahub.vlaamsekunstcollectie.be:museabrugge.be:254
     #   ex. oai:datahub.vlaamsekunstcollectie.be:collectievlaamsegemeenschap.be:837
     #
     # Note: the .tld is stripped from the domainname because the . (dot) breaks the
     # route matching algoritm.
 
-    unless is_array(or_record.pids)
-        move_field(or_record.pids, or_record.tmp)
-        set_array(or_record.pids)
-        move_field(or_record.tmp, or_record.pids.$append)
+#    unless is_array(or_record.pids)
+#        move_field(or_record.pids, or_record.tmp)
+#        set_array(or_record.pids)
+#        move_field(or_record.tmp, or_record.pids.$append)
+#    end
+
+    unless is_array(or_record.administration_name)
+        move_field(or_record.administration_name, or_record.tmp)
+        set_array(or_record.administration_name)
+        move_field(or_record.tmp, or_record.administration_name.$append)
     end
 
-    do list(path:or_record.pids, var: c)
+    do list(path: or_record.administration_name, var: c)
 
-        if all_match('c.digital_reference\.description', 'datapid')
+        if all_match(c, '.*\S.*')
 
-            if all_match(c.digital_reference, '.*\S.*')
-
-                lido_baseid(
-                    lidoRecID,
-                    c.digital_reference,
-                    -type: purl,
-                    -source: 'Musea Brugge - Groeningemuseum',
-                    -label: dataPID,
-                    -pref: alternate
-                )
-
-                copy_field(c.digital_reference, or_record.oaiPid)
-                parse_text(or_record.oaiPid, '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
-                join_field('or_record.oaiPid', ':')
-                prepend('or_record.oaiPid', 'oai:datahub.vlaamsekunstcollectie.be:')
-
-                lido_baseid(
-                    lidoRecID,
-                    or_record.oaiPid,
-                    -type: urn,
-                    -source: 'Vlaamse Kunstcollectie - Arthub Flanders',
-                    -label: dataPID,
-                    -pref: preferred
-                )
-
-            end
+            copy_field(c, or_record.record_source)
 
         end
+
+    end
+
+#    do list(path:or_record.pids, var: c)
+
+#        if all_match('c.digital_reference\.description', 'datapid')
+
+#            if all_match(c.digital_reference, '.*\S.*')
+
+#                copy_field(c.digital_reference, lidoRecID._)
+#                set_field(lidoRecID.type, 'purl')
+#                copy_field(or_record.record_source, lidoRecID.source)
+#                set_field(lidoRecID.label, 'dataPID')
+#                set_field(lidoRecID.pref, 'alternate')
+
+#                copy_field(c.digital_reference, or_record.oaiPid)
+#                parse_text(or_record.oaiPid, '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
+#                join_field('or_record.oaiPid', ':')
+#                prepend('or_record.oaiPid', 'oai:datahub.vlaamsekunstcollectie.be:')
+
+#                lido_baseid(
+#                    lidoRecID,
+#                    or_record.oaiPid,
+#                    -type: urn,
+#                    -source: 'Vlaamse Kunstcollectie - Arthub Flanders',
+#                    -label: dataPID,
+#                    -pref: preferred
+#                )
+
+#            end
+
+#        end
+
+#    end
+
+    copy_field(or_record.object_number, or_record.identificator)
+
+    lookup_in_store(or_record.identificator, DBI, data_source: 'dbi:SQLite:/tmp/import.PIDS_MUSEA_BRUGGE_UTF8.sqlite')
+
+    if all_match(or_record.identificator.dataPid, '.*\S.*')
+
+        copy_field(or_record.identificator.dataPid, lidoRecID.$append._)
+        set_field(lidoRecID.$last.type, 'purl')
+        copy_field(or_record.record_source, lidoRecID.$last.source)
+        set_field(lidoRecID.$last.label, 'dataPID')
+        set_field(lidoRecID.$last.pref, 'alternate')
+
+        copy_field('or_record.identificator.dataPid', 'or_record.identificator.oaiPid')
+        parse_text('or_record.identificator.oaiPid', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
+        join_field('or_record.identificator.oaiPid', ':')
+        prepend('or_record.identificator.oaiPid', 'oai:datahub.vlaamsekunstcollectie.be:')
+
+        lido_baseid(
+            lidoRecID,
+            or_record.identificator.oaiPid,
+            -type: urn,
+            -source: 'Vlaamse Kunstcollectie - Arthub Flanders',
+            -label: dataPID,
+            -pref: preferred
+        )
 
     end
 
@@ -252,29 +294,35 @@
 
 ### LIDO objectPublishedID
 
-    unless is_array(or_record.workPid)
-        move_field(or_record.workPid, or_record.tmp)
-        set_array(or_record.workPid)
-        move_field(or_record.tmp, or_record.workPid.$append)
-    end
+#    unless is_array(or_record.workPid)
+#        move_field(or_record.workPid, or_record.tmp)
+#        set_array(or_record.workPid)
+#        move_field(or_record.tmp, or_record.workPid.$append)
+#    end
 
-    do list(path:or_record.workPid, var: c)
+#    do list(path:or_record.workPid, var: c)
 
-        if all_match('c.alternative_number\.type', 'workpid')
+#        if all_match('c.alternative_number\.type', 'workpid')
 
-            if all_match(c.alternative_number, '.*\S.*')
+#            if all_match(c.alternative_number, '.*\S.*')
 
-                lido_baseid(
-                    objectPublishedID,
-                    c.alternative_number,
-                    -type: purl,
-                    -source: 'Musea Brugge - Groeningemuseum',
-                    -label: workPID
-                )
+#                copy_field(c.alternative_number, objectPublishedID._)
+#                set_field(objectPublishedID.type, 'purl')
+#                copy_field(or_record.record_source, objectPublishedID.source)
+#                set_field(objectPublishedID.label, 'workPID')
 
-            end
+#            end
 
-        end
+#        end
+
+#    end
+
+    if all_match(or_record.identificator.workPid, '.*\S.*')
+
+        copy_field(or_record.identificator.workPid, objectPublishedID.$append._)
+        set_field(objectPublishedID.$last.type, 'purl')
+        copy_field(or_record.record_source, objectPublishedID.$last.source)
+        set_field(objectPublishedID.$last.label, 'workPID')
 
     end
 
@@ -516,13 +564,7 @@
 
 # LIDO repositoryName
 
-    unless is_array(or_record.institution) 
-        move_field(or_record.institution, or_record.tmp)
-        set_array(or_record.institution)
-        move_field(or_record.tmp, or_record.institution.$append)
-    end
-
-    do list(path: or_record.institution, var: c)
+    do list(path: or_record.administration_name, var: c)
 
         if all_match(c, '.*\S.*')
 
@@ -1748,7 +1790,7 @@
 
 # LIDO recordSource
 
-    do list(path: or_record.institution, var: c)
+    do list(path: or_record.administration_name, var: c)
 
         if all_match(c, '.*\S.*')
 
@@ -1761,7 +1803,7 @@
 
     end
 
-    add_field('or_record.LegalBodyWebLink', 'http://groeningemuseum.be')
+    add_field('or_record.LegalBodyWebLink', 'http://museabrugge.be')
 
     lido_basevalue(
         administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
