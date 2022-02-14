@@ -108,7 +108,7 @@
 #           lido:term
 #               thumbnail
 #
-#                                                   publish_image          
+#                                                   publish_image
 
 
 ## DescriptiveMetadata
@@ -135,11 +135,11 @@ end
 
 ## Title
 
-# Get preferred en title from LIDO if exists
+# Get preferred nl title from LIDO if exists
 
 do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.0.appellationValue, var:el)
     if all_match('el.pref', 'preferred')
-        if all_match('el.lang', 'en')
+        if all_match('el.lang', 'nl')
             if all_match('el._', '.*\S.*')
                 copy_field('el._', "title_display")
             end
@@ -159,7 +159,6 @@ unless all_match(title_display, '.*\S.*')
     end
 end
 
-
 # If no preferred title exists, try to get any title from LIDO
 
 unless all_match(title_display, '.*\S.*')
@@ -178,7 +177,7 @@ end
 
 
 ## Creator
- 
+
 set_array(creator)
 set_array(creator_dod)
 set_array(creator_role)
@@ -196,7 +195,7 @@ end
 do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
 
     do list(path:e.event.eventType.term, var:p)
-    
+
         if all_match(p._, 'production')
 
             # Get the name of the creator from LIDO
@@ -228,7 +227,7 @@ do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
                         if all_match(d._, '.*\S.*')
                             copy_field(d._, tmp_creator_index.$last)
                         end
-                    end                
+                    end
                 end
 
                 # Add VIAF alternate names from CREATORS_UTF8.csv
@@ -240,7 +239,7 @@ do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
                 downcase(tmp_creator_concord)
                 lookup_in_store(tmp_creator_concord, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
 
-                # We store the VIAF alternate names in creator search field. 
+                # We store the VIAF alternate names in creator search field.
                 # This allows users to search on name variants of the creator.
                 # If no VIAF alternate names are found, use n/a (not available)
 
@@ -271,7 +270,7 @@ do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
 
                 if all_match('c.actorInRole.attributionQualifierActor.$last._', '.*\S.*')
                     if all_match('c.actorInRole.attributionQualifierActor.$last._', '.*\S.*')
-                        
+
                         # add the attribution to the creator_display and creator_index
 
                         copy_field(c.actorInRole.attributionQualifierActor.$last._, tmp_creator_display.$prepend)
@@ -284,7 +283,7 @@ do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
                         #
                         # Why? Because we can't reliable establish that the work was truly created
                         # by the attributed artist. i.e. The qualifier "copy after" implies
-                        # that this work was created by someone else. "copy after Anthony van Dyck" 
+                        # that this work was created by someone else. "copy after Anthony van Dyck"
                         # might have us erroneously infer that the work was created by Anthony van Dyck
                         # while it may have actually been created in the 20th century.
                         #
@@ -312,7 +311,7 @@ do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
                 move_field(tmp_creator_display, creator_display.$append)
 
                 join_field(tmp_creator_index, " ")
-                move_field(tmp_creator_index, creator_index.$append)    
+                move_field(tmp_creator_index, creator_index.$append)
             end
 
         end
@@ -322,7 +321,7 @@ do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
 end
 
 # If the fields for creator are empty, use n/a (not available)
-   
+
 unless all_match(creator.$first, '.*\S.*')
     set_field(creator.$first, 'n/a')
 end
@@ -330,7 +329,7 @@ end
 unless all_match(creator_dod.$first, '.*\S.*')
     set_field(creator_dod.$first, 'n/a')
 end
-   
+
 unless all_match(creator_role.$first, '.*\S.*')
     set_field(creator_role.$first, 'n/a')
 end
@@ -388,17 +387,17 @@ end
 # may be published based on copyright rules.
 #
 # General rule: date of death artist < current date - 70 years
-# 
+#
 # We check if the LIDO date of death of the longest living contributor to the
 # work is more than 70 years ago.
 #
 # In case the work is tentatively "attributed to" an artist, we check the
 # production date, that is, the most recent asserted date instead.
-# 
+#
 # When asserting copyright via the production date of the work, we use
 # this rule: production date < current date - 150 years.
 #
-# Assuming a max life expectancy of 90 years, we rule out all works 
+# Assuming a max life expectancy of 90 years, we rule out all works
 # created in the past 150 years (70 after presumable death + 80 years).
 # This would rule out the edge case of a creator who died in his 90's, exactly
 # 70 years ago and made his first known works in his teenage years.
@@ -415,7 +414,7 @@ end
 
 add_field(publish_image, "false")
 
-# This is a 'sentinel' variable. As soon as the copyright has been 
+# This is a 'sentinel' variable. As soon as the copyright has been
 # determined (true), we bail out of the algorithm.
 
 add_field(determined, "false")
@@ -435,7 +434,7 @@ if all_match(check_production_date, 'true')
             if is_number(dates.date.latestDate._.$first)
                 copy_field(dates.date.latestDate._.$first, production_date_copyright)
             end
-        else 
+        else
             if any_match(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)')
                 parse_text(dates.date.latestDate._, '(\d\d\d\d)-(\d\d)')
                 if is_number(dates.date.latestDate._.$first)
@@ -528,7 +527,7 @@ set_array(period)
 # Use the event 'production'
 
 do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var: e)
-    
+
     do list(path:e.event.eventType.term, var:p)
 
         if all_match(p._, 'production')
@@ -586,12 +585,12 @@ set_array(material)
 # Use the event 'production'
 
 do list(path:'filteredDescriptiveMetadata.eventWrap.eventSet', var:e)
-    
+
     do list(path:e.event.eventType.term, var:p)
 
         if all_match(p._, 'production')
 
-            # Get materials from LIDO           
+            # Get materials from LIDO
 
             do list(path:e.event.eventMaterialsTech, var:mat)
 
@@ -687,14 +686,14 @@ do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.objectMeasurem
                 else
                     add_field(tmp_dimensionsw, 'n/a')
                     copy_field(tmp_dimensionsw, dimensionsw.$append)
-                    remove_field(tmp_dimensionsw)                    
+                    remove_field(tmp_dimensionsw)
                 end
                 if all_match(el.measurementUnit.0._, '.*\S.*')
                     copy_field(el.measurementUnit.0._, dimensionsw.$append)
                 else
                     add_field(tmp_dimensionsw, 'n/a')
                     copy_field(tmp_dimensionsw, dimensionsw.$append)
-                    remove_field(tmp_dimensionsw) 
+                    remove_field(tmp_dimensionsw)
                 end
                 join_field(dimensionsw, ' ')
                 if all_match(dimensionsw, 'n/a n/a')
@@ -710,14 +709,14 @@ do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.objectMeasurem
                 else
                     add_field(tmp_dimensionsd, 'n/a')
                     copy_field(tmp_dimensionsd, dimensionsd.$append)
-                    remove_field(tmp_dimensionsd)                    
+                    remove_field(tmp_dimensionsd)
                 end
                 if all_match(el.measurementUnit.0._, '.*\S.*')
                     copy_field(el.measurementUnit.0._, dimensionsd.$append)
                 else
                     add_field(tmp_dimensionsd, 'n/a')
                     copy_field(tmp_dimensionsd, dimensionsd.$append)
-                    remove_field(tmp_dimensionsd) 
+                    remove_field(tmp_dimensionsd)
                 end
                 join_field(dimensionsd, ' ')
                 if all_match(dimensionsd, 'n/a n/a')
@@ -733,14 +732,14 @@ do list(path:filteredDescriptiveMetadata.objectIdentificationWrap.objectMeasurem
                 else
                     add_field(tmp_dimensionsr, 'n/a')
                     copy_field(tmp_dimensionsr, dimensionsr.$append)
-                    remove_field(tmp_dimensionsr) 
+                    remove_field(tmp_dimensionsr)
                 end
                 if all_match(el.measurementUnit.0._, '.*\S.*')
                     copy_field(el.measurementUnit.0._, dimensionsr.$append)
                 else
                     add_field(tmp_dimensionsr, 'n/a')
                     copy_field(tmp_dimensionsr, dimensionsr.$append)
-                    remove_field(tmp_dimensionsr) 
+                    remove_field(tmp_dimensionsr)
                 end
                 join_field(dimensionsr, ' ')
                 if all_match(dimensionsr, 'n/a n/a')
@@ -903,7 +902,7 @@ set_array(artwork_subtype)
 # If no artwork subtype exists, use n/a (not available)
 
 do list(path: 'filteredDescriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType', var:t)
-    
+
     do list(path: 't.term', var:type)
         if all_match('type.pref', 'preferred')
             if all_match(type._, '.*\S.*')
@@ -1032,45 +1031,45 @@ end
 
 ## Manifest_url
 
-#do list(path:'filteredAdministrativeMetadata.resourceWrap.resourceSet', var:r)
-    
-#    do list(path:'r.resourceType.term', var:m)
-#        if all_match(m._, 'IIIF Manifest')
-#            if all_match('r.resourceID._', '.*\S.*')
-#                copy_field('r.resourceID._', 'manifest_url')
-#            end
-#        end
-#    end
+do list(path:'filteredAdministrativeMetadata.resourceWrap.resourceSet', var:r)
 
-#end
+    do list(path:'r.resourceType.term', var:m)
+        if all_match(m._, 'IIIF Manifest')
+            if all_match('r.resourceID._', '.*\S.*')
+                copy_field('r.resourceID._', 'manifest_url')
+            end
+        end
+    end
 
-#unless exists(manifest_url)
-#    add_field(manifest_url, 'n/a')
-#end
+end
+
+unless exists(manifest_url)
+    add_field(manifest_url, 'n/a')
+end
 
 
 ## Thumbnail_url
 
-#do list(path:'filteredAdministrativeMetadata.resourceWrap.resourceSet', var:r)
-    
-#    do list(path:'r.resourceType.term', var:t)
-#        if all_match(t._, 'thumbnail')
-#            if all_match('r.resourceID._', '.*\S.*')
-#                copy_field('r.resourceID._', 'thumbnail_url')
-#            end
-#        end
-#    end
+do list(path:'filteredAdministrativeMetadata.resourceWrap.resourceSet', var:r)
 
-#end
+    do list(path:'r.resourceType.term', var:t)
+        if all_match(t._, 'thumbnail')
+            if all_match('r.resourceID._', '.*\S.*')
+                copy_field('r.resourceID._', 'thumbnail_url')
+            end
+        end
+    end
 
-#unless exists(thumbnail_url)
-#    add_field(thumbnail_url, 'n/a')
-#end
+end
+
+unless exists(thumbnail_url)
+    add_field(thumbnail_url, 'n/a')
+end
 
 
 ## Language
 
-add_field('language', 'English')
+add_field('language', 'Dutch')
 
 ## ID
 
@@ -1088,9 +1087,10 @@ add_field('language', 'English')
 unless all_match(data_pid, 'n/a')
     copy_field('data_pid', 'id')
     parse_text('id', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
+    replace_all('id.0', '^www\.(.*)', '$1')
     replace_all('id.0', '([^.]*)\.[^.]{2,3}(?:\.[^.]{2,3})?$', '$1')
     join_field(id, ':')
-    prepend('id', 'en:')
+    prepend('id', 'nl:')
 end
 
 unless exists(id)
@@ -1099,7 +1099,7 @@ end
 
 
 # Retain only those records that have a workPid
-unless all_match('work_pid', 'http://*')
+unless all_match('work_pid', 'https?://*')
     reject()
 end
 

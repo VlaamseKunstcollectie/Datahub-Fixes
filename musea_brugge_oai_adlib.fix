@@ -1,23 +1,26 @@
 # Catmandu Fix
 #
-# Institution: Museum voor Schone Kunsten Gent
+# Institution: Museums Bruges
 # Description: Converts Adlib Structured XML exposed via ErfgoedInzicht OAI to LIDO 1.0
 # Created: 15/9/2017
 
+# Only retain the records from the Museums Bruges
 
+    select all_match('_metadata.institution\.name', 'Musea Brugge')
 
 ### Prepare an intermediate structure
 
 # Copy relevant Adlib fields in order to create a dedicated lido structure
 
-#    copy_field(_metadata.Digital_reference, or_record.pids)
-#    copy_field(_metadata.Alternative_number, or_record.workPid)
+    copy_field(_metadata.Digital_reference, or_record.pids)
+    copy_field(_metadata.Alternative_number, or_record.workPid)
     copy_field(_metadata.Object_name, or_record.object_name)
     copy_field(_metadata.object_category, or_record.object_category)
     copy_field('_metadata.object_category\.lref', or_record.object_category_id)
     copy_field(_metadata.Title, or_record.title)
     copy_field(_metadata.Titel_translation, or_record.title_translation)
     copy_field('_metadata.institution\.name', or_record.institution)
+    copy_field(_metadata.administration_name, or_record.administration_name)
     copy_field(_metadata.object_number, or_record.object_number)
     copy_field(_metadata.Description, or_record.description)
     copy_field(_metadata.Dimension, or_record.dimensions)
@@ -72,7 +75,7 @@
 #   Title                                                   pref: preferred                                                         titel
 #   Titel_translation                                       pref: alternate
 #                                                       lido:repositorySet
-#   institution\.name                                       lido:repositoryName                             Instelling              naam bewaarinstelling
+#   administration_name                                     lido:repositoryName                             Instelling              naam bewaarinstelling
 #                                                           lido:workID
 #   object_number                                               type: object-number                         Inventarisnummer        waarde objectnummer
 #   Description                                         lido:objectDescriptionSet                           Beschrijving            korte beschrijving
@@ -178,7 +181,7 @@
 #                                                               lido:term
 #                                                           lido:recordSource
 #                                                               lido:legalBodyID                                                    identificatie data provider
-#   institution\.name                                           lido:legalBodyName                                                  naam data provider
+#   administration_name                                         lido:legalBodyName                                                  naam data provider
 #                                                               lido:legalBodyWeblink
 #                                                           lido:recordRights
 #                                                               lido:rightsType
@@ -199,7 +202,7 @@
     # the ID field looks like this:
     #
     #   oai:datahub.vlaamsekunstcollectie.be:<domain>:<identifier>
-    #   ex. oai:datahub.vlaamsekunstcollectie.be:mskgent.be:254
+    #   ex. oai:datahub.vlaamsekunstcollectie.be:museabrugge.be:254
     #   ex. oai:datahub.vlaamsekunstcollectie.be:collectievlaamsegemeenschap.be:837
     #
     # Note: the .tld is stripped from the domainname because the . (dot) breaks the
@@ -211,20 +214,33 @@
 #        move_field(or_record.tmp, or_record.pids.$append)
 #    end
 
+    unless is_array(or_record.administration_name)
+        move_field(or_record.administration_name, or_record.tmp)
+        set_array(or_record.administration_name)
+        move_field(or_record.tmp, or_record.administration_name.$append)
+    end
+
+    do list(path: or_record.administration_name, var: c)
+
+        if all_match(c, '.*\S.*')
+
+            copy_field(c, or_record.record_source)
+
+        end
+
+    end
+
 #    do list(path:or_record.pids, var: c)
 
 #        if all_match('c.digital_reference\.description', 'datapid')
 
 #            if all_match(c.digital_reference, '.*\S.*')
 
-#                lido_baseid(
-#                    lidoRecID,
-#                    c.digital_reference,
-#                    -type: purl,
-#                    -source: 'Museum voor Schone Kunsten Gent',
-#                    -label: dataPID,
-#                    -pref: alternate
-#                )
+#                copy_field(c.digital_reference, lidoRecID._)
+#                set_field(lidoRecID.type, 'purl')
+#                copy_field(or_record.record_source, lidoRecID.source)
+#                set_field(lidoRecID.label, 'dataPID')
+#                set_field(lidoRecID.pref, 'alternate')
 
 #                copy_field(c.digital_reference, or_record.oaiPid)
 #                parse_text(or_record.oaiPid, '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
@@ -248,18 +264,15 @@
 
     copy_field(or_record.object_number, or_record.identificator)
 
-    lookup_in_store(or_record.identificator, DBI, data_source: 'dbi:SQLite:/tmp/import.PIDS_ALL_UTF8.sqlite')
+    lookup_in_store(or_record.identificator, DBI, data_source: 'dbi:SQLite:/tmp/import.PIDS_MUSEA_BRUGGE_UTF8.sqlite')
 
     if all_match(or_record.identificator.dataPid, '.*\S.*')
 
-        lido_baseid(
-            lidoRecID,
-            or_record.identificator.dataPid,
-            -type: purl,
-            -source: 'Museum voor Schone Kunsten Gent',
-            -label: dataPID,
-            -pref: alternate
-        )
+        copy_field(or_record.identificator.dataPid, lidoRecID.$append._)
+        set_field(lidoRecID.$last.type, 'purl')
+        copy_field(or_record.record_source, lidoRecID.$last.source)
+        set_field(lidoRecID.$last.label, 'dataPID')
+        set_field(lidoRecID.$last.pref, 'alternate')
 
         copy_field('or_record.identificator.dataPid', 'or_record.identificator.oaiPid')
         parse_text('or_record.identificator.oaiPid', '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
@@ -293,13 +306,10 @@
 
 #            if all_match(c.alternative_number, '.*\S.*')
 
-#                lido_baseid(
-#                    objectPublishedID,
-#                    c.alternative_number,
-#                    -type: purl,
-#                    -source: 'Museum voor Schone Kunsten Gent',
-#                    -label: workPID
-#                )
+#                copy_field(c.alternative_number, objectPublishedID._)
+#                set_field(objectPublishedID.type, 'purl')
+#                copy_field(or_record.record_source, objectPublishedID.source)
+#                set_field(objectPublishedID.label, 'workPID')
 
 #            end
 
@@ -309,13 +319,10 @@
 
     if all_match(or_record.identificator.workPid, '.*\S.*')
 
-        lido_baseid(
-            objectPublishedID,
-            or_record.identificator.workPid,
-            -type: purl,
-            -source: 'Museum voor Schone Kunsten Gent',
-            -label: workPID
-        )
+        copy_field(or_record.identificator.workPid, objectPublishedID.$append._)
+        set_field(objectPublishedID.$last.type, 'purl')
+        copy_field(or_record.record_source, objectPublishedID.$last.source)
+        set_field(objectPublishedID.$last.label, 'workPID')
 
     end
 
@@ -557,13 +564,7 @@
 
 # LIDO repositoryName
 
-    unless is_array(or_record.institution) 
-        move_field(or_record.institution, or_record.tmp)
-        set_array(or_record.institution)
-        move_field(or_record.tmp, or_record.institution.$append)
-    end
-
-    do list(path: or_record.institution, var: c)
+    do list(path: or_record.administration_name, var: c)
 
         if all_match(c, '.*\S.*')
 
@@ -888,7 +889,7 @@
 
         do list (path: c.creator_source, var: s)
 
-            if all_match(s.source, 'VIAF')
+            if in(s.source, 'viaf')
 
                 if all_match('s.source\.number', '.*\S.*')
 
@@ -909,7 +910,7 @@
 
             end
 
-            if all_match(s.source, 'RKDartists&')
+            if in(s.source, 'rkd')
 
                 if all_match('s.source\.number', '.*\S.*')
 
@@ -930,7 +931,7 @@
 
             end
 
-            if all_match(s.source, 'Wikidata')
+            if in(s.source, 'wikidata')
 
                 if all_match('s.source\.number', '.*\S.*')
 
@@ -1718,31 +1719,21 @@
 
 # LIDO recordID
 
-#    do list(path:or_record.pids, var: c)
+    do list(path:or_record.pids, var: c)
 
-#        if all_match('c.digital_reference\.description', 'datapid')
+        if all_match('c.digital_reference\.description', 'datapid')
 
-#            if all_match(c.digital_reference, '.*\S.*')
+            if all_match(c.digital_reference, '.*\S.*')
 
-#                lido_baseid(
-#                    administrativeMetadata.recordWrap.recordID,
-#                    c.digital_reference,
-#                    -type: global
-#                )
+                lido_baseid(
+                    administrativeMetadata.recordWrap.recordID,
+                    c.digital_reference,
+                    -type: global
+                )
 
-#            end
+            end
 
-#        end
-
-#    end
-
-    if all_match(or_record.identificator.dataPid, '.*\S.*')
-
-        lido_baseid(
-            administrativeMetadata.recordWrap.recordID,
-            or_record.identificator.dataPid,
-            -type: global
-        )
+        end
 
     end
 
@@ -1799,7 +1790,7 @@
 
 # LIDO recordSource
 
-    do list(path: or_record.institution, var: c)
+    do list(path: or_record.administration_name, var: c)
 
         if all_match(c, '.*\S.*')
 
@@ -1812,7 +1803,7 @@
 
     end
 
-    add_field('or_record.LegalBodyWebLink', 'http://mskgent.be')
+    add_field('or_record.LegalBodyWebLink', 'http://museabrugge.be')
 
     lido_basevalue(
         administrativeMetadata.recordWrap.recordSource.legalBodyWeblink,
@@ -1824,35 +1815,21 @@
 
 # LIDO resourceID & linkResource
 
-#    do list(path:or_record.pids, var: c)
+    do list(path:or_record.pids, var: c)
 
-#        if all_match('c.digital_reference\.description', 'representationpid')
+        if all_match('c.digital_reference\.description', 'representationpid')
 
-#            if all_match(c.digital_reference, '.*\S.*')
+            if all_match(c.digital_reference, '.*\S.*')
 
-#                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
-#                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
-#                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
+                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
+                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
+                add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
 
-#                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+                copy_field(c.digital_reference, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
 
-#            end
+            end
 
-#        end
-
-#    end
-
-    if all_match(or_record.identificator.dataPid, '.*\S.*')
-
-        copy_field('or_record.identificator.dataPid', 'or_record.identificator.representationPid')
-        parse_text('or_record.identificator.representationPid', '(.*)/collection/work/data/(.*)')
-        join_field('or_record.identificator.representationPid', '/collection/work/representation/')
-
-        copy_field(or_record.identificator.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
-        add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
-        add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.label, "representationPID")
-
-        copy_field(or_record.identificator.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+        end
 
     end
 

@@ -13,7 +13,7 @@
     select all_match(DepartmentID, '1')
 
 # Copy relevant fields in order to create a dedicated LIDO structure
-# Some fields, for example ObjectNumber, ObjectID, DateBegin, DateEnd, Dated and Medium, are obtained from the CITvgsrpObjTombstoneD_RO table in MySQL
+# Some fields, for example ObjectNumber, ObjectID, DateBegin, DateEnd, Dated and Medium, are obtained from the Objects table in MySQL
 # Additional data is obtained from SQLite database files
 
     # Identifiers
@@ -27,6 +27,10 @@
     move_field(or_record.object_number.datapid.dataPid, or_record.object_number.pid.dataPid)
     remove_field(or_record.object_number.datapid)
 
+    # Reject those records that have "(not assigned)" as data PID
+
+    reject all_match(or_record.object_number.pid.dataPid, '.*not assigned.*')
+
     copy_field(ObjectNumber, or_record.object_number.workpid)
     lookup_in_store(or_record.object_number.workpid, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.workpids.sqlite')
     move_field(or_record.object_number.workpid.workPid, or_record.object_number.pid.workPid)
@@ -37,15 +41,35 @@
     move_field(or_record.object_number.representationpid.representationPid, or_record.object_number.pid.representationPid)
     remove_field(or_record.object_number.representationpid)
 
+    # aat
+
+    copy_field(ObjectID, or_record.aat.db)
+    lookup_in_store(or_record.aat.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.aat.sqlite')
+
     # objectWrap
 
     copy_field(ObjectID, or_record.objectWrap.db)
     lookup_in_store(or_record.objectWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.objects.sqlite')
 
+    # objectNames
+
+    copy_field(ObjectID, or_record.objectNames.db)
+    lookup_in_store(or_record.objectNames.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.objectnames.sqlite')
+
     # classificationWrap
 
     copy_field(ObjectID, or_record.classificationWrap.db)
     lookup_in_store(or_record.classificationWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.classifications.sqlite')
+
+    # highlights
+
+    copy_field(ObjectID, or_record.highlights.db)
+    lookup_in_store(or_record.highlights.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.highlights.sqlite')
+
+    # collectionPresentation
+
+    copy_field(ObjectID, or_record.collectionPresentation.db)
+    lookup_in_store(or_record.collectionPresentation.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.collectionpresentation.sqlite')
 
     # subjectWrap
 
@@ -57,21 +81,59 @@
     copy_field(ObjectID, or_record.materialWrap.db)
     lookup_in_store(or_record.materialWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.materials.sqlite')
 
+    # techniqueWrap
+
+    copy_field(ObjectID, or_record.techniqueWrap.db)
+    lookup_in_store(or_record.techniqueWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.techniques.sqlite')
+
     # title
 
     copy_field(ObjectNumber, or_record.titleWrap.db)
     lookup_in_store(or_record.titleWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.objtitles.sqlite')
 
-    # description
+    # inscriptions
 
-    copy_field(ObjectID, or_record.description.db)
-    lookup_in_store(or_record.description.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.descriptions.sqlite')
-    trim(or_record.description.db.description)
+    copy_field(Inscribed, or_record.inscriptions)
+
+    # location
+
+    copy_field(ObjectID, or_record.location.db)
+    lookup_in_store(or_record.location.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.locations.sqlite')
+
+    # clusters
+
+#    copy_field(ObjectID, or_record.clusters.db)
+#    lookup_in_store(or_record.clusters.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.clusters.sqlite')
+
+    # halls
+
+#    copy_field(ObjectID, or_record.halls.db)
+#    lookup_in_store(or_record.halls.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.halls.sqlite')
+
+    # textEntries
+
+    copy_field(ObjectID, or_record.textEntries.db)
+    lookup_in_store(or_record.textEntries.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.textentries.sqlite')
+
+    # pageNumber
+
+    copy_field(ObjectID, or_record.pageNumber.db)
+    lookup_in_store(or_record.pageNumber.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.pagenumbers.sqlite')
+
+    # handling
+
+    copy_field(ObjectID, or_record.handling.db)
+    lookup_in_store(or_record.handling.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.handling.sqlite')
 
     # objectMeasurements
 
     copy_field(ObjectID, or_record.objectMeasurements.db)
     lookup_in_store(or_record.objectMeasurements.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.dimensions.sqlite')
+
+    # acquisition
+
+    copy_field(ObjectID, or_record.acquisition.db)
+    lookup_in_store(or_record.acquisition.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.acquisition.sqlite')
 
     # production actor (production)
 
@@ -105,22 +167,58 @@
 
     copy_field(Medium, or_record.eventMaterialsTech.display)
 
+    # provenance
+
+    copy_field(Provenance, or_record.provenance)
+    replace_all(or_record.provenance, '\r', '')
+
+    # restoration
+
+    copy_field(CreditLine, or_record.restoration)
+
     # subjectConcept
 
-    copy_field(ObjectID, or_record.iconclass.db)
-    lookup_in_store(or_record.iconclass.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.iconclass.sqlite')
+    copy_field(Notes, or_record.iconclass)
 
     # relatedWorksWrap
 
     copy_field(ObjectID, or_record.relationWrap.db)
     lookup_in_store(or_record.relationWrap.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.relations.sqlite')
 
+    # linkLibrary
+
+    copy_field(UserNumber1, or_record.linkLibrary)
+
+    # linkArchive
+
+    copy_field(ObjectID, or_record.linkArchive.db)
+    lookup_in_store(or_record.linkArchive.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.linkarchive.sqlite')
+
     # recordSource
 
     copy_field(ObjectID, or_record.department.db)
     lookup_in_store(or_record.department.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.departments.sqlite')
 
-# Remove all fields from CITvgsrpObjTombstoneD_RO, retaining only the ones necessary to create the LIDO structure
+    # resourceWrap
+
+    copy_field(ObjectNumber, or_record.iiif_manifest)
+    lookup_in_store(or_record.iiif_manifest, DBI, data_source: 'dbi:SQLite:/tmp/import.iiif_manifests.sqlite')
+
+    # Set placeholder if no manifest exists (look up 'placeholder_manifest' in sqlite)
+
+    unless all_match(or_record.iiif_manifest.manifest, '.*\S.*')
+
+        set_field(or_record.iiif_manifest, 'placeholder_manifest')
+        lookup_in_store(or_record.iiif_manifest, DBI, data_source: 'dbi:SQLite:/tmp/import.iiif_manifests.sqlite')
+
+    end
+
+    # translations
+
+    copy_field(ObjectID, or_record.translations.db)
+    lookup_in_store(or_record.translations.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.translations.sqlite')
+
+# Remove all fields from Objects, retaining only the ones necessary to create the LIDO structure
 
     retain(or_record)
 
@@ -140,26 +238,21 @@
 #                                                 lido:term
 #                                             lido:objectWorkType
 #                                                 lido:conceptID
-#   vobjects.TermID                                  pref: preferred
-#                                                    pref: alternate                                                      identificatie objectnaam
+#   vobjectnames.objectNameID                        pref: preferred                                                      identificatie objectnaam
 #                                                 lido:term
-#   vobjects.object                                  pref: preferred                              Subtype                 term objectnaam
-#                                                    pref: alternate                              Subtype
+#   vobjectnames.objectName                          pref: preferred                              Subtype                 term objectnaam
 #                                             lido:classification
-#                                                 type: objectcategorie
+#                                                 type: object-category
 #                                                    lido:conceptID
 #   vclassifications.ClassificationID                     pref: preferred
 #                                                         pref: alternate                                                 identificatie
 #                                                    lido:term
-#   vclassifications.Classification                       pref: preferred                         Type                    term
-#                                                         pref: alternate                         Type
-#                                                 type: hoofdmotief
-#                                                    lido:conceptID
-#   vsubjects.TermID                                      pref: preferred
-#                                                         pref: alternate                                                 identificatie hoofdmotief
-#                                                    lido:term
-#   vsubjects.subject                                     pref: preferred                         Onderwerp               term hoofdmotief
-#                                                         pref: alternate                         Onderwerp
+#   vclassifications.classification_nl                    pref: preferred / lang: nl              Type                    term
+#                                                         pref: alternate / lang: nl              Type
+#   vclassifications.classification_en                    lang: en
+#   vclassifications.classification_fr                    lang: fr
+#   vhighlights                                      lido:term
+#   vcollectionpresentation                          lido:term
 #                                             lido:titleSet
 #                                                 lido:appellationValue
 #   vobjtitles.title                                  lang: en                                                            titel
@@ -167,11 +260,27 @@
 #                                                 lido:sourceAppellation
 #   vobjtitles.titleid                                lang: en
 #   vobjtitles.titleid                                lang: nl
-#                                             lido:repositoryName                                 Instelling              naam bewaarinstelling
-#   vdepartments.DepartmentID                     lido:legalBodyID
-#   vdepartments.department                       lido:legalBodyName                              Inventarisnummer        waarde objectnummer
-#   CITvgsrpObjTombstoneD_RO.ObjectNumber     lido:workID
-#   vdescriptions.description                 lido:objectDescriptionSet                           Beschrijving            korte beschrijving
+#                                             lido:inscriptions
+#                                                 lido:inscriptionDescription
+#   Objects.Inscribed                                 lang: nl
+#   vtranslations.textEntry                           lang: en
+#   vtranslations.textEntry                           lang: fr
+#                                             lido:repositorySet
+#                                                 lido:repositoryName
+#   vdepartments.DepartmentID                         lido:legalBodyID
+#   vdepartments.department                           lido:legalBodyName                          Instelling              naam bewaarinstelling
+#                                                 lido:workID
+#   Objects.ObjectNumber                              type: object-number                         Inventarisnummer        waarde objectnummer
+#                                                 lido:repositoryLocation
+#   vlocations.room_nl                                lang: nl
+#   vlocations.room_en                                lang: en
+#   vlocations.room_fr                                lang: fr
+#                                             lido:objectDescriptionSet
+#   vtextentries.textEntry                            lido:descriptiveNoteValue                   Beschrijving            korte beschrijving
+#                                                 type: page-number
+#   vpagenumbers.pageNumber                           lido:descriptiveNoteValue
+#                                                 type: handling
+#   vhandling.handling                                lido:descriptiveNoteValue
 #                                             lido:objectMeasurementsSet
 #   vdimensions.display                           lido:displayObjectMeasurements
 #                                                 lido:objectMeasurements
@@ -180,6 +289,21 @@
 #   vdimensions.unit                                      lido:measurementUnit                    Dimensies               eenheid afmeting
 #   vdimensions.dimension                                 lido:measurementValue                   Dimensies               waarde afmeting
 #   vdimensions.element                               lido:extentMeasurements                                             onderdeel afmeting
+#                                             lido:eventType
+#                                                 lido:term
+#                                                     acquisition
+#                                                         lido:eventActor
+#                                                             lido:actorID
+#   vacquisition.constituentID                                    type: local
+#   vacquisition.name                                         lido:nameActorSet                                           naam verwervingsbron
+#                                                         lido:eventDate
+#   vacquisition.date                                         lido:displayDate                                            waarde verwervingdatum
+#                                                         lido:eventMethod
+#                                                             lido:term
+#   vacquisition.role_nl                                          lang: nl                                                term verwervingsmethode
+#   vacquisition.role_en                                          lang: en
+#   vacquisition.role_fr                                          lang: fr
+#                                                         lido:eventDescriptionSet
 #                                             lido:eventType
 #                                                 lido:term
 #                                                     production
@@ -193,37 +317,86 @@
 #                                                             lido:vitalDatesActor
 #   vconstituents.BeginDateISO                                    lido:earliestDate
 #   vconstituents.EndDateISO                                      lido:latestDate
-#   vconstituents.Role                                        lido:roleActor                      Vervaardiger            rol vervaardiger
-#   vconstituents.Role                                        lido:attributionQualifierActor      Vervaardiger            kwalificatie vervaardiger
+#                                                             lido:roleActor
+#   vconstituents.role_nl                                         lang: nl                        Vervaardiger            rol vervaardiger
+#   vconstituents.role_en                                         lang: en
+#   vconstituents.role_fr                                         lang: fr
+#                                                             lido:attributionQualifierActor
+#   vconstituents.role_nl                                         lang: nl                        Vervaardiger            kwalificatie vervaardiger
+#   vconstituents.role_en                                         lang: en
+#   vconstituents.role_fr                                         lang: fr
 #                                                         lido:eventDate
-#   CITvgsrpObjTombstoneD_RO.Dated                            lido:displayDate                    Datering
+#   Objects.Dated                                             lido:displayDate                    Datering
 #                                                             lido:date
-#   CITvgsrpObjTombstoneD_RO.DateBegin                            lido:earliestDate                                       begindatum
-#   CITvgsrpObjTombstoneD_RO.DateEnd                              lido:latestDate                                         einddatum
+#   Objects.DateBegin                                             lido:earliestDate                                       begindatum
+#   Objects.DateEnd                                               lido:latestDate                                         einddatum
 #                                                         lido:periodName
-#   vperiods.term                                             lido:term
+#                                                             lido:term
+#   vperiods.term                                                 lang: nl
+#   vtranslations.textEntry                                       lang: en
+#   vtranslations.textEntry                                       lang: fr
 #                                                         lido:eventMaterialsTech
 #                                                             lido:termMaterialsTech
+#                                                                 type: material
+#                                                                     lido:conceptID
+#   vmaterials.TermID                                                     pref: preferred
+#                                                                         pref: alternate                                 identificatie materiaal
+#                                                                     lido:term
+#   vmaterials.material                                                   pref: preferred         Materiaal               term materiaal
+#                                                                         pref: alternate
+#                                                                 type: technique
+#                                                                     lido:conceptID
+#   vtechniques.TermID                                                    pref: preferred
+#                                                                     lido:term
+#   vtechniques.technique                                                 pref: preferred
+#                                                             lido:displayMaterialsTech
+#   Objects.Medium                                                lang: nl
+#   vtranslations.textEntry                                       lang: en
+#   vtranslations.textEntry                                       lang: fr
+#                                             lido:eventType
+#                                                 lido:term
+#                                                     provenance
+#   Objects.Provenance                                    lido:eventDescriptionSet
+#                                             lido:eventType
+#                                                 lido:term
+#                                                     restoration
+#                                                         lido:eventDescriptionSet
+#   Objects.CreditLine                                        lang: nl
+#   vtranslations.textEntry                                   lang: en
+#   vtranslations.textEntry                                   lang: fr
+#                                             lido:objectRelationWrap
+#                                                 lido:subjectWrap
+#                                                     lido:subject
+#                                                         type: content-motif-general
+#                                                             lido:subjectConcept
 #                                                                 lido:conceptID
-#   vmaterials.TermID                                                 pref: preferred
-#                                                                     pref: alternate                                     identificatie materiaal
+#   vsubjects.TermID                                                  pref: preferred
+#                                                                     pref: alternate                                     identificatie hoofdmotief
 #                                                                 lido:term
-#   vmaterials.material                                               pref: preferred             Materiaal               term materiaal
-#                                                                     pref: alternate
-#                                             lido:subjectConcept
-#   viconclass                                    lido:conceptID                                                          identificatie afgebeeld concept
-#   viconclass                                    lido:term                                                               term afgebeeld concept
-#                                             lido:relatedWorksWrap
-#                                                 lido:relatedWorkSet
-#   vrelations.numbering                              sortorder
-#                                                         lido:objectID
-#   vrelations.relatedObjectNumber                            type: local
-#                                                             type: oai
-#                                                 lido:relatedWorkRelType
-#   vrelations.relationshipID1(2)                     lido:conceptID
-#                                                         type: local
-#                                                         type: URI
-#   vrelations.relationship                           lido:term
+#   vsubjects.subject                                                 pref: preferred             Onderwerp               term hoofdmotief
+#                                                                     pref: alternate             Onderwerp
+#                                                         no type
+#                                                             lido:subjectConcept
+#   Objects.Notes                                                 lido:conceptID                                          identificatie afgebeeld concept
+#   Objects.Notes                                                 lido:term                                               term afgebeeld concept
+#                                                 lido:relatedWorksWrap
+#                                                     lido:relatedWorkSet
+#   vrelations.numbering                                  sortorder
+#                                                             lido:relatedWork
+#                                                                 lido:objectID
+#   vrelations.relatedObjectNumber                                    type: local
+#                                                                     type: oai
+#                                                             lido:relatedWorkRelType
+#   vrelations.relationshipID1(2)                                 lido:conceptID
+#                                                                     type: local
+#                                                                     type: URI
+#   vrelations.relationship                                       lido:term
+#                                                     lido:relatedWorkSet
+#   Objects.UserNumber1                                   lido:objectWebResource
+#                                                             label: link-library
+#                                                     lido:relatedWorkSet
+#   vlinkarchive.link                                     lido:objectWebResource
+#                                                             label: link-archive
 #                                             lido:rightsWorkWrap
 #                                                 lido:rightsType
 #                                                     lido:conceptID                                                      identificatie rechten werk
@@ -232,7 +405,7 @@
 #                                             lido:recordWrap
 #                                                 lido:recordID
 #   vdatapids.dataPid                                 type: global                                Data PURL               waarde databanknummer
-#   CITvgsrpObjTombstoneD_RO.ObjectID                 type: local                                                         waarde databanknummer
+#   Objects.ObjectID                                  type: local                                                         waarde databanknummer
 #                                                 lido:recordType
 #                                                     lido:conceptID
 #                                                     lido:term
@@ -291,6 +464,8 @@
         -pref: preferred
     )
 
+
+
 ### LIDO objectPublishedID
 
     # Add workpid from TMS as LIDO objectPublishedID
@@ -302,6 +477,7 @@
         -type: purl,
         -label: workPID
     )
+
 
 
 ### LIDO category
@@ -321,59 +497,100 @@
         -source: cidoc-crm
     )
 
+
+
 ### LIDO descriptiveMetadata
 
 ## LIDO objectClassificationWrap
 
 # LIDO objectWorkType
 
-    # We'll have multiple objectWorkTypes: the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+    # We'll have multiple object names: the corresponding value from AAT (source:AAT) and the value from TMS (source:TMS)
 
-    # Loop over the different object terms from TMS
+    # Loop over the different object names from TMS
 
-    do list(path:or_record.objectWrap.db.objects, var:o)
+    do list(path:or_record.objectNames.db.objectnames, var:n)
 
-        # Add each object term from TMS to LIDO objectWorkType as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
+        # Use ObjectNameTypeID 0 (not entered) or 2 (object name by form)
 
-        lido_term(
-            descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
-            o.object,
-            -conceptid: o.TermID,
-            -type: local,
-            -source: TMS,
-            -pref: preferred,
-            -lang: nl
-        )
+        if all_match(n.objectNameTypeID, '^[02]$')
 
-        # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
+            # Add each object name from TMS to LIDO objectWorkType as LIDO term (pref:preferred) along with the ObjectNameID from TMS as LIDO conceptID (pref:preferred)
 
-        copy_field(o.object, o.aat)
-        lookup_in_store(o.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+            lido_term(
+                descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+                n.objectName,
+                -conceptid: n.objectNameID,
+                -type: local,
+                -source: TMS,
+                -pref: preferred,
+                -lang: nl
+            )
 
-        # Add the corresponding term from the AAT vocabulary (if present) to LIDO objectWorkType as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
+            add_field(descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last.type, 'form')
 
-        if all_match(o.aat.aatterm, '.*\S.*')
+        end
 
-            if all_match(o.aat.aaturi, '.*\S.*')
+    end
 
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
-                    o.aat.aatterm,
-                    -conceptid: o.aat.aaturi,
-                    -type: purl,
-                    -source: AAT,
-                    -pref: alternate,
-                    -lang: nl
-                )
+    set_field(or_record.objectName_aat_exists, '')
 
-            else
+    # Loop over the different object names from AAT
 
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
-                    o.aat.aatterm,
-                    -pref: alternate,
-                    -lang: nl
-                )                
+    do list(path:or_record.aat.db.aat, var:a)
+
+        # Use path starting with 'TGO.AAI' or 'AAT.V'
+
+        if all_match(a.path, '^TGO\.AAI|AAT\.V.*$')
+
+            set_field(or_record.objectName_aat_exists, 'true')
+
+            lido_term(
+                descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+                a.term,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(a.term, a.objectName_aat)
+            lookup_in_store(a.objectName_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO objectWorkType as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(a.objectName_aat.aatterm, '.*\S.*')
+
+                if all_match(a.objectName_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
+                        a.objectName_aat.aatterm,
+                        -conceptid: a.objectName_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
+                        a.objectName_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+            unless all_match(descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last.conceptID.source, '.*\S.*')
+
+                add_field(descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last.conceptID._, '')
+                add_field(descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last.conceptID.type, 'purl')
+                add_field(descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last.conceptID.source, 'AAT')
 
             end
 
@@ -381,19 +598,79 @@
 
     end
 
-# LIDO classification [type="objectcategorie"]
+    # If there is no object name from AAT, try using object terms
 
-    # We'll have multiple classifications with type "objectcategorie": the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+    unless all_match(or_record.objectName_aat_exists, 'true')
+
+        # We'll have multiple object terms: the corresponding value from the AAT vocabulary (pref:alternate) and the value from TMS (pref:preferred)
+
+        # Loop over the different object terms from TMS
+
+        do list(path:or_record.objectWrap.db.objects, var:o)
+
+            # Add each object term from TMS to LIDO objectWorkType as LIDO term (pref:preferred) along with the termID from TMS as LIDO conceptID (pref:preferred)
+
+            lido_term(
+                descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$append,
+                o.object,
+                -conceptid: o.TermID,
+                -type: local,
+                -source: TMS,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(o.object, o.object_aat)
+            lookup_in_store(o.object_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO objectWorkType as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(o.object_aat.aatterm, '.*\S.*')
+
+                if all_match(o.object_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
+                        o.object_aat.aatterm,
+                        -conceptid: o.object_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.objectClassificationWrap.objectWorkTypeWrap.objectWorkType.$last,
+                        o.object_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+        end
+
+    end
+
+# LIDO classification [type="object-category"]
+
+    # We'll have multiple terms for the type "object-category": the corresponding value from the AAT vocabulary (pref:alternate) and the value from TMS (pref:preferred)
 
     # Loop over the different classification terms from TMS
 
     do list(path:or_record.classificationWrap.db.classifications, var:c)
 
-        # Add each classification term from TMS to LIDO classification as LIDO term (type:preferred) along with the classificationID from TMS as LIDO conceptID (type:preferred)
+        # Add each classification term from TMS to LIDO classification as LIDO term (pref:preferred) along with the classificationID from TMS as LIDO conceptID (pref:preferred)
 
         lido_term(
             descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-            c.Classification,
+            c.classification_nl,
             -conceptid: c.ClassificationID,
             -type: local,
             -source: TMS,
@@ -401,25 +678,33 @@
             -lang: nl
         )
 
+        copy_field(c.classification_en, descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$append._)
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.pref, "preferred")
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.lang, "en")
+
+        copy_field(c.classification_fr, descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$append._)
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.pref, "preferred")
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.term.$last.lang, "fr")
+
         # Add type of LIDO classification
 
-        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "objectcategorie")
+        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
-        # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
+        # Retrieve the corresponding term and URI from the AAT vocabulary
 
-        copy_field(c.Classification, c.classification.aat)
-        lookup_in_store(c.classification.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        copy_field(c.classification_nl, c.classification_aat)
+        lookup_in_store(c.classification_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-        # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
+        # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
 
-        if all_match(c.classification.aat.aatterm, '.*\S.*')
+        if all_match(c.classification_aat.aatterm, '.*\S.*')
 
-            if all_match(c.classification.aat.aaturi, '.*\S.*')
+            if all_match(c.classification_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.classification.aat.aatterm,
-                    -conceptid: c.classification.aat.aaturi,
+                    c.classification_aat.aatterm,
+                    -conceptid: c.classification_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -430,7 +715,7 @@
 
                 lido_term(
                     descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    c.classification.aat.aatterm,
+                    c.classification_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )                
@@ -439,76 +724,44 @@
 
             # Add type of LIDO classification
 
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "objectcategorie")
+            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "object-category")
 
         end
 
     end
 
-# LIDO classification [type="hoofdmotief"]
+# LIDO classification
 
-    # We'll have multiple classifications with type "hoofdmotief": the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+    # Highlights
 
-    # Loop over the different subject terms from TMS
+    # Add term "highlights" from TMS (if present) to LIDO classification as LIDO term
 
-    do list(path:or_record.subjectWrap.db.subjects, var:s)
+    if all_match('or_record.highlights.db._id', '.*\S.*')
 
-        # Add each subject term from TMS to LIDO classification as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
-        
+        set_field(or_record.highlights_term, "highlights")
+
         lido_term(
             descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
-            s.subject,
-            -conceptid: s.TermID,
-            -type: local,
-            -source: TMS,
-            -pref: preferred,
-            -lang: nl
+            or_record.highlights_term
         )
 
-        # Add type of LIDO classification
+    end
 
-        add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "hoofdmotief")
+    # Collection presentation
 
-        # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
+    # Add term "collection presentation" from TMS (if present) to LIDO classification as LIDO term
 
-        copy_field(s.subject, s.aat)
-        downcase(s.aat)
-        lookup_in_store(s.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+    if all_match('or_record.collectionPresentation.db._id', '.*\S.*')
 
-        # Add the corresponding term from the AAT vocabulary (if present) to LIDO classification as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
+        set_field(or_record.collectionPresentation_term, "collection presentation")
 
-        if all_match(s.aat.aatterm, '.*\S.*')
-
-            if all_match(s.aat.aaturi, '.*\S.*')
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    s.aat.aatterm,
-                    -conceptid: s.aat.aaturi,
-                    -type: purl,
-                    -source: AAT,
-                    -pref: alternate,
-                    -lang: nl
-                )
-
-            else
-
-                lido_term(
-                    descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last,
-                    s.aat.aatterm,
-                    -pref: alternate,
-                    -lang: nl
-                )
-
-            end
-
-            # Add type of LIDO classification
-
-            add_field(descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$last.type, "hoofdmotief")
-
-        end
+        lido_term(
+            descriptiveMetadata.objectClassificationWrap.classificationWrap.classification.$append,
+            or_record.collectionPresentation_term
+        )
 
     end
+
 
 ## LIDO objectIdentificationWrap
 
@@ -518,40 +771,358 @@
 
     do list(path:or_record.titleWrap.db.objtitles, var:t)
 
-        # Remove unnecessary whitespaces
+        # Use TitleTypeID 1 (titles)
 
-        trim(t.title)
-        trim(t.titleid)
+        if all_match(t.titletypeid, '1')
 
-        # Add each Dutch title from TMS to LIDO titleSet as LIDO appellationValue along with the titleID from TMS as LIDO sourceAppellation
+            # Remove unnecessary whitespaces
 
-        if all_match(t.languageid, 2)
+            trim(t.title)
+            trim(t.titleid)
 
-            copy_field(t.title, t.dutch_title)
+            # Add each title from TMS to LIDO titleSet as LIDO appellationValue along with the titleID from TMS as LIDO sourceAppellation
 
-            lido_basenameset(
-                descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
-                t.dutch_title,
-                -value_pref: preferred,
-                -value_lang: nl,
-                -source: t.titleid
-            )
+            copy_field(t.title, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$append._)
+            set_field(descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$last.pref, 'preferred')
+            copy_field(t.language, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$last.lang)
+            copy_field(t.titleid, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.sourceAppellation.$append._)
+            copy_field(t.language, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.sourceAppellation.$last.lang)
 
         end
 
-        # Add the corresponding English title from TMS to LIDO titleSet as LIDO appellationValue along with the titleID from TMS as LIDO sourceAppellation
+    end
 
-        if all_match(t.languageid, 1)
+    # If there is no title, try using TitleTypeID 2 (series titles)
 
-            copy_field(t.title, t.english_title)
+    unless all_match(descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.0._, '.*\S.*')
 
-            lido_basenameset(
-                descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet,
-                t.title,
-                -value_pref: preferred,
-                -value_lang: en,
-                -source: t.titleid
-            )
+        # Loop over the different titles from TMS
+
+        do list(path:or_record.titleWrap.db.objtitles, var:t)
+
+            if all_match(t.titletypeid, '2')
+
+                # Remove unnecessary whitespaces
+
+                trim(t.title)
+                trim(t.titleid)
+
+                # Add each series title from TMS to LIDO titleSet with type 'series-title' as LIDO appellationValue along with the titleID from TMS as LIDO sourceAppellation
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.type, 'series-title')
+                copy_field(t.title, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$append._)
+                set_field(descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$last.pref, 'preferred')
+                copy_field(t.language, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.appellationValue.$last.lang)
+                copy_field(t.titleid, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.sourceAppellation.$append._)
+                copy_field(t.language, descriptiveMetadata.objectIdentificationWrap.titleWrap.titleSet.sourceAppellation.$last.lang)
+
+            end
+
+        end
+
+    end
+
+# LIDO inscriptions
+
+    # Split separate inscriptions
+
+    split_field(or_record.inscriptions, '(\r\n|\r|\n)')
+
+    do list(path:or_record.translations.db.translations, var:t)
+
+        if all_match(t.textTypeID, '121')
+
+            copy_field(t.textEntry, or_record.inscriptions_en)
+            split_field(or_record.inscriptions_en, '(\r\n|\r|\n)')
+
+        end
+
+        if all_match(t.textTypeID, '129')
+
+            copy_field(t.textEntry, or_record.inscriptions_fr)
+            split_field(or_record.inscriptions_fr, '(\r\n|\r|\n)')
+
+        end
+
+    end
+
+    # Loop over the separate inscriptions
+
+    do list(path:or_record.inscriptions, var:i)
+
+        if all_match('i', '.*\S.*')
+
+            # Add a new, empty LIDO inscriptions field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+            copy_field(i, or_record.inscription)
+
+            if all_match(or_record.inscription, '.*:.*')
+
+                # Split the inscriptions on the colon
+
+                split_field(or_record.inscription, ':')
+
+                set_field(or_record.inscriptionDescription)
+
+                # Loop over the different parts of the inscriptions
+
+                do list(path:or_record.inscription, var:in)
+
+                    # Remove unnecessary whitespaces and parentheses
+
+                    if all_match(in, '.*\S.*')
+
+                        trim(in)
+
+                        if all_match(in, '^\(.*\)$')
+
+                            replace_all(in,'^\((.*)',$1)
+                            replace_all(in,'(.*)\)$',$1)
+
+                        end
+
+                        if all_match (descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, 'position')
+
+                            # Add each inscription content from TMS (if present) to LIDO inscriptions as LIDO inscriptionTranscription
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionTranscription._)
+
+                            paste(or_record.inscriptionDescription, or_record.inscriptionDescription, in, join_char:': ')
+
+                        else
+
+                            # Add each inscription position from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription (type:position)
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "position")
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "nl")
+
+                            copy_field('in', or_record.inscriptionDescription)
+
+                        end
+
+                    end
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                if all_match('or_record.inscriptionDescription', '.*\S.*')
+
+                    copy_field('or_record.inscriptionDescription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                    add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "nl")
+
+                end
+
+            else
+
+                # Remove unnecessary whitespaces and parentheses
+
+                trim(or_record.inscription)
+
+                if all_match(or_record.inscription, '^\(.*\)$')
+
+                    replace_all(or_record.inscription,'^\((.*)',$1)
+                    replace_all(or_record.inscription,'(.*)\)$',$1)
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                copy_field('or_record.inscription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "nl")
+
+            end
+
+        end
+
+    end
+
+    # Loop over the separate inscriptions
+
+    do list(path:or_record.inscriptions_en, var:i)
+
+        if all_match('i', '.*\S.*')
+
+            # Add a new, empty LIDO inscriptions field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+            copy_field(i, or_record.inscription)
+
+            if all_match(or_record.inscription, '.*:.*')
+
+                # Split the inscriptions on the colon
+
+                split_field(or_record.inscription, ':')
+
+                set_field(or_record.inscriptionDescription)
+
+                # Loop over the different parts of the inscriptions
+
+                do list(path:or_record.inscription, var:in)
+
+                    # Remove unnecessary whitespaces and parentheses
+
+                    if all_match(in, '.*\S.*')
+
+                        trim(in)
+
+                        if all_match(in, '^\(.*\)$')
+
+                            replace_all(in,'^\((.*)',$1)
+                            replace_all(in,'(.*)\)$',$1)
+
+                        end
+
+                        if all_match (descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, 'position')
+
+                            # Add each inscription content from TMS (if present) to LIDO inscriptions as LIDO inscriptionTranscription
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionTranscription._)
+
+                            paste(or_record.inscriptionDescription, or_record.inscriptionDescription, in, join_char:': ')
+
+                        else
+
+                            # Add each inscription position from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription (type:position)
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "position")
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "en")
+
+                            copy_field('in', or_record.inscriptionDescription)
+
+                        end
+
+                    end
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                if all_match('or_record.inscriptionDescription', '.*\S.*')
+
+                    copy_field('or_record.inscriptionDescription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                    add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "en")
+
+                end
+
+            else
+
+                # Remove unnecessary whitespaces and parentheses
+
+                trim(or_record.inscription)
+
+                if all_match(or_record.inscription, '^\(.*\)$')
+
+                    replace_all(or_record.inscription,'^\((.*)',$1)
+                    replace_all(or_record.inscription,'(.*)\)$',$1)
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                copy_field('or_record.inscription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "en")
+
+            end
+
+        end
+
+    end
+
+    # Loop over the separate inscriptions
+
+    do list(path:or_record.inscriptions_fr, var:i)
+
+        if all_match('i', '.*\S.*')
+
+            # Add a new, empty LIDO inscriptions field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$append)
+
+            copy_field(i, or_record.inscription)
+
+            if all_match(or_record.inscription, '.*:.*')
+
+                # Split the inscriptions on the colon
+
+                split_field(or_record.inscription, ':')
+
+                set_field(or_record.inscriptionDescription)
+
+                # Loop over the different parts of the inscriptions
+
+                do list(path:or_record.inscription, var:in)
+
+                    # Remove unnecessary whitespaces and parentheses
+
+                    if all_match(in, '.*\S.*')
+
+                        trim(in)
+
+                        if all_match(in, '^\(.*\)$')
+
+                            replace_all(in,'^\((.*)',$1)
+                            replace_all(in,'(.*)\)$',$1)
+
+                        end
+
+                        if all_match (descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, 'position')
+
+                            # Add each inscription content from TMS (if present) to LIDO inscriptions as LIDO inscriptionTranscription
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionTranscription._)
+
+                            paste(or_record.inscriptionDescription, or_record.inscriptionDescription, in, join_char:' : ')
+
+                        else
+
+                            # Add each inscription position from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription (type:position)
+
+                            copy_field('in', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.type, "position")
+                            add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "fr")
+
+                            copy_field('in', or_record.inscriptionDescription)
+
+                        end
+
+                    end
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                if all_match('or_record.inscriptionDescription', '.*\S.*')
+
+                    copy_field('or_record.inscriptionDescription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                    add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "fr")
+
+                end
+
+            else
+
+                # Remove unnecessary whitespaces and parentheses
+
+                trim(or_record.inscription)
+
+                if all_match(or_record.inscription, '^\(.*\)$')
+
+                    replace_all(or_record.inscription,'^\((.*)',$1)
+                    replace_all(or_record.inscription,'(.*)\)$',$1)
+
+                end
+
+                # Add each entire inscription description from TMS (if present) to LIDO inscriptions as LIDO inscriptionDescription
+
+                copy_field('or_record.inscription', descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$append.descriptiveNoteValue._)
+                add_field(descriptiveMetadata.objectIdentificationWrap.inscriptionsWrap.inscriptions.$last.inscriptionDescription.$last.descriptiveNoteValue.lang, "fr")
+
+            end
 
         end
 
@@ -562,7 +1133,7 @@
     # Add department ID from TMS to LIDO repositoryName as LIDO legalBodyID
 
     lido_baseid(
-        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyID,
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append.repositoryName.legalBodyID,
         or_record.department.db.DepartmentID,
         -type: local,
         -source: TMS
@@ -571,7 +1142,7 @@
     # Add department from TMS to LIDO repositoryName as LIDO legalBodyName
 
     lido_basenameset(
-        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.repositoryName.legalBodyName,
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryName.legalBodyName,
         or_record.department.db.department
     )
 
@@ -580,22 +1151,231 @@
     # Add object number from TMS as LIDO workID
 
     lido_baseid(
-        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.workID,
+        descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.workID,
         or_record.object_number.local,
-        -type: objectnummer
+        -type: object-number
     )
+
+# LIDO repositoryLocation
+
+    # Add location from TMS (if present) to LIDO repositoryLocation as LIDO namePlaceSet
+
+    if all_match(or_record.location.db.room_nl, '.*\S.*')
+
+        # Add new LIDO repositorySet with type "room"
+
+#        add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append.type, "room")
+
+        # Add a new, empty LIDO repositorySet field
+
+        add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append)
+
+        # Add location to last created LIDO repositorySet
+
+        lido_basenameset(
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet.$append,
+            or_record.location.db.room_nl,
+            -value_lang: nl
+        )
+
+    end
+
+    if all_match(or_record.location.db.room_en, '.*\S.*')
+
+        # Add a new, empty LIDO repositorySet field unless this already exists
+
+        unless exists(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet)
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append)
+
+        end
+
+        # Add location to last created LIDO repositorySet
+
+        lido_basenameset(
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet.$last,
+            or_record.location.db.room_en,
+            -value_lang: en
+        )
+
+    end
+
+    if all_match(or_record.location.db.room_fr, '.*\S.*')
+
+        # Add a new, empty LIDO repositorySet field unless this already exists
+
+        unless exists(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet)
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append)
+
+        end
+
+        # Add location to last created LIDO repositorySet
+
+        lido_basenameset(
+            descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet.$last,
+            or_record.location.db.room_fr,
+            -value_lang: fr
+        )
+
+    end
+
+    # Loop over the different clusters from TMS
+
+#    do list(path:or_record.clusters.db.clusters, var:c)
+
+        # Add each cluster from TMS (if present) to LIDO repositoryLocation as LIDO namePlaceSet
+
+#        if all_match(c.cluster, '.*\S.*')
+
+            # Add new LIDO repositorySet with type "cluster"
+
+#            add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append.type, "cluster")
+
+            # Add cluster to last created LIDO repositorySet
+
+#            lido_basenameset(
+#                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet,
+#                c.cluster
+#            )
+
+#        end
+
+#    end
+
+    # Loop over the different halls from TMS
+
+#    do list(path:or_record.halls.db.halls, var:h)
+
+        # Add each hall from TMS (if present) to LIDO repositoryLocation as LIDO namePlaceSet
+
+#        if all_match(h.hall, '.*\S.*')
+
+            # Add new LIDO repositorySet with type "hall"
+
+#            add_field(descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$append.type, "hall")
+
+            # Add hall to last created LIDO repositorySet
+
+#            lido_basenameset(
+#                descriptiveMetadata.objectIdentificationWrap.repositoryWrap.repositorySet.$last.repositoryLocation.namePlaceSet,
+#                h.hall
+#            )
+
+#        end
+
+#    end
 
 # LIDO objectDescriptionSet
 
-    # Add description from TMS (if present) as LIDO descriptiveNoteValue
+    # Loop over the different text entries from TMS
 
-    if all_match(or_record.description.db.description, '.*\S.*')
+    do list(path:or_record.textEntries.db.textentries, var:t)
+
+        # Add each text entry from TMS (if present) to LIDO objectDescriptionSet as LIDO descriptiveNoteValue
+
+        if all_match(t.textEntry, '.*\S.*')
+
+            # Add a new, empty LIDO objectDescriptionSet field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$append)
+
+            # Remove unnecessary whitespaces
+
+            trim(t.textEntry)
+
+            # Add the Dutch text entry to last created LIDO objectDescriptionSet
+
+            if all_match(t.languageid, 2)
+
+                copy_field(t.textEntry, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.lang, 'nl')
+
+            end
+
+            # Add the English text entry to last created LIDO objectDescriptionSet
+
+            if all_match(t.languageid, 1)
+
+                copy_field(t.textEntry, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.lang, 'en')
+
+            end
+
+            # Add the text type as type for LIDO objectDescriptionSet
+
+            if all_match(t.textTypeID, '107')
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'note')
+
+            end
+
+            if all_match(t.textTypeID, '110')
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'literature')
+
+            end
+
+            if all_match(t.textTypeID, '113')
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'technical-notes')
+
+            end
+
+            if all_match(t.textTypeID, '117')
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'highlights')
+
+            end
+
+        end
+
+    end
+
+    # Add page number from TMS (if present) to LIDO objectDescriptionSet as LIDO descriptiveNoteValue
+
+    if all_match('or_record.pageNumber.db.pageNumber', '.*\S.*')
 
         lido_descriptivenote(
             descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet,
-            or_record.description.db.description,
-            -lang: 'nl'
+            or_record.pageNumber.db.pageNumber
         )
+
+        # Add type 'page-number' for LIDO objectDescriptionSet
+
+        set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'page-number')
+
+    end
+
+    # Loop over the different handling advices from TMS
+
+    do list(path:or_record.handling.db.handling, var:h)
+
+        # Add each handling advice from TMS (if present) to LIDO objectDescriptionSet as LIDO descriptiveNoteValue
+
+        if all_match(h.textEntry, '.*\S.*')
+
+            # Add a new, empty LIDO objectDescriptionSet field
+
+            add_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$append)
+
+            # Remove unnecessary whitespaces
+
+            trim(h.textEntry)
+
+            # Add the handling advice and language of it to last created LIDO objectDescriptionSet
+
+            copy_field(h.textEntry, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+
+            copy_field(h.language, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.lang)
+
+            # Add type 'handling' for LIDO objectDescriptionSet
+
+            set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.type, 'handling')
+
+        end
 
     end
 
@@ -653,13 +1433,296 @@
 
     end
 
+
 ## LIDO eventWrap
 
-# LIDO eventType
+# LIDO eventType [eventType/term="acquisition"]
 
     # Create event_type
 
-    add_field(or_record.event_type, production)
+    add_field(or_record.event_type, "acquisition")
+
+    # Loop over the acquisitions from TMS
+
+    do list(path:or_record.acquisition.db.acquisition, var:a)
+
+        trim(a.role_nl)
+        trim(a.role_en)
+        trim(a.role_fr)
+
+        set_field(or_record.acquisition_actor, '')
+        set_field(or_record.acquisition_date, '')
+        set_field(or_record.acquisition_method, '')
+        set_field(or_record.acquisition_method_en, '')
+        set_field(or_record.acquisition_method_fr, '')
+
+        # Add a new, empty LIDO eventSet field (if acquisition is present) and add the created event type to LIDO eventType
+
+        if all_match(a.name, '.*\S.*')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                or_record.event_type
+            )
+
+        else
+
+            if all_match(a.date, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                    or_record.event_type
+                )
+
+            else
+
+                if all_match(a.role_nl, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                        or_record.event_type
+                    )
+
+                else
+
+                    if all_match(a.role_en, '.*\S.*')
+
+                        lido_term(
+                            descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                            or_record.event_type
+                        )
+
+                    else
+
+                        if all_match(a.role_fr, '.*\S.*')
+
+                            lido_term(
+                                descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+                                or_record.event_type
+                            )
+
+                        end
+
+                    end
+
+                end
+
+            end
+
+        end
+
+# LIDO eventActor [eventType/term="acquisition"]
+
+        # Add the display name of each actor from TMS (if present) to LIDO eventActor as LIDO appellationValue along with the constituentID from TMS as LIDO actorID (source:TMS)
+
+        if all_match(a.name, '.*\S.*')
+
+            copy_field(a.name, or_record.acquisition_actor)
+
+            lido_actor(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
+                a.constituentID,
+                a.name,
+                -name_lang: nl,
+                -id_source: TMS,
+                -id_type: local
+            )
+
+        end
+
+# LIDO displayDate [eventType/term="acquisition"]
+
+        # Add each display date from TMS (if present) to LIDO eventDate as LIDO displayDate
+
+        if all_match(a.date, '.*\S.*')
+
+            copy_field(a.date, or_record.acquisition_date)
+
+            lido_basevalue(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
+                a.date,
+                -lang: nl
+            )
+
+        end
+
+# LIDO eventMethod [eventType/term="acquisition"]
+
+        # Add each role from TMS (if present) to LIDO eventMethod as LIDO term
+
+        if all_match(a.role_nl, '.*\S.*')
+
+            copy_field(a.role_nl, or_record.acquisition_method)
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$append,
+                a.role_nl,
+                -lang: nl
+            )
+
+        end
+
+        if all_match(a.role_en, '.*\S.*')
+
+            copy_field(a.role_en, or_record.acquisition_method_en)
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
+                a.role_en,
+                -lang: en
+            )
+
+        end
+
+        if all_match(a.role_fr, '.*\S.*')
+
+            copy_field(a.role_fr, or_record.acquisition_method_fr)
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMethod.$last,
+                a.role_fr,
+                -lang: fr
+            )
+
+        end
+
+# LIDO eventDescriptionSet [eventType/term="acquisition"]
+
+        # Create the entire acquisition description from the role, name and date from TMS
+
+        set_field(or_record.acquisition_description, '')
+        set_field(or_record.acquisition_description_en, '')
+        set_field(or_record.acquisition_description_fr, '')
+
+        if all_match(or_record.acquisition_method, '.*\S.*')
+
+            copy_field(or_record.acquisition_method, or_record.acquisition_description)
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                paste(or_record.acquisition_description, or_record.acquisition_description, or_record.acquisition_actor, join_char:': ')
+
+            end
+
+            if all_match(or_record.acquisition_date, '.*\S.*')
+
+                paste(or_record.acquisition_description, or_record.acquisition_description, or_record.acquisition_date, join_char:', ')
+
+            end
+
+        else
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                copy_field(or_record.acquisition_actor, or_record.acquisition_description)
+
+                if all_match(or_record.acquisition_date, '.*\S.*')
+
+                    paste(or_record.acquisition_description, or_record.acquisition_description, or_record.acquisition_date, join_char:', ')
+
+                end
+
+            end
+
+        end
+
+        if all_match(or_record.acquisition_method_en, '.*\S.*')
+
+            copy_field(or_record.acquisition_method_en, or_record.acquisition_description_en)
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                paste(or_record.acquisition_description_en, or_record.acquisition_description_en, or_record.acquisition_actor, join_char:': ')
+
+            end
+
+            if all_match(or_record.acquisition_date, '.*\S.*')
+
+                paste(or_record.acquisition_description_en, or_record.acquisition_description_en, or_record.acquisition_date, join_char:', ')
+
+            end
+
+        else
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                copy_field(or_record.acquisition_actor, or_record.acquisition_description_en)
+
+                if all_match(or_record.acquisition_date, '.*\S.*')
+
+                    paste(or_record.acquisition_description_en, or_record.acquisition_description_en, or_record.acquisition_date, join_char:', ')
+
+                end
+
+            end
+
+        end
+
+        if all_match(or_record.acquisition_method_fr, '.*\S.*')
+
+            copy_field(or_record.acquisition_method_fr, or_record.acquisition_description_fr)
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                paste(or_record.acquisition_description_fr, or_record.acquisition_description_fr, or_record.acquisition_actor, join_char:': ')
+
+            end
+
+            if all_match(or_record.acquisition_date, '.*\S.*')
+
+                paste(or_record.acquisition_description_fr, or_record.acquisition_description_fr, or_record.acquisition_date, join_char:', ')
+
+            end
+
+        else
+
+            if all_match(or_record.acquisition_actor, '.*\S.*')
+
+                copy_field(or_record.acquisition_actor, or_record.acquisition_description_fr)
+
+                if all_match(or_record.acquisition_date, '.*\S.*')
+
+                    paste(or_record.acquisition_description_fr, or_record.acquisition_description_fr, or_record.acquisition_date, join_char:', ')
+
+                end
+
+            end
+
+        end
+
+        # Add the created entire acquisition description (if present) to LIDO eventDescriptionSet as LIDO descriptiveNoteValue
+
+        if all_match(or_record.acquisition_description, '.*\S.*')
+
+            lido_descriptivenote(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet,
+                or_record.acquisition_description,
+                -lang: nl
+            )
+
+        end
+
+        if all_match(or_record.acquisition_description_en, '.*\S.*')
+
+            copy_field(or_record.acquisition_description_en, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "en")
+
+        end
+
+        if all_match(or_record.acquisition_description_fr, '.*\S.*')
+
+            copy_field(or_record.acquisition_description_fr, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "fr")
+
+        end
+
+    end
+
+# LIDO eventType [eventType/term="production"]
+
+    # Create event_type
+
+    add_field(or_record.event_type, "production")
 
     # Add the created event type to LIDO eventType
     
@@ -668,13 +1731,15 @@
         or_record.event_type
     )
 
-# LIDO eventActor
+# LIDO eventActor [eventType/term="production"]
 
     # We'll have multiple appellationValues and actorIDs for the same actor: the corresponding values from the creators vocabulary and the values from TMS
 
     # Determine which roles from TMS should be added as qualifier
 
-    set_array(qualifiers, "atelier van", "kopie naar", "navolger van", "omgeving van", "school van", "toegeschreven aan", "vroegere toeschrijving", "x")
+    set_array(qualifiers, "atelier van", "kopie naar", "navolger van", "omgeving van", "school van", "toegeschreven aan", "x")
+    set_array(qualifiers_en, "workshop of", "copy after", "follower of", "circle of", "school of", "attributed to")
+    set_array(qualifiers_fr, "atelier de", "copie d'après", "disciple de", "cercle de", "école de", "attribué à")
 
     # Loop over the different constituents from TMS
 
@@ -684,47 +1749,82 @@
 
         trim(c.BeginDateISO)
         trim(c.EndDateISO)
+        trim(c.role_nl)
+        trim(c.role_en)
+        trim(c.role_fr)
 
-        # Add the display name of each constituent from TMS to LIDO eventActor as LIDO appellationValue (type:preferred)
+        # Add the display name of each constituent from TMS to LIDO eventActor as LIDO appellationValue (pref:preferred)
         # along with the constituentID from TMS as LIDO actorID (source:TMS),
         # the BeginDateISO from TMS as LIDO earliestDate,
         # the EndDateISO from TMS as LIDO latestDate and,
-        # if determined before as qualifier, add the Role from TMS as LIDO attributionQualifierActor
-        # else, add the Role from TMS as LIDO roleActor
+        # if determined before as qualifier, add the role from TMS as LIDO attributionQualifierActor
+        # else, add the role from TMS as LIDO roleActor
 
-        if in(c.Role, qualifiers)
-            lido_actor(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
-                c.ConstituentID,
-                c.DisplayName,
-                -id_source: TMS,
-                -id_type: local,
-                -birthdate: c.BeginDateISO,
-                -deathdate: c.EndDateISO,
-                -qualifier: c.Role,
-                -name_pref: preferred
-            )
-        else
-            lido_actor(
-                descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
-                c.ConstituentID,
-                c.DisplayName,
-                -id_source: TMS,
-                -id_type: local,
-                -birthdate: c.BeginDateISO,
-                -deathdate: c.EndDateISO,
-                -role: c.Role,
-                -name_pref: preferred
-            )
+        unless all_match(c.role_nl, 'vroegere toeschrijving')
+
+            if in(c.role_nl, qualifiers)
+                lido_actor(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
+                    c.ConstituentID,
+                    c.DisplayName,
+                    -id_source: TMS,
+                    -id_type: local,
+                    -birthdate: c.BeginDateISO,
+                    -deathdate: c.EndDateISO,
+                    -qualifier: c.role_nl,
+                    -name_pref: preferred
+                )
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$last.lang, "nl")
+            else
+                lido_actor(
+                    descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$append,
+                    c.ConstituentID,
+                    c.DisplayName,
+                    -id_source: TMS,
+                    -id_type: local,
+                    -birthdate: c.BeginDateISO,
+                    -deathdate: c.EndDateISO,
+                    -role: c.role_nl,
+                    -name_pref: preferred
+                )
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$last.lang, "nl")
+            end
+
         end
 
-        # Retrieve the corresponding values from the creators vocabulary, these are not (yet) retrievable via TMS
+        unless all_match(c.role_en, "formerly attributed to")
 
-        copy_field(c.DisplayName, c.creator.pid)
-        downcase(c.creator.pid)
-        lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+            if in(c.role_en, qualifiers_en)
+                copy_field(c.role_en, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$last.lang, "en")
+            else
+                copy_field(c.role_en, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$last.lang, "en")
+            end
 
-        # Add the corresponding display name from the creators vocabulary (if present) to LIDO eventActor as LIDO appellationValue (type:alternate)
+        end
+
+        unless all_match(c.role_fr, "Ancienne attribution à")
+
+            if in(c.role_fr, qualifiers_fr)
+                copy_field(c.role_fr, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.attributionQualifierActor.$last.lang, "fr")
+            else
+                copy_field(c.role_fr, descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$append._)
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventActor.$last.actorInRole.roleActor.term.$last.lang, "fr")
+            end
+
+        end
+
+        # Retrieve the corresponding values from the creators vocabulary
+
+        unless all_match(c.role_nl, 'vroegere toeschrijving')
+            copy_field(c.DisplayName, c.creator.pid)
+            downcase(c.creator.pid)
+            lookup_in_store(c.creator.pid, DBI, data_source: "dbi:SQLite:/tmp/import.CREATORS_UTF8.sqlite")
+        end
+
+        # Add the corresponding display name from the creators vocabulary (if present) to LIDO eventActor as LIDO appellationValue (pref:alternate)
 
         if all_match(c.creator.pid._id, '.*\S.*')
 
@@ -780,12 +1880,23 @@
     # Remove the created field qualifiers
 
     remove_field(qualifiers)
+    remove_field(qualifiers_en)
+    remove_field(qualifiers_fr)
 
-# LIDO displayDate
+# LIDO displayDate [eventType/term="production"]
 
     # Add display date from TMS (if present) as LIDO displayDate
 
     if all_match(or_record.date.display, '.*\S.*')
+
+        # Remove unnecessary parentheses
+
+        if all_match(or_record.date.display, '^\(.*\)$')
+
+            replace_all(or_record.date.display,'^\((.*)',$1)
+            replace_all(or_record.date.display,'(.*)\)$',$1)
+
+        end
 
         lido_basevalue(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventDate.displayDate,
@@ -794,7 +1905,7 @@
 
     end
 
-# LIDO date
+# LIDO date [eventType/term="production"]
 
     # Add begin end end date from TMS (if present) as respectively LIDO earliestDate and LIDO latestDate
 
@@ -830,52 +1941,271 @@
 
     end
 
-# LIDO periodName
+# LIDO periodName [eventType/term="production"]
 
     # Add period from TMS as LIDO periodName
 
     lido_term(
-        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName,
+        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
         or_record.periodName.term,
         -lang: nl
     )
 
-# LIDO termMaterialsTech
+    do list(path:or_record.translations.db.translations, var:t)
 
-    # We'll have multiple eventMaterialsTechs: the corresponding value from the AAT vocabulary (type:alternate) and the value from TMS (type:preferred)
+        if all_match(t.textTypeID, '124')
 
-    # Loop over the different material terms from TMS
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                t.textEntry,
+                -lang: en
+            )
 
-    do list(path:or_record.materialWrap.db.materials, var:m)
+        end
 
-        # Add each material term from TMS to LIDO eventMaterialsTechs as LIDO term (type:preferred) along with the termID from TMS as LIDO conceptID (type:preferred)
-        
+        if all_match(t.textTypeID, '118')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                t.textEntry,
+                -lang: fr
+            )
+
+        end
+
+    end
+
+    # Loop over the different styles and periods from AAT
+
+    do list(path:or_record.aat.db.aat, var:a)
+
+        # Use path starting with 'TGO.AAE'
+
+        if all_match(a.path, '^TGO\.AAE.*$')
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$append,
+                a.term,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(a.term, a.period_aat)
+            lookup_in_store(a.period_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO periodName as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(a.period_aat.aatterm, '.*\S.*')
+
+                if all_match(a.period_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                        a.period_aat.aatterm,
+                        -conceptid: a.period_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last,
+                        a.period_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+            unless all_match(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID.source, '.*\S.*')
+
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID._, '')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID.type, 'purl')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.periodName.$last.conceptID.source, 'AAT')
+
+            end
+
+        end
+
+    end
+
+# LIDO namePlaceSet [eventType/term="production"]
+
+    # Not yet added
+
+# LIDO termMaterialsTech [eventType/term="production"]
+
+    set_field(or_record.material_aat_exists, '')
+
+    # Loop over the different materials from AAT
+
+    do list(path:or_record.aat.db.aat, var:a)
+
+        # Use path starting with 'TGO.AAH' or 'AAT.M'
+
+        if all_match(a.path, '^TGO\.AAH|AAT\.M.*$')
+
+            set_field(or_record.material_aat_exists, 'true')
+
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                a.term,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(a.term, a.material_aat)
+            lookup_in_store(a.material_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(a.material_aat.aatterm, '.*\S.*')
+
+                if all_match(a.material_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        a.material_aat.aatterm,
+                        -conceptid: a.material_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        a.material_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+            unless all_match(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID.source, '.*\S.*')
+
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID._, '')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID.type, 'purl')
+                add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last.conceptID.source, 'AAT')
+
+            end
+
+        end
+
+    end
+
+    # If there is no material from AAT, try using material terms
+
+    unless all_match(or_record.material_aat_exists, 'true')
+
+        # We'll have multiple terms: the corresponding value from the AAT vocabulary (pref:alternate) and the value from TMS (pref:preferred)
+
+        # Loop over the different material terms from TMS
+
+        do list(path:or_record.materialWrap.db.materials, var:m)
+
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "material")
+
+            # Add each material term from TMS to LIDO termMaterialsTech as LIDO term (pref:preferred) along with the termID from TMS as LIDO conceptID (pref:preferred)
+
+            lido_term(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                m.material,
+                -conceptid: m.TermID,
+                -type: local,
+                -source: TMS,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(m.material, m.material_aat)
+            downcase(m.material_aat)
+            lookup_in_store(m.material_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(m.material_aat.aatterm, '.*\S.*')
+
+                if all_match(m.material_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        m.material_aat.aatterm,
+                        -conceptid: m.material_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+                        m.material_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+        end
+
+    end
+
+    # Loop over the different technique terms from TMS
+
+    do list(path:or_record.techniqueWrap.db.techniques, var:t)
+
+        add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append.type, "technique")
+
+        # Add each technique term from TMS to LIDO termMaterialsTech as LIDO term (pref:preferred) along with the termID from TMS as LIDO conceptID (pref:preferred)
+
         lido_term(
-            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.materialsTech.termMaterialsTech.$append,
-            m.material,
-            -conceptid: m.TermID,
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
+            t.technique,
+            -conceptid: t.TermID,
             -type: local,
             -source: TMS,
             -pref: preferred,
             -lang: nl
         )
 
-        # Retrieve the corresponding term and URI from the AAT vocabulary, these are not (yet) retrievable via TMS
+        # Retrieve the corresponding term and URI from the AAT vocabulary
 
-        copy_field(m.subject, m.aat)
-        downcase(m.aat)
-        lookup_in_store(m.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+        copy_field(t.technique, t.technique_aat)
+        downcase(t.technique_aat)
+        lookup_in_store(t.technique_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
 
-        # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (type:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (type:alternate)
+        # Add the corresponding term from the AAT vocabulary (if present) to LIDO termMaterialsTech as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
 
-        if all_match(m.aat.aatterm, '.*\S.*')
+        if all_match(t.technique_aat.aatterm, '.*\S.*')
 
-            if all_match(m.aat.aaturi, '.*\S.*')
+            if all_match(t.technique_aat.aaturi, '.*\S.*')
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    m.aat.aatterm,
-                    -conceptid: m.aat.aaturi,
+                    t.technique_aat.aatterm,
+                    -conceptid: t.technique_aat.aaturi,
                     -type: purl,
                     -source: AAT,
                     -pref: alternate,
@@ -886,7 +2216,7 @@
 
                 lido_term(
                     descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.materialsTech.termMaterialsTech.$last,
-                    m.aat.aatterm,
+                    t.technique_aat.aatterm,
                     -pref: alternate,
                     -lang: nl
                 )
@@ -897,7 +2227,7 @@
 
     end
 
-# LIDO displayMaterialsTech
+# LIDO displayMaterialsTech [eventType/term="production"]
 
     # Add medium from TMS as LIDO displayMaterialsTech
 
@@ -905,26 +2235,288 @@
 
         lido_basevalue(
             descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$append.displayMaterialsTech,
-            or_record.eventMaterialsTech.display
+            or_record.eventMaterialsTech.display,
+            -lang: nl
         )
 
     end
 
-# LIDO namePlaceSet
+    do list(path:or_record.translations.db.translations, var:t)
 
-    # Not yet added
+        if all_match(t.textTypeID, '127')
+
+            lido_basevalue(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.displayMaterialsTech,
+                t.textEntry,
+                -lang: en
+            )
+
+        end
+
+        if all_match(t.textTypeID, '128')
+
+            lido_basevalue(
+                descriptiveMetadata.eventWrap.eventSet.$last.event.eventMaterialsTech.$last.displayMaterialsTech,
+                t.textEntry,
+                -lang: fr
+            )
+
+        end
+
+    end
+
+# LIDO eventType [eventType/term="provenance"]
+
+    # Create event_type
+
+    add_field(or_record.event_type, "provenance")
+
+    # Add a new, empty LIDO eventSet field (if provenance is present) and add the created event type to LIDO eventType
+
+    if all_match(or_record.provenance, '.*\S.*')
+
+        lido_term(
+            descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+            or_record.event_type
+        )
+
+    end
+
+# LIDO eventDescriptionSet [eventType/term="provenance"]
+
+    # Add provenance description from TMS (if present) to LIDO eventDescriptionSet as LIDO descriptiveNoteValue
+
+    if all_match('or_record.provenance', '.*\S.*')
+
+        # Remove unnecessary whitespaces
+
+        trim(or_record.provenance)
+
+        lido_descriptivenote(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet,
+            or_record.provenance,
+            -lang: nl
+        )
+
+    end
+
+# LIDO eventType [eventType/term="restoration"]
+
+    # Create event_type
+
+    add_field(or_record.event_type, "restoration")
+
+    # Add a new, empty LIDO eventSet field (if restoration is present) and add the created event type to LIDO eventType
+
+    if all_match(or_record.restoration, '.*\S.*')
+
+        lido_term(
+            descriptiveMetadata.eventWrap.eventSet.$append.event.eventType,
+            or_record.event_type
+        )
+
+    end
+
+# LIDO eventDescriptionSet [eventType/term="restoration"]
+
+    # Add restoration description from TMS (if present) to LIDO eventDescriptionSet as LIDO descriptiveNoteValue
+
+    if all_match('or_record.restoration', '.*\S.*')
+
+        # Remove unnecessary whitespaces
+
+        trim(or_record.restoration)
+
+        lido_descriptivenote(
+            descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet,
+            or_record.restoration,
+            -lang: nl
+        )
+
+    end
+
+    do list(path:or_record.translations.db.translations, var:t)
+
+        if all_match(t.textTypeID, '123')
+
+            # Remove unnecessary whitespaces
+
+            trim(t.textEntry)
+
+            copy_field(t.textEntry, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "en")
+
+        end
+
+        if all_match(t.textTypeID, '122')
+
+            # Remove unnecessary whitespaces
+
+            trim(t.textEntry)
+
+            copy_field(t.textEntry, descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$append._)
+            add_field(descriptiveMetadata.eventWrap.eventSet.$last.event.eventDescriptionSet.$last.descriptiveNoteValue.$last.lang, "fr")
+
+        end
+
+    end
+
 
 ## LIDO objectRelationWrap
 
 # LIDO subjectConcept
 
+    # AAT
+
+    # Loop over the different associated concepts, agents and activities from AAT
+
+    do list(path:or_record.aat.db.aat, var:a)
+
+        # Use path starting with 'TGO.AAC', 'TGO.AAF' or 'TGO.AAG'
+
+        if all_match(a.path, '^TGO\.AAC|TGO\.AAF|TGO\.AAG.*$')
+
+            lido_term(
+                descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept.$append,
+                a.term,
+                -pref: preferred,
+                -lang: nl
+            )
+
+            # Retrieve the corresponding term and URI from the AAT vocabulary
+
+            copy_field(a.term, a.subject_aat)
+            lookup_in_store(a.subject_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+            # Add the corresponding term from the AAT vocabulary (if present) to LIDO subjectConcept as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+            if all_match(a.subject_aat.aatterm, '.*\S.*')
+
+                if all_match(a.subject_aat.aaturi, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        a.subject_aat.aatterm,
+                        -conceptid: a.subject_aat.aaturi,
+                        -type: purl,
+                        -source: AAT,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                else
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        a.subject_aat.aatterm,
+                        -pref: alternate,
+                        -lang: nl
+                    )
+
+                end
+
+            end
+
+            unless all_match(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, '.*\S.*')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._, '')
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.type, 'purl')
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, 'AAT')
+
+            end
+
+            if all_match(a.path, '^TGO\.AAC.*$')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.type, 'associated-concept')
+
+            end
+
+            if all_match(a.path, '^TGO\.AAF.*$')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.type, 'agent')
+
+            end
+
+            if all_match(a.path, '^TGO\.AAG.*$')
+
+                add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.type, 'activity')
+
+            end
+
+        end
+
+    end
+
+    # Content motif general
+
+    # We'll have multiple terms for the type "content-motif-general": the corresponding value from the AAT vocabulary (pref:alternate) and the value from TMS (pref:preferred)
+
+    # Loop over the different subject terms from TMS
+
+    do list(path:or_record.subjectWrap.db.subjects, var:s)
+
+        # Add type of LIDO subject
+
+        add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "content-motif-general")
+
+        # Add each subject term from TMS to LIDO subjectConcept as LIDO term (pref:preferred) along with the termID from TMS as LIDO conceptID (pref:preferred)
+
+        lido_term(
+            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+            s.subject,
+            -conceptid: s.TermID,
+            -type: local,
+            -source: TMS,
+            -pref: preferred,
+            -lang: nl
+        )
+
+        # Retrieve the corresponding term and URI from the AAT vocabulary
+
+        copy_field(s.subject, s.aat)
+        downcase(s.aat)
+        lookup_in_store(s.aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+        # Add the corresponding term from the AAT vocabulary (if present) to LIDO subjectConcept as LIDO term (pref:alternate) along with the URI from the AAT vocabulary (if present) as LIDO conceptID (pref:alternate)
+
+        if all_match(s.aat.aatterm, '.*\S.*')
+
+            if all_match(s.aat.aaturi, '.*\S.*')
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    s.aat.aatterm,
+                    -conceptid: s.aat.aaturi,
+                    -type: purl,
+                    -source: AAT,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            else
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    s.aat.aatterm,
+                    -pref: alternate,
+                    -lang: nl
+                )
+
+            end
+
+        end
+
+    end
+
+    # Iconclass
+
     # Split separate iconclass concepts from notes
 
-    split_field(or_record.iconclass.db.iconclass, '(\r\n|\r|\n)')
+    split_field(or_record.iconclass, '(\r\n|\r|\n)')
 
     # Loop over the different iconclass concepts from TMS
 
-    do list(path:or_record.iconclass.db.iconclass, var:ic)
+    do list(path:or_record.iconclass, var:ic)
 
         # Remove unnecessary whitespaces
 
@@ -1126,9 +2718,13 @@
 
         add_field(descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$append)
 
-        if all_match(r.descriptionNumbering, '.*\S.*')
+        if all_match(r.descriptionNumbering, 'paginanummer')
 
-            copy_field(r.numbering, descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.sortorder)
+            if all_match(r.numbering, '[0-9]+')
+
+                copy_field(r.numbering, descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.sortorder)
+
+            end
 
         end
 
@@ -1241,6 +2837,56 @@
 
     end
 
+    # Add each library link from TMS (if present) to LIDO relatedWorkSet as LIDO objectWebResource
+
+    if all_match('or_record.linkLibrary', '.*\S.*')
+
+        # Add a new, empty LIDO relationWorkSet field
+
+        add_field(descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$append)
+
+        # Create library link
+
+        prepend(or_record.linkLibrary, 'http://anet.be/record/opackmska/')
+
+        # Add the created library link to last created LIDO relatedWorkSet
+
+        lido_basevalue(
+            descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectWebResource,
+            or_record.linkLibrary,
+            -label: link-library
+        )
+
+    end
+
+    # Loop over the different archive links from TMS
+
+    do list(path:or_record.linkArchive.db.linkarchive, var:l)
+
+        # Add each archive link from TMS (if present) to LIDO relatedWorkSet as LIDO objectWebResource
+
+        if all_match('l.link', '.*\S.*')
+
+            # Add a new, empty LIDO relationWorkSet field
+
+            add_field(descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$append)
+
+            # Create archive link
+
+            prepend(l.link, 'http://anet.be/isadtree/kmska/opackmskaisad/')
+
+            # Add the created archive link to last created LIDO relatedWorkSet
+
+            lido_basevalue(
+                descriptiveMetadata.objectRelationWrap.relatedWorksWrap.relatedWorkSet.$last.relatedWork.object.objectWebResource,
+                l.link,
+                -label: link-archive
+            )
+
+        end
+
+    end
+
 
 
 ### LIDO administrativeMetadata
@@ -1299,7 +2945,7 @@
 
     end
 
-    # If the copyright notice contains "SABAM", add this to LIDO rightsType as LIDO term along with the URI from creativecommons.org as LIDO conceptID
+    # Add the copyright notice to LIDO creditLine
 
     if all_match(or_record.copyright, '.*\S.*')
 
@@ -1383,13 +3029,37 @@
 
     if all_match(or_record.object_number.pid.representationPid, '.*\S.*')
 
-        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceID._)
-        add_field(administrativeMetadata.resourceWrap.resourceSet.resourceID.type, "purl")
+        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.label, "representationPID")
 
-        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.resourceRepresentation.linkResource._)
+        copy_field(or_record.object_number.pid.representationPid, administrativeMetadata.resourceWrap.resourceSet.$last.resourceRepresentation.linkResource._)
 
     end
 
+    # Add IIIF manifest from the ImageHub to LIDO resourceSet as LIDO resourceID
+
+    if all_match(or_record.iiif_manifest.manifest, '.*\S.*')
+
+        copy_field(or_record.iiif_manifest.manifest, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.source, "ImagehubKMSKA")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$append._, "IIIF Manifest")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$last.pref, "preferred")
+
+    end
+
+    # Add IIIF thumbnail from the ImageHub to LIDO resourceSet as LIDO resourceID
+
+    if all_match(or_record.iiif_manifest.thumbnail, '.*\S.*')
+
+        copy_field(or_record.iiif_manifest.thumbnail, administrativeMetadata.resourceWrap.resourceSet.$append.resourceID._)
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.type, "purl")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceID.source, "ImagehubKMSKA")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$append._, "thumbnail")
+        add_field(administrativeMetadata.resourceWrap.resourceSet.$last.resourceType.term.$last.pref, "preferred")
+
+    end
 
 
 ### Add lang attributes to descriptiveMetadata and administrativeMetadata
