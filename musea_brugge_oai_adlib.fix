@@ -236,10 +236,10 @@
             if all_match(c.digital_reference, '.*\S.*')
 
                 copy_field(c.digital_reference, lidoRecID.$append._)
-                set_field(lidoRecID.type, 'purl')
-                copy_field(or_record.record_source, lidoRecID.source)
-                set_field(lidoRecID.label, 'dataPID')
-                set_field(lidoRecID.pref, 'alternate')
+                set_field(lidoRecID.$last.type, 'purl')
+                copy_field(or_record.record_source, lidoRecID.$last.source)
+                set_field(lidoRecID.$last.label, 'dataPID')
+                set_field(lidoRecID.$last.pref, 'alternate')
 
                 copy_field(c.digital_reference, or_record.oaiPid)
                 parse_text(or_record.oaiPid, '.*://([A-Za-z0-9\-\.]+)/collection/work/data/(.*)')
