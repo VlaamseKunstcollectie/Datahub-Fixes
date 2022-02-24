@@ -235,7 +235,7 @@
 
             if all_match(c.digital_reference, '.*\S.*')
 
-                copy_field(c.digital_reference, lidoRecID._)
+                copy_field(c.digital_reference, lidoRecID.$append._)
                 set_field(lidoRecID.type, 'purl')
                 copy_field(or_record.record_source, lidoRecID.source)
                 set_field(lidoRecID.label, 'dataPID')
