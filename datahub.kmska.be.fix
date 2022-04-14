@@ -178,7 +178,8 @@
 
     # subjectConcept
 
-    copy_field(Notes, or_record.iconclass)
+    copy_field(ObjectID, or_record.iconclass.db)
+    lookup_in_store(or_record.iconclass.db, DBI, data_source: 'dbi:SQLite:/tmp/tms_import.iconclass.sqlite')
 
     # relatedWorksWrap
 
@@ -375,10 +376,10 @@
 #                                                                 lido:term
 #   vsubjects.subject                                                 pref: preferred             Onderwerp               term hoofdmotief
 #                                                                     pref: alternate             Onderwerp
-#                                                         no type
+#                                                         source: Iconclass
 #                                                             lido:subjectConcept
-#   Objects.Notes                                                 lido:conceptID                                          identificatie afgebeeld concept
-#   Objects.Notes                                                 lido:term                                               term afgebeeld concept
+#   viconclass                                                    lido:conceptID                                          identificatie afgebeeld concept
+#   viconclass                                                    lido:term                                               term afgebeeld concept
 #                                                 lido:relatedWorksWrap
 #                                                     lido:relatedWorkSet
 #   vrelations.numbering                                  sortorder
@@ -1301,6 +1302,16 @@
                 copy_field(t.textEntry, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
 
                 set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.lang, 'en')
+
+            end
+
+            # Add the French text entry to last created LIDO objectDescriptionSet
+
+            if all_match(t.languageid, 3)
+
+                copy_field(t.textEntry, descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue._)
+
+                set_field(descriptiveMetadata.objectIdentificationWrap.objectDescriptionWrap.objectDescriptionSet.$last.descriptiveNoteValue.lang, 'fr')
 
             end
 
@@ -2510,201 +2521,30 @@
 
     # Iconclass
 
-    # Split separate iconclass concepts from notes
-
-    split_field(or_record.iconclass, '(\r\n|\r|\n)')
-
     # Loop over the different iconclass concepts from TMS
 
-    do list(path:or_record.iconclass, var:ic)
+    do list(path:or_record.iconclass.db.iconclass, var:ic)
 
         # Remove unnecessary whitespaces
 
         trim(ic)
 
-        # Condition if the iconclass concept matches a format like "11H(AUGUSTINE)343(+3)"
-
-        if all_match(ic, '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\([^\+][^\)]*\)\d*(?:\(\+\d+\))?$')
-
-            # Add a new, empty LIDO subjectSet field
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append)
-
-            # Retrieve iconclass ID and term from the iconclass concept
-
-            parse_text(ic, '(^\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?)$')
-
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.2, or_record.iconclassTerm)
-
-            # Downcase the iconclass term
-
-            downcase(or_record.iconclassTerm)
-
-            ## Create the LIDO fields
-
-            # Add iconclass ID from TMS as LIDO conceptID
-
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
-
-            # Add type of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.type, local)
-
-            # Add source of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, Iconclass)
-
-            # Add iconclass term from TMS as LIDO term
-
-            copy_field(or_record.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
-
-        # Condition if the iconclass concept matches a format like "47(+22)"
-
-        elsif all_match(ic, '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?(?:\(\+\d+\))?$')
-
-            # Add a new, empty LIDO subjectSet field
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append)
-
-            # Copy the iconclass ID from the iconclass concept
-
-            copy_field(ic, or_record.iconclassId)
-
-            ## Create the LIDO fields
-
-            # Add iconclass ID from TMS as LIDO conceptID
-
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
-
-            # Add type of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.type, local)
-
-            # Add source of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, Iconclass)
-
-        # Condition if the iconclass concept matches a format like "61B2(A. PAUWELS)11(+513) profiel"
-
-        elsif all_match(ic, '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\([^\+][^\)]*\)\d*(?:\(\+\d+\))? [^\d].*$')
-
-            # Add a new, empty LIDO subjectSet field
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append)
-
-            # Retrieve iconclass ID, term and catogory from the iconclass concept
-
-            parse_text(ic, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?) ([^\d].*)$')
-
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.2, or_record.iconclassTerm)
-            copy_field(ic.3, or_record.iconclassCategory)
-
-            # Downcase the iconclass term and remove unnecessary whitespaces from the iconclass category
-
-            downcase(or_record.iconclassTerm)
-            trim(or_record.iconclassCategory)
-
-            ## Create the LIDO fields
-
-            # Add iconclass ID from TMS as LIDO conceptID
-
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
-
-            # Add type of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.type, local)
-
-            # Add source of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, Iconclass)
-
-            # Add iconclass term from TMS as LIDO term
-
-            copy_field(or_record.iconclassTerm, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
-
-            # Add iconclass category from TMS as LIDO term
-
-            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
-
-        # Condition if the iconclass concept matches a format like "47C21(+8) uitgraven, landbouw"
-
-        elsif all_match(ic, '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?(?:\(\+\d+\))? [^\d].*$')
-
-            # Add a new, empty LIDO subjectSet field
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append)
-
-            # Retrieve iconclass ID and category from the iconclass concept
-
-            parse_text(ic, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?(?:\(\+\d+\))?) ([^\d].*)$')
-
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.2, or_record.iconclassCategory)
-
-            # Remove unnecessary whitespaces from the iconclass category
-
-            trim(or_record.iconclassCategory)
-
-            ## Create the LIDO fields
-
-            # Add iconclass ID from TMS as LIDO conceptID
-
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
-
-            # Add type of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.type, local)
-
-            # Add source of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, Iconclass)
-
-            # Add iconclass category from TMS as LIDO term
-
-            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
-
-        # Condition if the iconclass concept matches a format like "480(+354) Tekenkunst"
-
-        elsif all_match(ic, '^480(?:\(\+\d+\))? [^\d].*$')
-
-            # Add a new, empty LIDO subjectSet field
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append)
-
-            # Retrieve iconclass ID and category from the iconclass concept
-
-            parse_text(ic, '^(480(?:\(\+\d+\))?) ([^\d].*)$')
-
-            copy_field(ic.0, or_record.iconclassId)
-            copy_field(ic.1, or_record.iconclassCategory)
-
-            ## Create the LIDO fields
-
-            # Add iconclass ID from TMS as LIDO conceptID
-
-            copy_field(or_record.iconclassId, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID._)
-
-            # Add type of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.type, local)
-
-            # Add source of LIDO conceptID
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.conceptID.source, Iconclass)
-
-            # Add iconclass category from TMS as LIDO term
-
-            copy_field(or_record.iconclassCategory, descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last.term.$append._)
-
-        end
+        paste(or_record.iconclassId, ic.TermSource, ic.SourceTermID, join_char:'')
+
+        # Add each iconclass concept from TMS to LIDO subjectConcept as LIDO term along with the iconclass ID from TMS as LIDO conceptID
+
+        lido_term(
+            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept.$append,
+            ic.term,
+            -conceptid: or_record.iconclassId,
+            -type: purl,
+            -source: Iconclass,
+            -lang: nl
+        )
 
         # Prevent reusing the same values in the next iteration
 
         remove_field(or_record.iconclassId)
-        remove_field(or_record.iconclassTerm)
-        remove_field(or_record.iconclassCategory)
 
     end
 
