@@ -1484,6 +1484,22 @@
                 remove_field(or_record.iconclassId)
                 remove_field(or_record.content_motif_general_id.$first)
 
+                # English term
+
+                copy_field('i.term\.code', i.english_term)
+
+                lookup_in_store(i.english_term, DBI, data_source: "dbi:SQLite:/tmp/import.iconclass.sqlite")
+
+                if all_match(i.english_term, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        i.english_term,
+                        -lang: en
+                    )
+
+                end
+
             end
 
         else
@@ -1597,6 +1613,22 @@
                 )
 
                 remove_field(or_record.iconclassId)
+
+                # English term
+
+                copy_field('c.term\.code', c.english_term)
+
+                lookup_in_store(c.english_term, DBI, data_source: "dbi:SQLite:/tmp/import.iconclass.sqlite")
+
+                if all_match(c.english_term, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        c.english_term,
+                        -lang: en
+                    )
+
+                end
 
             end
 
