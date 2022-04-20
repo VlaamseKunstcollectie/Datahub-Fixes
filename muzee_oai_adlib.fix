@@ -1859,6 +1859,14 @@
                 remove_field(or_record.iconclassId)
                 remove_field(or_record.content_motif_general_id.$first)
 
+                # English term
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    i.term,
+                    -lang: en
+                )
+
             end
 
         else
@@ -1972,6 +1980,14 @@
                 )
 
                 remove_field(or_record.iconclassId)
+
+                # English term
+
+                lido_term(
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                    c.term,
+                    -lang: en
+                )
 
             end
 
