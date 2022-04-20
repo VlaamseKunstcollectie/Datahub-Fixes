@@ -987,14 +987,18 @@ do list(path:_metadata.descriptiveMetadata.0.objectRelationWrap.subjectWrap.subj
 
         do list(path:ic.subject.subjectConcept.0.term, var:ic2)
 
-            copy_field(iconclassid.$last, iconclasstmp.$append)
+            if all_match('term.lang', 'nl')
 
-            if all_match(ic2._, '.*\S.*')
-                copy_field(ic2._, iconclasstmp.$append)
+                copy_field(iconclassid.$last, iconclasstmp.$append)
+
+                if all_match(ic2._, '.*\S.*')
+                    copy_field(ic2._, iconclasstmp.$append)
+                end
+
+                join_field(iconclasstmp, ' ')
+                move_field(iconclasstmp, iconclass.$append)
+
             end
-
-            join_field(iconclasstmp, ' ')
-            move_field(iconclasstmp, iconclass.$append)
 
         end
 
