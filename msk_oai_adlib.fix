@@ -1501,10 +1501,10 @@
                         if all_match(i.english_term.t, '.*\(with [^\(]*[A-Z][A-Z]+[^\(]*\).*')
 
                             replace_all('i.term\.code', '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?.*', '$2')
-                            paste(i.english_term.t, 'i.term\.code', i.english_term.t, join_char:'#@KEYWORD@#')
-                            replace_all(i.english_term.t, '(.*)#@KEYWORD@#(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1#@KEYWORD@#$2\($1\)$3')
-                            replace_all(i.english_term.t, '(.*)#@KEYWORD@#(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1#@KEYWORD@#$2\($1\)$3')
-                            replace_all(i.english_term.t, '.*#@KEYWORD@#(.*)', '$1')
+                            paste(i.english_term.t, 'i.term\.code', i.english_term.t, join_char:'##KEYWORD##')
+                            replace_all(i.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(i.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(i.english_term.t, '.*##KEYWORD##(.*)', '$1')
 
                         end
 
@@ -1653,10 +1653,10 @@
                         if all_match(c.english_term.t, '.*\(with [^\(]*[A-Z][A-Z]+[^\(]*\).*')
 
                             replace_all('c.term\.code', '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?.*', '$2')
-                            paste(c.english_term.t, 'c.term\.code', c.english_term.t, join_char:'#@KEYWORD@#')
-                            replace_all(c.english_term.t, '(.*)#@KEYWORD@#(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1#@KEYWORD@#$2\($1\)$3')
-                            replace_all(c.english_term.t, '(.*)#@KEYWORD@#(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1#@KEYWORD@#$2\($1\)$3')
-                            replace_all(c.english_term.t, '.*#@KEYWORD@#(.*)', '$1')
+                            paste(c.english_term.t, 'c.term\.code', c.english_term.t, join_char:'##KEYWORD##')
+                            replace_all(c.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(c.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(c.english_term.t, '.*##KEYWORD##(.*)', '$1')
 
                         end
 
