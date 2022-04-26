@@ -33,6 +33,7 @@
     copy_field(_metadata.physical_description, or_record.physical_description)
     copy_field('_metadata.content\.motif\.general', or_record.content_motif_general)
     copy_field('_metadata.content\.motif\.general\.lref', or_record.content_motif_general_id)
+    copy_field('_metadata.content\.motif\.specific', or_record.content_motif_specific)
     copy_field(_metadata.Content_subject, or_record.depicted_subject)
     copy_field(_metadata.Content_person, or_record.depicted_person)
     copy_field(_metadata.priref, or_record.priref)
@@ -149,8 +150,12 @@
 #   content\.motif\.general\.lref                                           pref: preferred
 #                                                                           pref: alternate                                         identificatie hoofdmotief
 #                                                                       lido:term
-#   content\.motif\.general                                                 pref: preferred                 Onderwerp               term hoofdmotief
+#   content\.motif\.general.term                                            pref: preferred                 Onderwerp               term hoofdmotief
 #                                                                           pref: alternate                 Onderwerp
+#                                                               source: Iconclass
+#                                                                   lido:subjectConcept
+#   content\.motif\.specific.term\.code                                 lido:conceptID                                              identificatie afgebeeld concept
+#   content\.motif\.specific.term                                       lido:term                                                   term afgebeeld concept
 #                                                               no type
 #                                                                   lido:subjectConcept
 #   Content_subject.content\.subject\.lref                              lido:conceptID                                              identificatie afgebeeld concept
@@ -1445,7 +1450,7 @@
 
 # LIDO subjectConcept / subjectEvent / subjectPlace
 
-    # Content motif general
+    # Content motif general / Iconclass
 
     unless is_array(or_record.content_motif_general)
         move_field(or_record.content_motif_general, or_record.tmp)
@@ -1459,75 +1464,215 @@
         move_field(or_record.tmp, or_record.content_motif_general_id.$append)
     end
 
-    do list(path:or_record.content_motif_general_id, var:c)
-        copy_field(c, or_record.content_motif_general.$append.id)
-    end
+    do list(path:or_record.content_motif_general, var: i)
 
-    assoc(or_record.general_motif, or_record.content_motif_general.*.id, or_record.content_motif_general.*)
+        if all_match(i.source, 'http://iconclass.org/')
 
-    # We'll have multiple terms for the type "content-motif-general": the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
+            if all_match('i.term\.code', '.*\S.*')
 
-    do each(path:or_record.general_motif, var:c)
-
-        # Value in Adlib
-
-        if all_match(c.value, '.*\S.*')
-
-            add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "content-motif-general")
-
-            if all_match(c.key, '.*\S.*')
+                paste(or_record.iconclassId, i.source, 'i.term\.code', join_char:'')
 
                 lido_term(
-                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
-                    c.value,
-                    -conceptid: c.key,
-                    -type: local,
-                    -source: Adlib,
-                    -pref: preferred,
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept.$append,
+                    i.term,
+                    -conceptid: or_record.iconclassId,
+                    -type: purl,
+                    -source: Iconclass,
                     -lang: nl
                 )
 
-            else
+                remove_field(or_record.iconclassId)
+                remove_field(or_record.content_motif_general_id.$first)
 
-                lido_term(
-                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
-                    c.value,
-                    -pref: preferred,
-                    -lang: nl
-                )
+                # English term
+
+                copy_field('i.term\.code', i.english_term)
+
+                lookup_in_store(i.english_term, DBI, data_source: "dbi:SQLite:/tmp/import.iconclass.sqlite")
+
+                unless all_match(i.english_term.t, '.*\S.*')
+
+                    if all_match(i.english_term, '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\([^\+][^\)]*\)\d*(?:\(\+\d+\))?.*')
+
+                        replace_all(i.english_term, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\()[^\+][^\)]*(\)\d*(?:\(\+\d+\))?.*)', '$1...$3')
+
+                        lookup_in_store(i.english_term, DBI, data_source: "dbi:SQLite:/tmp/import.iconclass.sqlite")
+
+                        if all_match(i.english_term.t, '.*\(with [^\(]*[A-Z][A-Z]+[^\(]*\).*')
+
+                            replace_all('i.term\.code', '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?.*', '$2')
+                            paste(i.english_term.t, 'i.term\.code', i.english_term.t, join_char:'##KEYWORD##')
+                            replace_all(i.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(i.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(i.english_term.t, '.*##KEYWORD##(.*)', '$1')
+
+                        end
+
+                    end
+
+                end
+
+                if all_match(i.english_term.t, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        i.english_term.t,
+                        -lang: en
+                    )
+
+                end
 
             end
 
+        else
+
+            move_field(i.term, or_record.term_array.$append)
+
+            copy_field(or_record.content_motif_general_id.$first, or_record.term_array.$append.id)
+
+            assoc(or_record.general_motif, or_record.term_array.*.id, or_record.term_array.*)
+
+            # We'll have multiple terms for the type "content-motif-general": the corresponding value in AAT (type:alternate) and the value from Adlib (type:preferred)
+
+            do each(path:or_record.general_motif, var:c)
+
+                # Value in Adlib
+
+                if all_match(c.value, '.*\S.*')
+
+                    add_field(descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.type, "content-motif-general")
+
+                    if all_match(c.key, '.*\S.*')
+
+                        lido_term(
+                            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+                            c.value,
+                            -conceptid: c.key,
+                            -type: local,
+                            -source: Adlib,
+                            -pref: preferred,
+                            -lang: nl
+                        )
+
+                    else
+
+                        lido_term(
+                            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$append,
+                            c.value,
+                            -pref: preferred,
+                            -lang: nl
+                        )
+
+                    end
+
+                end
+
+                # Corresponding value in AAT, not (yet) retrievable via API
+
+                copy_field(c.value, c.general_motif_aat)
+
+                lookup_in_store(c.general_motif_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+
+                if all_match(c.general_motif_aat.aatterm, '.*\S.*')
+
+                    if all_match(c.general_motif_aat.aaturi, '.*\S.*')
+
+                        lido_term(
+                            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                            c.general_motif_aat.aatterm,
+                            -conceptid: c.general_motif_aat.aaturi,
+                            -type: purl,
+                            -source: AAT,
+                            -pref: alternate,
+                            -lang: nl
+                        )
+
+                    else
+
+                        lido_term(
+                            descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                            c.general_motif_aat.aatterm,
+                            -pref: alternate,
+                            -lang: nl
+                        )
+
+                    end
+
+                end
+
+            end
+
+            remove_field(or_record.term_array)
+            remove_field(or_record.content_motif_general_id.$first)
+
         end
 
-        # Corresponding value in AAT, not (yet) retrievable via API
+    end
 
-        copy_field(c.value, c.general_motif_aat)
+    # Content motif specific / Iconclass
 
-        lookup_in_store(c.general_motif_aat, DBI, data_source: "dbi:SQLite:/tmp/import.AAT_UTF8.sqlite")
+    unless is_array(or_record.content_motif_specific)
+        move_field(or_record.content_motif_specific, or_record.tmp)
+        set_array(or_record.content_motif_specific)
+        move_field(or_record.tmp, or_record.content_motif_specific.$append)
+    end
 
-        if all_match(c.general_motif_aat.aatterm, '.*\S.*')
+    do list(path:or_record.content_motif_specific, var: c)
 
-            if all_match(c.general_motif_aat.aaturi, '.*\S.*')
+        if all_match(c.source, 'http://iconclass.org/')
+
+            if all_match('c.term\.code', '.*\S.*')
+
+                paste(or_record.iconclassId, c.source, 'c.term\.code', join_char:'')
 
                 lido_term(
-                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
-                    c.general_motif_aat.aatterm,
-                    -conceptid: c.general_motif_aat.aaturi,
+                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$append.subject.subjectConcept.$append,
+                    c.term,
+                    -conceptid: or_record.iconclassId,
                     -type: purl,
-                    -source: AAT,
-                    -pref: alternate,
+                    -source: Iconclass,
                     -lang: nl
                 )
 
-            else
+                remove_field(or_record.iconclassId)
 
-                lido_term(
-                    descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
-                    c.general_motif_aat.aatterm,
-                    -pref: alternate,
-                    -lang: nl
-                )
+                # English term
+
+                copy_field('c.term\.code', c.english_term)
+
+                lookup_in_store(c.english_term, DBI, data_source: "dbi:SQLite:/tmp/import.iconclass.sqlite")
+
+                unless all_match(c.english_term.t, '.*\S.*')
+
+                    if all_match(c.english_term, '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\([^\+][^\)]*\)\d*(?:\(\+\d+\))?.*')
+
+                        replace_all(c.english_term, '^(\d(?:\d(?:([A-Z])(?:\2)?\d*)?)?\()[^\+][^\)]*(\)\d*(?:\(\+\d+\))?.*)', '$1...$3')
+
+                        lookup_in_store(c.english_term, DBI, data_source: "dbi:SQLite:/tmp/import.iconclass.sqlite")
+
+                        if all_match(c.english_term.t, '.*\(with [^\(]*[A-Z][A-Z]+[^\(]*\).*')
+
+                            replace_all('c.term\.code', '^\d(?:\d(?:([A-Z])(?:\1)?\d*)?)?\(([^\+][^\)]*)\)\d*(?:\(\+\d+\))?.*', '$2')
+                            paste(c.english_term.t, 'c.term\.code', c.english_term.t, join_char:'##KEYWORD##')
+                            replace_all(c.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(c.english_term.t, '(.*)##KEYWORD##(.*)\(with [^\(]*[A-Z][A-Z]+[^\(]*\)(.*)', '$1##KEYWORD##$2\($1\)$3')
+                            replace_all(c.english_term.t, '.*##KEYWORD##(.*)', '$1')
+
+                        end
+
+                    end
+
+                end
+
+                if all_match(c.english_term.t, '.*\S.*')
+
+                    lido_term(
+                        descriptiveMetadata.objectRelationWrap.subjectWrap.subjectSet.$last.subject.subjectConcept.$last,
+                        c.english_term.t,
+                        -lang: en
+                    )
+
+                end
 
             end
 

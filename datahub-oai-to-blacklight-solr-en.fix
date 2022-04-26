@@ -969,6 +969,53 @@ unless exists(description)
 end
 
 
+## Iconclass
+
+set_array(iconclass)
+
+do list(path:_metadata.descriptiveMetadata.0.objectRelationWrap.subjectWrap.subjectSet, var:ic)
+
+    # Use source 'Iconclass'
+
+    if all_match(ic.subject.subjectConcept.0.conceptID.0.source, 'Iconclass')
+
+        # Get Iconclass ID and term from LIDO
+
+        if all_match(ic.subject.subjectConcept.0.conceptID.0._, '.*\S.*')
+            copy_field(ic.subject.subjectConcept.0.conceptID.0._, iconclassid.$append)
+            replace_all(iconclassid.$last, '.*iconclass\.org/', '')
+        end
+
+        do list(path:ic.subject.subjectConcept.0.term, var:ic2)
+
+            if all_match('ic2.lang', 'en')
+
+                copy_field(iconclassid.$last, iconclasstmp.$append)
+
+                if all_match(ic2._, '.*\S.*')
+                    copy_field(ic2._, iconclasstmp.$append)
+                end
+
+                join_field(iconclasstmp, ' ')
+                move_field(iconclasstmp, iconclass.$append)
+
+            end
+
+        end
+
+        remove_field('iconclassid')
+
+    end
+
+end
+
+# If the field for iconclass is empty, use n/a (not available)
+
+unless all_match(iconclass.$first, '.*\S.*')
+    set_field(iconclass.$first, 'n/a')
+end
+
+
 ## Work_pid
 
 if all_match('_metadata.objectPublishedID.0._', '.*\S.*')
